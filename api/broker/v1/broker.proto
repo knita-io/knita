@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package broker;
+
+option go_package = "github.com/knita-io/knita/api/broker/v1";
+
+import "executor/v1/executor.proto";
+
+service RuntimeBroker {
+  rpc Tender(RuntimeTender) returns (RuntimeContracts);
+  rpc Settle(RuntimeContract) returns (RuntimeSettlement);
+}
+
+message RuntimeTender {
+  string tender_id = 1;
+  executor.Opts opts = 2;
+}
+
+message RuntimeContracts {
+  repeated RuntimeContract contracts = 1;
+}
+
+message RuntimeContract {
+  string contract_id = 1;
+  string runtime_id = 2;
+  executor.Opts opts = 3;
+}
+
+message RuntimeSettlement {
+  RuntimeConnectionInfo connection_info = 1;
+}
+
+message RuntimeConnectionInfo {
+  oneof transport {
+    RuntimeTransportUnix unix = 1;
+  }
+}
+
+message RuntimeTransportUnix {
+  string socket_path = 1;
+}

@@ -1,0 +1,237 @@
+syntax = "proto3";
+
+package executor;
+
+option go_package = "github.com/knita-io/knita/api/executor/v1";
+
+service Executor {
+  rpc Introspect(IntrospectRequest) returns (IntrospectResponse);
+  rpc Open(OpenRequest) returns (OpenResponse);
+  rpc Exec(ExecRequest) returns (ExecResponse);
+  rpc Import(stream FileTransfer) returns (ImportResponse);
+  rpc Export(ExportRequest) returns (stream FileTransfer);
+  rpc Close(CloseRequest) returns (CloseResponse);
+  rpc Events(EventsRequest) returns (stream Event);
+}
+
+message IntrospectRequest {}
+message IntrospectResponse{
+  string os = 1;
+  string arch = 2;
+  uint32 ncpu = 4;
+  repeated string labels = 3;
+}
+
+message OpenRequest {
+  string build_id = 1;
+  string runtime_id = 2;
+  Opts opts = 3;
+}
+
+message OpenResponse {
+  string work_directory = 1;
+}
+
+enum RuntimeType {
+  RUNTIME_UNSPECIFIED = 0;
+  RUNTIME_HOST = 1;
+  RUNTIME_DOCKER = 2;
+}
+
+message Opts {
+  RuntimeType type = 1;
+  repeated string labels = 4;
+  map<string, string> tags = 5;
+  oneof opts {
+    HostOpts host = 2;
+    DockerOpts docker = 3;
+  }
+}
+
+message HostOpts {}
+
+message DockerOpts {
+  DockerPullOpts Image = 1;
+}
+
+message DockerPullOpts {
+  enum PullStrategy {
+    PULL_STRATEGY_UNSPECIFIED = 0;
+    PULL_STRATEGY_NEVER = 1;
+    PULL_STRATEGY_ALWAYS = 2;
+    PULL_STRATEGY_NOT_EXISTS = 3;
+  }
+  string image_uri = 1;
+  PullStrategy pull_strategy = 2;
+  DockerPullAuth auth = 3;
+}
+
+message DockerPullAuth {
+  oneof auth {
+    BasicAuth basic = 1;
+    AWSECRAuth aws_ecr = 2;
+  }
+}
+
+message BasicAuth {
+  string username = 1;
+  string password = 2;
+}
+
+message AWSECRAuth  {
+  string region = 1;
+  string aws_access_key_id = 2;
+  string aws_secret_key = 3;
+}
+
+message ExecRequest {
+  string runtime_id = 1;
+  string exec_id = 2;
+  ExecOpts opts = 3;
+}
+
+message ExecOpts {
+  string name = 1;
+  repeated string args = 2;
+  repeated string env = 3;
+  map<string, string> tags = 4;
+}
+
+message ExecResponse{
+  int32 ExitCode = 1;
+}
+
+message FileTransfer {
+  string runtime_id = 1;
+  string import_id = 2;
+  string file_id = 3;
+  FileTransferHeader header = 4;
+  FileTransferBody body = 5;
+  FileTransferTrailer trailer = 6;
+}
+
+message FileTransferHeader {
+  bool is_dir = 1;
+  string src_path = 2;
+  string dest_path = 3;
+  uint32 mode = 4;
+  uint64 size = 5;
+}
+
+message FileTransferBody {
+  uint64 offset = 1;
+  bytes data = 2;
+}
+
+message FileTransferTrailer {
+  bytes md5 = 1;
+}
+
+message ImportResponse {}
+
+message ExportRequest {
+  string runtime_id = 1;
+  string export_id = 2;
+  string src_path = 3;
+  string dest_path = 4;
+}
+
+message CloseRequest {
+  string runtime_id = 1;
+}
+
+message CloseResponse {}
+
+message EventsRequest {
+  string runtime_id = 1;
+}
+
+message Event {
+  string build_id = 1;
+  string group_name = 3;
+  uint64 sequence = 4;
+  oneof payload {
+    RuntimeOpenedEvent runtime_opened = 5;
+    ExecStartEvent exec_start = 6;
+    ExecEndEvent exec_end = 7;
+    ImportStartEvent import_start = 8;
+    ImportEndEvent import_end = 9;
+    ExportStartEvent export_start = 10;
+    ExportEndEvent export_end = 11;
+    StdoutEvent stdout = 12;
+    StderrEvent stderr = 13;
+    RuntimeClosedEvent runtime_closed = 14;
+  }
+}
+
+message RuntimeOpenedEvent {
+  string runtime_id = 1;
+  Opts opts = 2;
+}
+
+message RuntimeClosedEvent {
+  string runtime_id = 1;
+}
+
+message StdoutEvent {
+  bytes data = 1;
+  LogOutEventSource source = 2;
+}
+
+message StderrEvent {
+  bytes data = 1;
+  LogOutEventSource source = 2;
+}
+
+message LogOutEventSource {
+  oneof source {
+    LogSourceRuntime runtime = 2;
+    LogSourceExec exec = 3;
+    LogSourceDirector director = 4;
+  }
+}
+
+message LogSourceRuntime {
+  string runtime_id = 1;
+}
+
+message LogSourceExec {
+  string runtime_id = 1;
+  string exec_id = 2;
+}
+
+message LogSourceDirector {}
+
+message ExecStartEvent {
+  string runtime_id = 1;
+  string exec_id = 2;
+  ExecOpts opts = 3;
+  map<string, string> tags = 4;
+}
+
+message ImportStartEvent {
+  string runtime_id = 1;
+  string import_id = 2;
+}
+
+message ImportEndEvent {
+  string runtime_id = 1;
+  string import_id = 2;
+}
+
+message ExportStartEvent {
+  string runtime_id = 1;
+  string export_id = 2;
+}
+
+message ExportEndEvent {
+  string runtime_id = 1;
+  string export_id = 2;
+}
+
+message ExecEndEvent {
+  string runtime_id = 1;
+  string exec_id = 2;
+  string error = 3; // TODO structured error?
+  int32 ExitCode = 4;
+}
