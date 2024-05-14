@@ -93,7 +93,7 @@ func build(s *knita.Client) {
 			golang.MustExec(
 				exec.WithTag(knita.NameTag, fmt.Sprintf("knita-%[1]s-%[2]s", target.os, arch)),
 				exec.WithCommand("/bin/bash", "-c",
-					fmt.Sprintf("GOOS=%[1]s GOARCH=%[2]s cd cmd/knita && go build -o ../../build/output/cli/knita-%[1]s-%[2]s .", target.os, arch)))
+					fmt.Sprintf("cd cmd/knita && env GOOS=%[1]s GOARCH=%[2]s go build -o ../../build/output/cli/knita-%[1]s-%[2]s .", target.os, arch)))
 		}
 	}
 	golang.MustExport("build/output/cli/knita-*", "build/output/cli/")
