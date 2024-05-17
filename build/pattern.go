@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	stdruntime "runtime"
+	"sync"
 
 	"github.com/knita-io/knita/sdk/go/knita"
 	"github.com/knita-io/knita/sdk/go/knita/runtime"
@@ -29,24 +30,24 @@ func docker(s *knita.Client) {
 
 	host.MustImport("build/docker/*", "")
 	host.MustExec(
-		exec.WithTag(knita.NameTag, "build"),
+		exec.WithTag(knita.NameTag, "knita/build"),
 		exec.WithCommand("/bin/bash", "-c", `
-			cd build/docker && \
+			cd build/docker
 			docker build -t knita/build:latest .`),
 	)
 }
 
 func protobuf(s *knita.Client) {
-	golang := s.MustRuntime(
+	container := s.MustRuntime(
 		runtime.WithTag(knita.NameTag, "protobuf"),
 		runtime.WithType(runtime.TypeDocker),
 		runtime.WithImage("knita/build:latest"),
 		runtime.WithPullStrategy(runtime.PullStrategyNever))
-	defer golang.MustClose()
+	defer container.MustClose()
 
-	golang.MustImport("api/**/*.proto", "")
+	container.MustImport("api/**/*.proto", "")
 
-	golang.MustExec(
+	container.MustExec(
 		exec.WithTag(knita.NameTag, "python"),
 		exec.WithCommand("/bin/bash", "-c", `
 			python \
@@ -60,9 +61,9 @@ func protobuf(s *knita.Client) {
 
 			sed -i -e 's/from director.v1/from ./g' api/*/v1/*.py*
 			sed -i -e 's/from executor.v1/from ./g' api/*/v1/*.py*`))
-	golang.MustExport("api/**/*.py*", "sdk/python/knita/")
+	container.MustExport("api/**/*.py*", "sdk/python/knita/")
 
-	golang.MustExec(
+	container.MustExec(
 		exec.WithTag(knita.NameTag, "go"),
 		exec.WithCommand("/bin/bash", "-c", `
 			protoc \
@@ -75,19 +76,19 @@ func protobuf(s *knita.Client) {
 			executor/v1/executor.proto \
 			director/v1/director.proto \
 			observer/v1/observer.proto`))
-	golang.MustExport("api/**/*.pb.go", "")
+	container.MustExport("api/**/*.pb.go", "")
 }
 
 func unit(s *knita.Client) {
-	golang := s.MustRuntime(
+	container := s.MustRuntime(
 		runtime.WithTag(knita.NameTag, "unit-test"),
 		runtime.WithType(runtime.TypeDocker),
 		runtime.WithImage("knita/build:latest"),
 		runtime.WithPullStrategy(runtime.PullStrategyNever))
-	defer golang.MustClose()
+	defer container.MustClose()
 
-	golang.MustImport(".", ".")
-	golang.MustExec(
+	container.MustImport(".", ".")
+	container.MustExec(
 		exec.WithTag(knita.NameTag, "go"),
 		exec.WithCommand("/bin/bash", "-c", "go test ./..."))
 }
@@ -102,23 +103,29 @@ func build(s *knita.Client) {
 		{os: "windows", arch: []string{"arm64", "amd64"}},
 	}
 
-	golang := s.MustRuntime(
+	container := s.MustRuntime(
 		runtime.WithTag(knita.NameTag, "build"),
 		runtime.WithType(runtime.TypeDocker),
 		runtime.WithImage("knita/build:latest"),
 		runtime.WithPullStrategy(runtime.PullStrategyNever))
-	defer golang.MustClose()
+	defer container.MustClose()
 
-	golang.MustImport(".", ".")
+	container.MustImport(".", ".")
+	wg := sync.WaitGroup{}
 	for _, target := range targets {
 		for _, arch := range target.arch {
-			golang.MustExec(
-				exec.WithTag(knita.NameTag, fmt.Sprintf("knita-%[1]s-%[2]s", target.os, arch)),
-				exec.WithCommand("/bin/bash", "-c",
-					fmt.Sprintf("cd cmd/knita && env GOOS=%[1]s GOARCH=%[2]s go build -o ../../build/output/cli/knita-%[1]s-%[2]s .", target.os, arch)))
+			wg.Add(1)
+			go func(os string, arch string) {
+				defer wg.Done()
+				container.MustExec(
+					exec.WithTag(knita.NameTag, fmt.Sprintf("knita-%[1]s-%[2]s", os, arch)),
+					exec.WithCommand("/bin/bash", "-c",
+						fmt.Sprintf("cd cmd/knita && env GOOS=%[1]s GOARCH=%[2]s go build -o ../../build/output/cli/knita-%[1]s-%[2]s .", os, arch)))
+			}(target.os, arch)
 		}
 	}
-	golang.MustExport("build/output/cli/knita-*", "build/output/cli/")
+	wg.Wait()
+	container.MustExport("build/output/cli/knita-*", "build/output/cli/")
 }
 
 // testSDK runs e2e tests for the Knita SDKs. This is a little meta as we're invoking `knita build`
@@ -159,15 +166,15 @@ func publishSDK(s *knita.Client) {
 		return
 	}
 
-	golang := s.MustRuntime(
+	container := s.MustRuntime(
 		runtime.WithTag(knita.NameTag, "sdk-publish"),
 		runtime.WithType(runtime.TypeDocker),
 		runtime.WithImage("knita/build:latest"),
 		runtime.WithPullStrategy(runtime.PullStrategyNever))
-	defer golang.MustClose()
+	defer container.MustClose()
 
-	golang.MustImport("sdk/python", "")
-	golang.MustExec(
+	container.MustImport("sdk/python", "")
+	container.MustExec(
 		exec.WithTag(knita.NameTag, "python"),
 		exec.WithEnv("TWINE_PASSWORD="+os.Getenv("TWINE_PASSWORD")),
 		exec.WithCommand("/bin/bash", "-c", `

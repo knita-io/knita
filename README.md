@@ -4,14 +4,12 @@
  </a>
 
 ### `Knit-ter` - `/ˈnɪ.tər/`
-# The Next Generation Build System
+# Build Code. Code Builds.
 </div>
 
 ## Overview
 
-Knita overhauls the traditional software build process by integrating build and continuous integration (CI) functionality into one cohesive platform.
-
-Key advantages of Knita:
+Knita overhauls the traditional software build process by combining build and continuous integration into one cohesive platform.
 
 * **Real Code**: Replace cumbersome CI YAML files with real code. Matrices are just for loops, conditions are just if statements, input/outputs are just variables etc.
 * **Local Builds**: Run and test builds entirely locally without the painful change-commit-wait cycle typical of traditional CI systems.
