@@ -16,7 +16,7 @@ Key advantages of Knita:
 * **Real Code**: Replace cumbersome CI YAML files with real code. Matrices are just for loops, conditions are just if statements, input/outputs are just variables etc.
 * **Local Builds**: Run and test builds entirely locally without the painful change-commit-wait cycle typical of traditional CI systems.
 * **Distributed Builds**: Run builds across distributed build infrastructure, even when running outside your CI environment. Mix and match your local machine with remote build servers to minimize queue time.
-* **Flexible Environments**: Knita can run builds in a variety of different environments. Docker and direct host execution is currently supported, with VM, Kubernetes and Podman planned to follow.
+* **Flexible Environments**: Knita can run builds in a variety of different runtime environments. Docker and direct host execution is currently supported, with VM, Kubernetes and Podman planned to follow.
 * **Dynamic Builds**: Builds are now just code - no more static YAML files. Adapt the behaviour of your builds at runtime to achieve:
   * **Adaptive Test Splitting**: Dynamically calculate the distribution of tests across multiple parallel executors to optimize run time.
   * **Conditional Retries**: Automatically re-run failed build targets based on their outputs, such as standard output or specific error messages.
@@ -29,9 +29,9 @@ Anything you can code, Knita can execute as part of the build process.
 
 Download the latest Knita CLI from the [release page](https://github.com/knita-io/knita/releases) and make sure it's in your path.
 
-To define you first pattern, see the getting started guide for your preferred language:
+To define your first pattern, see the getting started guide for your preferred language:
 * [Golang](docs/guides/go/getting-started.md)
-* Python (coming soon)
+* [Python](docs/guides/python/getting-started.md)
 
 _Don't see your language? Open a GitHub issue to request it._
 
@@ -158,10 +158,10 @@ func buildBinaries(client *knita.Client) {
 Thank you for considering contributing to Knita! All kinds of contributions are welcome, whether you're fixing bugs, adding new features, improving documentation, or helping others.
 
 #### Guidelines
-Code Style: Please follow the coding style used in the project. Consistent code style helps maintain readability and quality.
-Write Tests: If you add a new feature, please write tests to cover it. If you're fixing a bug, consider adding a test that verifies the fix.
-Documentation: Update the documentation to reflect any changes you make. Good documentation helps others understand how to use and contribute to the project.
-Pull Request Reviews: Be open to feedback and revisions. Pull requests are a conversation, and improving the codebase is a collaborative effort.
+* **Code Style**: Please follow the coding style used in the project. Consistent code style helps maintain readability and quality.
+* **Write Tests**: If you add a new feature, please write tests to cover it. If you're fixing a bug, consider adding a test that verifies the fix.
+* **Documentation**: Update the documentation to reflect any changes you make. Good documentation helps others understand how to use and contribute to the project.
+  ( **Pull Request Reviews**: Be open to feedback and revisions. Pull requests are a conversation, and improving the codebase is a collaborative effort.
 
 #### Getting Help
 If you need any help or have questions, feel free to open an issue or join the community discussions.

@@ -277,9 +277,18 @@ func (r *ContainerManager) Execute(ctx context.Context, config ExecConfig) error
 		break
 	}
 	if exitCode != 0 {
-		return fmt.Errorf("error script exited with non-zero exit code: %d", exitCode)
+		return &exitError{exitCode: exitCode}
 	}
 	return nil
+}
+
+type exitError struct {
+	err      error
+	exitCode int
+}
+
+func (e *exitError) Error() string {
+	return e.err.Error()
 }
 
 // CreateNetwork creates a new private network and returns its ID.

@@ -45,7 +45,7 @@ func (o *withLabel) Apply(opts *executorv1.Opts) {
 	opts.Labels = append(opts.Labels, o.label)
 }
 
-// WithLabel specifies that this runtime can only be opened on an executor that supports the label.
+// WithLabel specifies that this runtime can only be opened on an executor that supports the specified label.
 func WithLabel(label string) Opt {
 	return &withLabel{label: label}
 }
@@ -58,7 +58,7 @@ func (o *withLabels) Apply(opts *executorv1.Opts) {
 	opts.Labels = append(opts.Labels, o.labels...)
 }
 
-// WithLabels specifies that this runtime can only be opened on an executor that supports the labels.
+// WithLabels specifies that this runtime can only be opened on an executor that supports the specified labels.
 func WithLabels(labels ...string) Opt {
 	return &withLabels{labels: labels}
 }
@@ -129,8 +129,8 @@ const (
 	// PullStrategyNever will skip the Docker pull entirely. This is useful if executors are
 	// loaded with relevant Docker images out of band of any individual build.
 	PullStrategyNever DockerPullStrategy = "never"
-	// PullStrategyIfNotExists will run Docker pull only if no matching image is found on the executor.
-	PullStrategyIfNotExists DockerPullStrategy = "if-not-exists"
+	// PullStrategyNotExists will run Docker pull only if no matching image is found on the executor.
+	PullStrategyNotExists DockerPullStrategy = "not-exists"
 )
 
 type DockerPullStrategy string
@@ -156,7 +156,7 @@ func WithPullStrategy(pullStrategy DockerPullStrategy) Opt {
 		return &withPullStrategy{pullStrategy: executorv1.DockerPullOpts_PULL_STRATEGY_ALWAYS}
 	case PullStrategyNever:
 		return &withPullStrategy{pullStrategy: executorv1.DockerPullOpts_PULL_STRATEGY_NEVER}
-	case PullStrategyIfNotExists:
+	case PullStrategyNotExists:
 		return &withPullStrategy{pullStrategy: executorv1.DockerPullOpts_PULL_STRATEGY_NOT_EXISTS}
 	default:
 		panic("Unknown pull strategy: " + pullStrategy)

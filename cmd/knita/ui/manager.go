@@ -15,7 +15,7 @@ import (
 	"github.com/knita-io/knita/internal/event"
 )
 
-const targetFPS = 60
+const targetFPS = 10
 
 type Element interface {
 	ID() string
@@ -172,14 +172,14 @@ func (ui *Manager) onEventCallback(event *executorv1.Event) {
 		})
 	case *executorv1.Event_Stdout:
 		switch s := p.Stdout.Source.Source.(type) {
-		case *executorv1.LogOutEventSource_Exec:
+		case *executorv1.LogEventSource_Exec:
 			withElement(ui, s.Exec.ExecId, func(ele *ExecElement) {
 				ele.SetMessage(string(p.Stdout.Data))
 			})
 		}
 	case *executorv1.Event_Stderr:
 		switch s := p.Stderr.Source.Source.(type) {
-		case *executorv1.LogOutEventSource_Exec:
+		case *executorv1.LogEventSource_Exec:
 			withElement(ui, s.Exec.ExecId, func(ele *ExecElement) {
 				ele.SetMessage(string(p.Stderr.Data))
 			})

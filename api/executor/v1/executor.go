@@ -5,7 +5,7 @@ type IsEvent_Payload interface {
 }
 
 type IsOutEvent_Source interface {
-	isLogOutEventSource_Source
+	isLogEventSource_Source
 }
 
 type RuntimeEvent interface {
@@ -44,9 +44,9 @@ func (e *Event_ExportEnd) GetRuntimeId() string {
 
 func (e *Event_Stdout) GetRuntimeId() string {
 	switch s := e.Stdout.Source.Source.(type) {
-	case *LogOutEventSource_Runtime:
+	case *LogEventSource_Runtime:
 		return s.Runtime.RuntimeId
-	case *LogOutEventSource_Exec:
+	case *LogEventSource_Exec:
 		return s.Exec.RuntimeId
 	}
 	return ""
@@ -54,9 +54,9 @@ func (e *Event_Stdout) GetRuntimeId() string {
 
 func (e *Event_Stderr) GetRuntimeId() string {
 	switch s := e.Stderr.Source.Source.(type) {
-	case *LogOutEventSource_Runtime:
+	case *LogEventSource_Runtime:
 		return s.Runtime.RuntimeId
-	case *LogOutEventSource_Exec:
+	case *LogEventSource_Exec:
 		return s.Exec.RuntimeId
 	}
 	return ""
@@ -98,19 +98,19 @@ func NewExportEndEvent(runtimeID string, exportID string) *Event {
 	return &Event{Payload: &Event_ExportEnd{ExportEnd: &ExportEndEvent{RuntimeId: runtimeID, ExportId: exportID}}}
 }
 
-func NewRuntimeLogEventSource(runtimeID string) *LogOutEventSource {
-	return &LogOutEventSource{Source: &LogOutEventSource_Runtime{Runtime: &LogSourceRuntime{RuntimeId: runtimeID}}}
+func NewRuntimeLogEventSource(runtimeID string) *LogEventSource {
+	return &LogEventSource{Source: &LogEventSource_Runtime{Runtime: &LogSourceRuntime{RuntimeId: runtimeID}}}
 }
 
-func NewExecLogEventSource(runtimeID string, execID string) *LogOutEventSource {
-	return &LogOutEventSource{Source: &LogOutEventSource_Exec{Exec: &LogSourceExec{RuntimeId: runtimeID, ExecId: execID}}}
+func NewExecLogEventSource(runtimeID string, execID string, system bool) *LogEventSource {
+	return &LogEventSource{Source: &LogEventSource_Exec{Exec: &LogSourceExec{RuntimeId: runtimeID, ExecId: execID, System: system}}}
 }
 
-func NewDirectorLogEventSource() *LogOutEventSource {
-	return &LogOutEventSource{Source: &LogOutEventSource_Director{Director: &LogSourceDirector{}}}
+func NewDirectorLogEventSource() *LogEventSource {
+	return &LogEventSource{Source: &LogEventSource_Director{Director: &LogSourceDirector{}}}
 }
 
-func NewStdoutEvent(data []byte, source *LogOutEventSource) *Event {
+func NewStdoutEvent(data []byte, source *LogEventSource) *Event {
 	return &Event{
 		Payload: &Event_Stdout{
 			Stdout: &StdoutEvent{Data: data, Source: source},
@@ -118,7 +118,7 @@ func NewStdoutEvent(data []byte, source *LogOutEventSource) *Event {
 	}
 }
 
-func NewStderrEvent(data []byte, source *LogOutEventSource) *Event {
+func NewStderrEvent(data []byte, source *LogEventSource) *Event {
 	return &Event{
 		Payload: &Event_Stderr{
 			Stderr: &StderrEvent{Data: data, Source: source},

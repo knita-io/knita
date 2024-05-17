@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
@@ -134,8 +133,8 @@ func (r *Runtime) Close() error {
 // Start must have been called before calling Exec.
 func (r *Runtime) Exec(ctx context.Context, execID string, opts *executorv1.ExecOpts) (*runtime.ExecResult, error) {
 	r.syslog.Infow("Executing command", "name", opts.Name, "args", opts.Args)
-	execLog := r.Log().ExecSource(execID)
-	execLog.Printf("Executing command: %s %v", opts.Name, opts.Args)
+	r.Log().ExecSource(execID, true).Printf("Executing command: %s %v", opts.Name, opts.Args)
+	execLog := r.Log().ExecSource(execID, false)
 	execConfig := ExecConfig{
 		ContainerID: r.state.containerID,
 		Command:     append([]string{opts.Name}, opts.Args...),
@@ -153,9 +152,9 @@ func (r *Runtime) Exec(ctx context.Context, execID string, opts *executorv1.Exec
 
 	err := r.containerManager.Execute(ctx, execConfig)
 	if err != nil {
-		var exitErr *exec.ExitError
+		var exitErr *exitError
 		if errors.As(err, &exitErr) {
-			return &runtime.ExecResult{ExitCode: int32(exitErr.ExitCode())}, nil
+			return &runtime.ExecResult{ExitCode: int32(exitErr.exitCode)}, nil
 		}
 		return nil, fmt.Errorf("error running command: %w", err)
 	}

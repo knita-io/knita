@@ -83,13 +83,12 @@ Docker installed.
     And if you have a look at the build log:
 
     ```
-    ~/Development/knita/build2 ~/Development/knita
+    ~/Development/knita/build ~/Development/knita
     mkdir: output: File exists
     ~/Development/knita
     Pulling Docker image...
-    Docker pull strategy is "default", image exists in cache and is not latest; "docker.io/library/golang:1.22" will not be pulled
-    Executing command: /bin/bash [-c 
-                            echo 'hello world']
+    Docker pull strategy is "default", image exists in cache and is not latest; "docker.io/library/alpine:latest" will not be pulled
+    Executing command: /bin/bash [-c echo 'hello world']
     hello world
     ```
    

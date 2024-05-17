@@ -51,8 +51,8 @@ func (r *Runtime) Start(ctx context.Context) error {
 
 func (r *Runtime) Exec(ctx context.Context, execID string, opts *executorv1.ExecOpts) (*runtime.ExecResult, error) {
 	r.syslog.Infow("Executing command", "name", opts.Name, "args", opts.Args)
-	execLog := r.Log().ExecSource(execID)
-	execLog.Printf("Executing command: %s %v", opts.Name, opts.Args)
+	r.Log().ExecSource(execID, true).Printf("Executing command: %s %v", opts.Name, opts.Args)
+	execLog := r.Log().ExecSource(execID, false)
 
 	cmd := exec.CommandContext(ctx, opts.Name, opts.Args...)
 	cmd.Dir = r.baseDir

@@ -51,7 +51,7 @@ message Opts {
 message HostOpts {}
 
 message DockerOpts {
-  DockerPullOpts Image = 1;
+  DockerPullOpts image = 1;
 }
 
 message DockerPullOpts {
@@ -98,7 +98,7 @@ message ExecOpts {
 }
 
 message ExecResponse{
-  int32 ExitCode = 1;
+  int32 exit_code = 1;
 }
 
 message FileTransfer {
@@ -175,15 +175,15 @@ message RuntimeClosedEvent {
 
 message StdoutEvent {
   bytes data = 1;
-  LogOutEventSource source = 2;
+  LogEventSource source = 2;
 }
 
 message StderrEvent {
   bytes data = 1;
-  LogOutEventSource source = 2;
+  LogEventSource source = 2;
 }
 
-message LogOutEventSource {
+message LogEventSource {
   oneof source {
     LogSourceRuntime runtime = 2;
     LogSourceExec exec = 3;
@@ -198,6 +198,8 @@ message LogSourceRuntime {
 message LogSourceExec {
   string runtime_id = 1;
   string exec_id = 2;
+  // System is true if a knita component wrote the log.
+  bool system = 3;
 }
 
 message LogSourceDirector {}
@@ -233,5 +235,5 @@ message ExecEndEvent {
   string runtime_id = 1;
   string exec_id = 2;
   string error = 3; // TODO structured error?
-  int32 ExitCode = 4;
+  int32 exit_code = 4;
 }

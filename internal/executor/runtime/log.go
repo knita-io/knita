@@ -25,9 +25,9 @@ func (l *Log) Named(name string) *Log {
 	}
 }
 
-func (l *Log) ExecSource(execID string) *Log {
+func (l *Log) ExecSource(execID string, system bool) *Log {
 	return &Log{
-		BuildLog:  l.BuildLog.Source(executorv1.NewExecLogEventSource(l.runtimeID, execID)),
+		BuildLog:  l.BuildLog.Source(executorv1.NewExecLogEventSource(l.runtimeID, execID, system)),
 		runtimeID: l.runtimeID,
 	}
 }
