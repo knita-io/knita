@@ -70,9 +70,9 @@ func (s *RuntimeSupervisor) Import(req *v1.FileTransfer) error {
 func (s *RuntimeSupervisor) Export(req *v1.ExportRequest, stream v1.Executor_ExportServer) error {
 	sender := file.NewSender(s.log, s.runtime.ReadFS(), s.runtime.ID(), file.WithSendCallback(func(header *v1.FileTransferHeader) {
 		if header.IsDir {
-			s.runtime.Log().Printf("Exported directory src=%s, dest=%s, mode=%s", header.SrcPath, header.SrcPath, os.FileMode(header.Mode))
+			s.runtime.Log().Printf("Exported directory src=%s, dest=%s, mode=%s", header.SrcPath, header.DestPath, os.FileMode(header.Mode))
 		} else {
-			s.runtime.Log().Printf("Exported file src=%s, dest=%s, mode=%s, size=%d", header.SrcPath, header.SrcPath, os.FileMode(header.Mode), header.Size)
+			s.runtime.Log().Printf("Exported file src=%s, dest=%s, mode=%s, size=%d", header.SrcPath, header.DestPath, os.FileMode(header.Mode), header.Size)
 		}
 	}))
 	_, err := sender.Send(stream, req.SrcPath, req.DestPath)

@@ -20,11 +20,11 @@ type BuildLog struct {
 	dependents []closer
 	stream     event.Stream
 	sequencer  *event.Sequencer
-	source     *v1.LogOutEventSource
+	source     *v1.LogEventSource
 	buildID    string
 }
 
-func NewBuildLog(stream event.Stream, buildID string, source *v1.LogOutEventSource) *BuildLog {
+func NewBuildLog(stream event.Stream, buildID string, source *v1.LogEventSource) *BuildLog {
 	return &BuildLog{
 		name:      "",
 		source:    source,
@@ -60,7 +60,7 @@ func (l *BuildLog) Named(name string) *BuildLog {
 	return log
 }
 
-func (l *BuildLog) Source(source *v1.LogOutEventSource) *BuildLog {
+func (l *BuildLog) Source(source *v1.LogEventSource) *BuildLog {
 	log := l.clone()
 	log.source = source
 	return log

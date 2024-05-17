@@ -67,16 +67,16 @@ func (s *Server) Exec(req *directorv1.ExecRequest, stream directorv1.Director_Ex
 		execEvent := &directorv1.ExecEvent{}
 		switch p := event.Payload.(type) {
 		case *executorv1.Event_Stdout:
-			src, ok := p.Stdout.Source.Source.(*executorv1.LogOutEventSource_Exec)
-			if !ok || src.Exec.RuntimeId != runtime.ID() || src.Exec.ExecId != execID {
+			src, ok := p.Stdout.Source.Source.(*executorv1.LogEventSource_Exec)
+			if !ok || src.Exec.RuntimeId != runtime.ID() || src.Exec.ExecId != execID || src.Exec.System {
 				return
 			}
 			execEvent.Payload = &directorv1.ExecEvent_Stdout{Stdout: &directorv1.ExecStdoutEvent{
 				Data: p.Stdout.Data,
 			}}
 		case *executorv1.Event_Stderr:
-			src, ok := p.Stderr.Source.Source.(*executorv1.LogOutEventSource_Exec)
-			if !ok || src.Exec.RuntimeId != runtime.ID() || src.Exec.ExecId != execID {
+			src, ok := p.Stderr.Source.Source.(*executorv1.LogEventSource_Exec)
+			if !ok || src.Exec.RuntimeId != runtime.ID() || src.Exec.ExecId != execID || src.Exec.System {
 				return
 			}
 			execEvent.Payload = &directorv1.ExecEvent_Stderr{Stderr: &directorv1.ExecStderrEvent{

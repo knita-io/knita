@@ -57,7 +57,7 @@ message ExecEvent {
 
 message ExecEndEvent {
   string error = 1;
-  int32 ExitCode = 2;
+  int32 exit_code = 2;
 }
 
 message ExecStdoutEvent {

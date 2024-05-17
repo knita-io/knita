@@ -1,0 +1,17 @@
+[project]
+name = "knita"
+version = "0.0.2"
+description = "The Knita SDK for Python"
+readme = "README.md"
+authors = [{ name = "Knita" }]
+license = { text = "MIT" }
+requires-python = ">=3.8"
+classifiers = ["License :: OSI Approved :: MIT License"]
+dependencies = ["protobuf", "grpcio"]
+
+[project.urls]
+Homepage = "https://github.com/knita-io/knita"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

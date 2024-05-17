@@ -76,7 +76,10 @@ func (e *ExecElement) Render(writer io.Writer, width int) {
 		if e.exitCode == 0 && e.err == "" {
 			text = fmt.Sprintf(" ✓ %s (%s)\r\n", displayName, runTime)
 		} else {
-			text = fmt.Sprintf(" ✗ %s: %d - %s\r\n", displayName, e.exitCode, e.err)
+			if e.err == "" {
+				e.err = "finished with non-zero exit code"
+			}
+			text = fmt.Sprintf(" ✗ %s: %s (%d)\r\n", displayName, e.err, e.exitCode)
 		}
 	} else {
 		maxMessageWidth := width - len(e.spinnerChars[e.spinnerFrame]) - len(displayName) - len(runTime) - 9
