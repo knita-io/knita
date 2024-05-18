@@ -21,6 +21,11 @@ for opts in opts:
                                                    f"fi\n"],
                      tags={"name": "import-test"})
 
+        # Verify zero-byte files can be imported
+        runtime.import_(src='input/zero-bytes.txt')
+        runtime.exec(name="/bin/bash", args=["-c", f"stat input/zero-bytes.txt"],
+                     tags={"name": "zero-byte-import-test"})
+
         # Verify the remote work directory is reported correctly
         runtime.exec(name="/bin/bash", args=["-c", f"contents=\"$(cat {runtime.work_directory(expected_file_path)})\"\n"
                                                    f"if [[ \"$contents\" != \"{expected_contents}\" ]]; then\n"

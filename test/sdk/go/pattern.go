@@ -50,6 +50,12 @@ func main() {
 				fi
 			`))
 
+			// Verify zero-byte files can be imported
+			rt.MustImport("input/zero-bytes.txt", "")
+			rt.MustExec(
+				exec.WithTag("name", "zero-byte-import-test"),
+				exec.WithCommand("/bin/bash", "-c", `stat input/zero-bytes.txt`))
+
 			// Verify the remote work directory is reported correctly
 			rt.MustExec(
 				exec.WithTag("name", "work-directory-test"),

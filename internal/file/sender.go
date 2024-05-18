@@ -247,7 +247,6 @@ func (f *Sender) sendFile(stream SendTransport, importID string, src string, des
 	if err != nil {
 		return fmt.Errorf("error stating file %s: %w", src, err)
 	}
-	parts := 0
 	fileID := uuid.New().String()
 	header := &executorv1.FileTransferHeader{
 		IsDir:    false,
@@ -256,41 +255,43 @@ func (f *Sender) sendFile(stream SendTransport, importID string, src string, des
 		Mode:     uint32(info.Mode()),
 		Size:     uint64(info.Size()),
 	}
-	for offset := int64(0); offset < info.Size(); { // TODO what if file is 0-byte
-		buf := make([]byte, chunkSize)
-		n, err := fh.Read(buf)
-		if err != nil {
-			return fmt.Errorf("error reading file: %w", err)
-		}
-		req := &executorv1.FileTransfer{
-			RuntimeId: f.runtimeID,
-			ImportId:  importID,
-			FileId:    fileID,
-		}
-		if offset == 0 {
-			req.Header = header
-		}
-		if n > 0 {
-			req.Body = &executorv1.FileTransferBody{
-				Offset: uint64(offset),
-				Data:   buf[:n],
-			}
-		}
-		partOffset := offset
-		offset += int64(n)
-		if offset == info.Size() {
-			req.Trailer = &executorv1.FileTransferTrailer{
-				Md5: nil, // TODO
-			}
-		}
+	if info.Size() == 0 {
+		req := &executorv1.FileTransfer{RuntimeId: f.runtimeID, ImportId: importID, FileId: fileID}
+		req.Header = header
+		req.Trailer = &executorv1.FileTransferTrailer{}
 		err = stream.Send(req)
 		if err != nil {
 			return fmt.Errorf("error sending file: %w", err)
 		}
-		parts++
-		f.syslog.Debugw("Sent file part", "src", src, "part_offset", partOffset, "part_size", n)
+	} else {
+		parts := 0
+		for offset := int64(0); offset < info.Size(); {
+			buf := make([]byte, chunkSize)
+			n, err := fh.Read(buf)
+			if err != nil {
+				return fmt.Errorf("error reading file: %w", err)
+			}
+			req := &executorv1.FileTransfer{RuntimeId: f.runtimeID, ImportId: importID, FileId: fileID}
+			if offset == 0 {
+				req.Header = header
+			}
+			if n > 0 {
+				req.Body = &executorv1.FileTransferBody{Offset: uint64(offset), Data: buf[:n]}
+			}
+			partOffset := offset
+			offset += int64(n)
+			if offset == info.Size() {
+				req.Trailer = &executorv1.FileTransferTrailer{Md5: nil} // TODO
+			}
+			err = stream.Send(req)
+			if err != nil {
+				return fmt.Errorf("error sending file: %w", err)
+			}
+			parts++
+			f.syslog.Debugw("Sent file part", "src", src, "part_offset", partOffset, "part_size", n)
+		}
 	}
-	f.syslog.Infow("Sent file", "src", src, "dest", dest, "mode", info.Mode(), "n_parts", parts, "size", info.Size())
+	f.syslog.Infow("Sent file", "src", src, "dest", dest, "mode", info.Mode(), "size", info.Size())
 	if f.opts.cb != nil {
 		f.opts.cb(header)
 	}
