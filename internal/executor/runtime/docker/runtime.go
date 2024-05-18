@@ -112,6 +112,10 @@ func (r *Runtime) Log() *runtime.Log {
 	return r.log
 }
 
+func (r *Runtime) Directory() string {
+	return r.state.containerConfig.GuestWorkspaceDir
+}
+
 // Close tears down the runtime.
 func (r *Runtime) Close() error {
 	if !r.state.started {

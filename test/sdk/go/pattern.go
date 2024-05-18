@@ -50,6 +50,16 @@ func main() {
 				fi
 			`))
 
+			// Verify the remote work directory is reported correctly
+			rt.MustExec(
+				exec.WithTag("name", "work-directory-test"),
+				exec.WithCommand("/bin/bash", "-c", `
+				contents="$(cat `+rt.WorkDirectory(expectedFilePath)+`)"
+				if [[ "$contents" != "`+expectedContents+`" ]]; then
+					exit 1
+				fi
+			`))
+
 			// Verify files can be exported
 			expectedContents = "hello world\n"
 			expectedFilePath = "output/host.txt"

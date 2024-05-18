@@ -19,6 +19,10 @@ Docker installed.
        runtime.exec(name='/bin/sh', args=['-c', 'echo "hello world"'], tags={'name': 'hello-world'})
    ```
 
+   ```bash
+   chmod +x pattern.py
+   ```
+
 3. Install the Knita Python package into a virtual env:
 
    ```bash

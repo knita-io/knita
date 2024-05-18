@@ -21,6 +21,13 @@ for opts in opts:
                                                    f"fi\n"],
                      tags={"name": "import-test"})
 
+        # Verify the remote work directory is reported correctly
+        runtime.exec(name="/bin/bash", args=["-c", f"contents=\"$(cat {runtime.work_directory(expected_file_path)})\"\n"
+                                                   f"if [[ \"$contents\" != \"{expected_contents}\" ]]; then\n"
+                                                   f"   exit 1\n"
+                                                   f"fi\n"],
+                     tags={"name": "work-directory-test"})
+
         # Verify files can be exported
         expected_contents = 'hello world\n'
         expected_file_path = 'output/host.txt'
@@ -44,3 +51,4 @@ for opts in opts:
                 raise Exception(f"mismatched stdout output: {stdout.getvalue()}")
             if stderr.getvalue() != expected_output:
                 raise Exception(f"mismatched stderr output: {stderr.getvalue()}")
+
