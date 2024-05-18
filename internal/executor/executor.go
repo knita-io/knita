@@ -197,3 +197,15 @@ func (s *Executor) getSupervisor(id string) (*RuntimeSupervisor, error) {
 	}
 	return supervisor, nil
 }
+
+func (s *Executor) Stop() {
+	var runtimeIDs []string
+	s.mu.Lock()
+	for id, _ := range s.supervisors {
+		runtimeIDs = append(runtimeIDs, id)
+	}
+	s.mu.Unlock()
+	for _, id := range runtimeIDs {
+		s.Close(context.Background(), &executorv1.CloseRequest{RuntimeId: id})
+	}
+}

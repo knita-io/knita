@@ -115,6 +115,7 @@ var buildCMD = &cobra.Command{
 		executorSysLog := syslog.Named("embedded_executor")
 		embeddedExecutorEventBroker := event.NewBroker(executorSysLog)
 		executor := executor.NewExecutor(executorSysLog, embeddedExecutorEventBroker)
+		defer executor.Stop()
 
 		broker := broker.NewLocalBroker(syslog.Named("embedded_broker"), socket)
 
