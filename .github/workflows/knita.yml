@@ -21,6 +21,8 @@ jobs:
         run: knita build ./build/pattern.sh
         env:
           DOCKER_API_VERSION: 1.43
+          KNITA_BUILD_DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          KNITA_BUILD_TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

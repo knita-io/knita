@@ -26,10 +26,20 @@ import (
 	"github.com/knita-io/knita/internal/event"
 	"github.com/knita-io/knita/internal/executor"
 	"github.com/knita-io/knita/internal/file"
+	"github.com/knita-io/knita/internal/version"
 )
 
 var rootCmd = &cobra.Command{
 	Use: "knita",
+}
+
+var versionCMD = &cobra.Command{
+	Use:   "version",
+	Short: "Prints the Knita version",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		fmt.Fprintln(os.Stdout, version.Version)
+		return nil
+	},
 }
 
 var buildCMD = &cobra.Command{
@@ -221,6 +231,7 @@ func getSocketPath() (string, error) {
 
 func main() {
 	rootCmd.AddCommand(buildCMD)
+	rootCmd.AddCommand(versionCMD)
 	buildCMD.PersistentFlags().BoolP("verbose", "v", false, "Set to true to disable the pretty build UI and send the build log directly to stdout")
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
