@@ -242,7 +242,7 @@ func getKnitaVersion() (knitaVersion, error) {
 	regex := regexp.MustCompile("(v?[0-9+]+\\.[0-9+]+\\.[0-9+]+)-([0-9]+)-(.*)$")
 	matches := regex.FindAllStringSubmatch(strings.Trim(describe.String(), "\n"), -1)
 	if len(matches) == 0 || len(matches[0]) != 4 {
-		return knitaVersion{}, fmt.Errorf("error un expected number of matches in git describe regex")
+		return knitaVersion{}, fmt.Errorf("error unexpected number of matches in git describe regex: %v", matches)
 	}
 	semver := matches[0][1]
 	tagDistance := matches[0][2]
