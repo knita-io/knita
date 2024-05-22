@@ -54,9 +54,12 @@ func (r *Runtime) Exec(ctx context.Context, execID string, opts *executorv1.Exec
 	r.Log().ExecSource(execID, true).Printf("Executing command: %s %v", opts.Name, opts.Args)
 	execLog := r.Log().ExecSource(execID, false)
 
+	env := os.Environ()
+	env = append(env, opts.Env...)
+
 	cmd := exec.CommandContext(ctx, opts.Name, opts.Args...)
 	cmd.Dir = r.baseDir
-	cmd.Env = opts.Env
+	cmd.Env = env
 
 	w := execLog.Stdout()
 	defer w.Close()

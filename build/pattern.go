@@ -56,10 +56,9 @@ func dockerImage(s *knita.Client) string {
 		exec.WithCommand("/bin/bash", "-c", `
 			export DOCKER_CLI_EXPERIMENTAL=enabled
 			if ! docker manifest inspect `+builderDockerImage+` > /dev/null; then
-				cd build/docker
-				docker build -t `+builderDockerImage+` .
 				echo $DOCKER_PASSWORD | docker login ghcr.io -u USERNAME --password-stdin
-				docker push `+builderDockerImage+`
+				cd build/docker
+				docker buildx build --push --tag `+builderDockerImage+` --platform linux/amd64,linux/arm64 .
 			fi`),
 	)
 
