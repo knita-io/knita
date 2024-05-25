@@ -6,7 +6,10 @@ replace github.com/knita-io/knita/sdk/go/knita => ./../sdk/go/knita
 
 replace github.com/knita-io/knita => ./../
 
-require github.com/knita-io/knita/sdk/go/knita v0.0.0-00010101000000-000000000000
+require (
+	github.com/davecgh/go-spew v1.1.1
+	github.com/knita-io/knita/sdk/go/knita v0.0.0-00010101000000-000000000000
+)
 
 require (
 	github.com/knita-io/knita v0.0.0-00010101000000-000000000000 // indirect

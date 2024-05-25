@@ -21,24 +21,27 @@ import (
 
 func main() {
 	client := knita.MustNewClient()
-	knitaVersion := mustGetKnitaVersion()
-	builderDockerImage := dockerImage(client)
-	protobuf(client, builderDockerImage)
-	unit(client, builderDockerImage)
-	build(client, builderDockerImage, knitaVersion)
-	testSDK(client)
-	publishSDK(client, builderDockerImage, knitaVersion)
+	client.Workflow().
+		WithInput(client).
+		WithJob(knita.Job(dockerImage)).
+		WithJob(knita.Job(getKnitaVersion)).
+		WithJob(knita.Job(protobuf)).
+		WithJob(knita.Job(unit)).
+		WithJob(knita.Job(build)).
+		WithJob(knita.Job(testSDK)).
+		WithJob(knita.Job(publishSDK)).
+		MustRun()
 }
 
 // dockerImage builds the knita/build Docker image that is used by subsequent build targets.
 // This image is versioned based on the content of the Dockerfile, and published to a publicly
 // readable repository. If you're building Knita and need to change this Dockerfile, you will
 // need write permissions to the repo. Open a GitHub issue to discuss.
-func dockerImage(s *knita.Client) string {
+func dockerImage(input *JobDockerImageInput) (*JobDockerImageOutput, error) {
 	fingerprint := mustFingerprint("build/docker/Dockerfile")
 	builderDockerImage := fmt.Sprintf("ghcr.io/knita-io/knita/build:%s", fingerprint)
 
-	host := s.MustRuntime(
+	host := input.Client.MustRuntime(
 		runtime.WithTag(knita.NameTag, "docker"),
 		runtime.WithType(runtime.TypeHost))
 	defer host.MustClose()
@@ -62,15 +65,15 @@ func dockerImage(s *knita.Client) string {
 			fi`),
 	)
 
-	return builderDockerImage
+	return &JobDockerImageOutput{KnitaBuildImage: builderDockerImage}, nil
 }
 
 // protobuf generates protobuf bindings for the languages used in the Knita repo.
-func protobuf(s *knita.Client, builderDockerImage string) {
-	container := s.MustRuntime(
+func protobuf(input *JobProtobufInput) (*JobProtobufOutput, error) {
+	container := input.Client.MustRuntime(
 		runtime.WithTag(knita.NameTag, "protobuf"),
 		runtime.WithType(runtime.TypeDocker),
-		runtime.WithImage(builderDockerImage))
+		runtime.WithImage(input.Docker.KnitaBuildImage))
 	defer container.MustClose()
 
 	container.MustImport("api/**/*.proto", "")
@@ -105,24 +108,28 @@ func protobuf(s *knita.Client, builderDockerImage string) {
 			director/v1/director.proto \
 			observer/v1/observer.proto`))
 	container.MustExport("api/**/*.pb.go", "")
+
+	return &JobProtobufOutput{}, nil
 }
 
 // unit executes unit tests for the Knita repo.
-func unit(s *knita.Client, builderDockerImage string) {
-	container := s.MustRuntime(
+func unit(input *JobUnitTestInput) (*JobUnitTestOutput, error) {
+	container := input.Client.MustRuntime(
 		runtime.WithTag(knita.NameTag, "unit-test"),
 		runtime.WithType(runtime.TypeDocker),
-		runtime.WithImage(builderDockerImage))
+		runtime.WithImage(input.Docker.KnitaBuildImage))
 	defer container.MustClose()
 
 	container.MustImport(".", ".")
 	container.MustExec(
 		exec.WithTag(knita.NameTag, "go"),
 		exec.WithCommand("/bin/bash", "-c", "go test ./..."))
+
+	return &JobUnitTestOutput{}, nil
 }
 
 // build compiles the various binaries in the Knita repo, and saves them to ./build/output/
-func build(s *knita.Client, builderDockerImage string, knitaVersion knitaVersion) {
+func build(input *JobBuildInput) (*JobBuildOutput, error) {
 	var targets = []struct {
 		os   string
 		arch []string
@@ -132,10 +139,10 @@ func build(s *knita.Client, builderDockerImage string, knitaVersion knitaVersion
 		{os: "windows", arch: []string{"arm64", "amd64"}},
 	}
 
-	container := s.MustRuntime(
+	container := input.Client.MustRuntime(
 		runtime.WithTag(knita.NameTag, "build"),
 		runtime.WithType(runtime.TypeDocker),
-		runtime.WithImage(builderDockerImage))
+		runtime.WithImage(input.Docker.KnitaBuildImage))
 	defer container.MustClose()
 
 	container.MustImport(".", ".")
@@ -147,7 +154,7 @@ func build(s *knita.Client, builderDockerImage string, knitaVersion knitaVersion
 				defer wg.Done()
 				container.MustExec(
 					exec.WithTag(knita.NameTag, fmt.Sprintf("knita-%[1]s-%[2]s", os, arch)),
-					exec.WithEnv(fmt.Sprintf("LDFLAGS=-X github.com/knita-io/knita/internal/version.Version=%s", knitaVersion)),
+					exec.WithEnv(fmt.Sprintf("LDFLAGS=-X github.com/knita-io/knita/internal/version.Version=%s", input.Version.KnitaVersion)),
 					exec.WithCommand("/bin/bash", "-c",
 						fmt.Sprintf("cd cmd/knita && env GOOS=%[1]s GOARCH=%[2]s go build -ldflags \"$LDFLAGS\" -o ../../build/output/cli/knita-%[1]s-%[2]s .", os, arch)))
 			}(target.os, arch)
@@ -155,12 +162,14 @@ func build(s *knita.Client, builderDockerImage string, knitaVersion knitaVersion
 	}
 	wg.Wait()
 	container.MustExport("build/output/cli/knita-*", "build/output/cli/")
+
+	return &JobBuildOutput{}, nil
 }
 
 // testSDK runs e2e tests for the Knita SDKs. This is a little meta as we're invoking `knita build`
 // from inside an existing `knita build`, but targeting a per-sdk test pattern file.
-func testSDK(s *knita.Client) {
-	host := s.MustRuntime(
+func testSDK(input *JobTestSDKInput) (*JobTestSDKOutput, error) {
+	host := input.Client.MustRuntime(
 		runtime.WithTag(knita.NameTag, "sdk-test"),
 		runtime.WithType(runtime.TypeHost))
 	defer host.MustClose()
@@ -187,15 +196,17 @@ func testSDK(s *knita.Client) {
 			export PATH=$PATH:$(pwd)
 			cd test/sdk/go
 			knita build ./pattern.sh`))
+
+	return &JobTestSDKOutput{}, nil
 }
 
 // publishSDK builds and publishes Knita SDK to relevant package repositories when running against a release tag.
 // Requires the KNITA_BUILD_TWINE_PASSWORD env var be set for pushing the Python SDK to Pypi.
-func publishSDK(s *knita.Client, builderDockerImage string, knitaVersion knitaVersion) {
+func publishSDK(input *JobPublishSDKInput) (*JobPublishSDKOutput, error) {
 	// See Python version string spec: https://peps.python.org/pep-0440/
-	if !knitaVersion.IsPublic() {
-		log.Printf("Build is not a release build, skipping SDK publishing: %s\n", knitaVersion)
-		return
+	if !input.Version.KnitaVersion.IsPublic() {
+		log.Printf("Build is not a release build, skipping SDK publishing: %s\n", input.Version.KnitaVersion)
+		return &JobPublishSDKOutput{}, nil // TODO how to convey a skipped status?
 	}
 
 	password := os.Getenv("KNITA_BUILD_TWINE_PASSWORD")
@@ -203,10 +214,10 @@ func publishSDK(s *knita.Client, builderDockerImage string, knitaVersion knitaVe
 		log.Fatal("KNITA_BUILD_TWINE_PASSWORD must be set when publishing SDKs")
 	}
 
-	container := s.MustRuntime(
+	container := input.Client.MustRuntime(
 		runtime.WithTag(knita.NameTag, "sdk-publish"),
 		runtime.WithType(runtime.TypeDocker),
-		runtime.WithImage(builderDockerImage))
+		runtime.WithImage(input.Docker.KnitaBuildImage))
 	defer container.MustClose()
 
 	container.MustImport("sdk/python", "")
@@ -215,42 +226,36 @@ func publishSDK(s *knita.Client, builderDockerImage string, knitaVersion knitaVe
 		exec.WithEnv("TWINE_PASSWORD="+os.Getenv("KNITA_BUILD_TWINE_PASSWORD")),
 		exec.WithCommand("/bin/bash", "-c", `
 			cd sdk/python
-			sed -i -e 's/version = "0.0.0"/version = "`+knitaVersion.String()+`"/g' pyproject.toml
+			sed -i -e 's/version = "0.0.0"/version = "`+input.Version.KnitaVersion.String()+`"/g' pyproject.toml
 			python3 -m build
 			twine upload --non-interactive -u __token__ -p $TWINE_PASSWORD dist/*`))
-}
 
-// mustGetKnitaVersion returns the Knita software version as derived from Git. Exits the process on error.
-func mustGetKnitaVersion() knitaVersion {
-	version, err := getKnitaVersion()
-	if err != nil {
-		log.Fatal(err)
-	}
-	return version
+	return &JobPublishSDKOutput{}, nil
 }
 
 // getKnitaVersion returns the Knita software version as derived from Git.
-func getKnitaVersion() (knitaVersion, error) {
+func getKnitaVersion(input *JobKnitaVersionInput) (*JobKnitaVersionOutput, error) {
 	describe := bytes.NewBuffer(make([]byte, 0))
 	cmd := stdexec.Command("git", "describe", "--long", "--tags", "--always")
 	cmd.Stdout = describe
 	err := cmd.Run()
 	if err != nil {
-		return knitaVersion{}, fmt.Errorf("error running git describe: %w", err)
+		return nil, fmt.Errorf("error running git describe: %w", err)
 	}
 	regex := regexp.MustCompile("(v?[0-9+]+\\.[0-9+]+\\.[0-9+]+)-([0-9]+)-(.*)$")
 	matches := regex.FindAllStringSubmatch(strings.Trim(describe.String(), "\n"), -1)
 	if len(matches) == 0 || len(matches[0]) != 4 {
-		return knitaVersion{}, fmt.Errorf("error unexpected number of matches in git describe regex: %v", matches)
+		return nil, fmt.Errorf("error unexpected number of matches in git describe regex: %v", matches)
 	}
 	semver := matches[0][1]
 	tagDistance := matches[0][2]
 	shortSHA := matches[0][3]
 	distance, err := strconv.ParseInt(tagDistance, 10, 64)
 	if err != nil {
-		return knitaVersion{}, fmt.Errorf("error parsing tag distance: %w", err)
+		return nil, fmt.Errorf("error parsing tag distance: %w", err)
 	}
-	return knitaVersion{semver: semver, tagDistance: int(distance), shortSHA: shortSHA}, nil
+	version := knitaVersion{semver: semver, tagDistance: int(distance), shortSHA: shortSHA}
+	return &JobKnitaVersionOutput{KnitaVersion: version}, nil
 }
 
 // mustFingerprint calculates a SHA256 hash of the contents of files.
@@ -289,3 +294,55 @@ func (v knitaVersion) String() string {
 	}
 	return v.semver
 }
+
+type JobDockerImageInput struct {
+	Client *knita.Client
+}
+
+type JobDockerImageOutput struct {
+	KnitaBuildImage string
+}
+
+type JobKnitaVersionInput struct {
+	Client *knita.Client
+}
+
+type JobKnitaVersionOutput struct {
+	KnitaVersion knitaVersion
+}
+
+type JobProtobufInput struct {
+	Client *knita.Client
+	Docker *JobDockerImageOutput
+}
+
+type JobProtobufOutput struct{}
+
+type JobUnitTestInput struct {
+	Client *knita.Client
+	Docker *JobDockerImageOutput
+}
+
+type JobUnitTestOutput struct{}
+
+type JobBuildInput struct {
+	Client  *knita.Client
+	Docker  *JobDockerImageOutput
+	Version *JobKnitaVersionOutput
+}
+
+type JobBuildOutput struct{}
+
+type JobTestSDKInput struct {
+	Client *knita.Client
+}
+
+type JobTestSDKOutput struct{}
+
+type JobPublishSDKInput struct {
+	Client  *knita.Client
+	Docker  *JobDockerImageOutput
+	Version *JobKnitaVersionOutput
+}
+
+type JobPublishSDKOutput struct{}

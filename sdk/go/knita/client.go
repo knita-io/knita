@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"reflect"
 	"time"
 
 	"google.golang.org/grpc"
@@ -144,6 +145,18 @@ func (c *Client) RuntimeWithContext(ctx context.Context, opts ...runtime.Opt) (*
 		runtimeID:           res.RuntimeId,
 		remoteWorkDirectory: res.WorkDirectory,
 	}, nil
+}
+
+func (c *Client) Workflow() *Workflow {
+	return &Workflow{
+		log:                c.syslog,
+		fatalFunc:          c.fatalFunc,
+		director:           newDirector(),
+		typeToIOID:         map[reflect.Type]ioID{},
+		resolvedInputsByID: map[ioID]interface{}{},
+		providedInputsByID: map[ioID]struct{}{},
+		jobByID:            map[jobID]jobDescriptor{},
+	}
 }
 
 func makeOpts(opts ...Opt) *Opts {

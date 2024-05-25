@@ -265,6 +265,18 @@ class Event(_message.Message):
     runtime_closed: RuntimeClosedEvent
     def __init__(self, build_id: _Optional[str] = ..., group_name: _Optional[str] = ..., sequence: _Optional[int] = ..., runtime_opened: _Optional[_Union[RuntimeOpenedEvent, _Mapping]] = ..., exec_start: _Optional[_Union[ExecStartEvent, _Mapping]] = ..., exec_end: _Optional[_Union[ExecEndEvent, _Mapping]] = ..., import_start: _Optional[_Union[ImportStartEvent, _Mapping]] = ..., import_end: _Optional[_Union[ImportEndEvent, _Mapping]] = ..., export_start: _Optional[_Union[ExportStartEvent, _Mapping]] = ..., export_end: _Optional[_Union[ExportEndEvent, _Mapping]] = ..., stdout: _Optional[_Union[StdoutEvent, _Mapping]] = ..., stderr: _Optional[_Union[StderrEvent, _Mapping]] = ..., runtime_closed: _Optional[_Union[RuntimeClosedEvent, _Mapping]] = ...) -> None: ...
 
+class JobStartEvent(_message.Message):
+    __slots__ = ("job_id",)
+    JOB_ID_FIELD_NUMBER: _ClassVar[int]
+    job_id: str
+    def __init__(self, job_id: _Optional[str] = ...) -> None: ...
+
+class JobEndEvent(_message.Message):
+    __slots__ = ("job_id",)
+    JOB_ID_FIELD_NUMBER: _ClassVar[int]
+    job_id: str
+    def __init__(self, job_id: _Optional[str] = ...) -> None: ...
+
 class RuntimeOpenedEvent(_message.Message):
     __slots__ = ("runtime_id", "opts")
     RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]

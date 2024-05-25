@@ -164,6 +164,14 @@ message Event {
   }
 }
 
+message JobStartEvent {
+  string job_id = 1;
+}
+
+message JobEndEvent {
+  string job_id = 1;
+}
+
 message RuntimeOpenedEvent {
   string runtime_id = 1;
   Opts opts = 2;
