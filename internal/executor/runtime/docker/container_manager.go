@@ -25,7 +25,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	executorv1 "github.com/knita-io/knita/api/executor/v1"
-	runtime2 "github.com/knita-io/knita/internal/executor/runtime"
+	"github.com/knita-io/knita/internal/executor/runtime"
 )
 
 type ContainerConfig struct {
@@ -68,10 +68,9 @@ func NewContainerManager(log *zap.SugaredLogger, client *client.Client) *Contain
 }
 
 // PullDockerImage pulls a Docker Image from a remote registry.
-func (r *ContainerManager) PullDockerImage(ctx context.Context, log *runtime2.Log, opts *executorv1.DockerPullOpts) error {
-	imageURI := parseDockerImageURI(opts.ImageUri)
+func (r *ContainerManager) PullDockerImage(ctx context.Context, log *runtime.Log, opts *executorv1.DockerPullOpts) error {
 	fil := filters.NewArgs()
-	fil.Add("reference", imageURI.Reference())
+	fil.Add("reference", opts.ImageUri)
 	list, err := r.client.ImageList(ctx, types.ImageListOptions{
 		All:     false,
 		Filters: fil,
@@ -83,21 +82,21 @@ func (r *ContainerManager) PullDockerImage(ctx context.Context, log *runtime2.Lo
 	alreadyExists := len(list) > 0
 	if opts.PullStrategy == executorv1.DockerPullOpts_PULL_STRATEGY_NEVER {
 		log.Printf("Docker pull strategy is %q; %q will not be pulled",
-			DockerPullStrategyNever, imageURI.FQN())
+			DockerPullStrategyNever, opts.ImageUri)
 		return nil
 	}
 	if opts.PullStrategy == executorv1.DockerPullOpts_PULL_STRATEGY_NOT_EXISTS && alreadyExists {
 		log.Printf("Docker pull strategy is %q and image exists in cache; %q will not be pulled",
-			DockerPullStrategyIfNotExists, imageURI.FQN())
+			DockerPullStrategyIfNotExists, opts.ImageUri)
 		return nil
 	}
-	if alreadyExists && !imageURI.IsLatest() && opts.PullStrategy == executorv1.DockerPullOpts_PULL_STRATEGY_UNSPECIFIED {
+	if alreadyExists && !strings.Contains(opts.ImageUri, ":latest") && opts.PullStrategy == executorv1.DockerPullOpts_PULL_STRATEGY_UNSPECIFIED {
 		log.Printf("Docker pull strategy is %q, image exists in cache and is not latest; %q will not be pulled",
-			DockerPullStrategyDefault, imageURI.FQN())
+			DockerPullStrategyDefault, opts.ImageUri)
 		return nil
 	}
 
-	log.Printf("Pulling image: %s", imageURI)
+	log.Printf("Pulling image: %s", opts.ImageUri)
 
 	// If authentication has been provided then pass it into the image pull
 	imagePullOptions := types.ImagePullOptions{}
@@ -151,7 +150,7 @@ func (r *ContainerManager) PullDockerImage(ctx context.Context, log *runtime2.Lo
 	}
 
 	// TODO this error needs to go to the job log.go
-	stream, err := r.client.ImagePull(ctx, imageURI.FQN(), imagePullOptions)
+	stream, err := r.client.ImagePull(ctx, opts.ImageUri, imagePullOptions)
 	if err != nil {
 		return errors.Wrap(err, "error pulling image")
 	}
@@ -171,21 +170,31 @@ func (r *ContainerManager) PullDockerImage(ctx context.Context, log *runtime2.Lo
 
 // GetDockerImageOS returns the type of underlying guest OS the specified Docker image
 // is made from. The docker image must have been pulled first.
-func (r *ContainerManager) GetDockerImageOS(ctx context.Context, imageURI string) (runtime2.OS, error) {
-	image := parseDockerImageURI(imageURI)
-	inspect, _, err := r.client.ImageInspectWithRaw(ctx, image.String())
+func (r *ContainerManager) GetDockerImageOS(ctx context.Context, imageURI string) (runtime.OS, error) {
+	fil := filters.NewArgs()
+	fil.Add("reference", imageURI)
+	list, err := r.client.ImageList(ctx, types.ImageListOptions{
+		All:     false,
+		Filters: fil,
+	})
 	if err != nil {
-		return "", fmt.Errorf("error inspecting image %q: %w", image, err)
+		return "", fmt.Errorf("error listing images: %w", err)
 	}
-	return runtime2.OS(inspect.Os), nil
+	if len(list) == 0 {
+		return "", fmt.Errorf("error image %q does not exist", imageURI)
+	}
+	inspect, _, err := r.client.ImageInspectWithRaw(ctx, list[0].ID)
+	if err != nil {
+		return "", fmt.Errorf("error inspecting image %q: %w", imageURI, err)
+	}
+	return runtime.OS(inspect.Os), nil
 }
 
 // StartContainer starts a new container in the background and returns its unique ID.
 // Call StopContainer to stop it and free up resources.
 func (r *ContainerManager) StartContainer(ctx context.Context, config ContainerConfig) (string, error) {
-	image := parseDockerImageURI(config.ImageURI)
 	cConfig := &container.Config{
-		Image:      image.FQN(),
+		Image:      config.ImageURI,
 		Entrypoint: config.Entrypoint,
 		Cmd:        config.Command,
 		WorkingDir: config.WorkingDir,

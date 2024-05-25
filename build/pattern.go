@@ -1,10 +1,17 @@
 package main
 
 import (
+	"bytes"
+	"crypto/sha256"
 	"fmt"
+	"io"
 	"log"
 	"os"
+	stdexec "os/exec"
+	"regexp"
 	stdruntime "runtime"
+	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/knita-io/knita/sdk/go/knita"
@@ -14,35 +21,56 @@ import (
 
 func main() {
 	client := knita.MustNewClient()
-	docker(client)
-	protobuf(client)
-	unit(client)
-	build(client)
+	knitaVersion := mustGetKnitaVersion()
+	builderDockerImage := dockerImage(client)
+	protobuf(client, builderDockerImage)
+	unit(client, builderDockerImage)
+	build(client, builderDockerImage, knitaVersion)
 	testSDK(client)
-	publishSDK(client)
+	publishSDK(client, builderDockerImage, knitaVersion)
 }
 
-func docker(s *knita.Client) {
+// dockerImage builds the knita/build Docker image that is used by subsequent build targets.
+// This image is versioned based on the content of the Dockerfile, and published to a publicly
+// readable repository. If you're building Knita and need to change this Dockerfile, you will
+// need write permissions to the repo. Open a GitHub issue to discuss.
+func dockerImage(s *knita.Client) string {
+	fingerprint := mustFingerprint("build/docker/Dockerfile")
+	builderDockerImage := fmt.Sprintf("ghcr.io/knita-io/knita/build:%s", fingerprint)
+
 	host := s.MustRuntime(
 		runtime.WithTag(knita.NameTag, "docker"),
 		runtime.WithType(runtime.TypeHost))
 	defer host.MustClose()
 
+	password := os.Getenv("KNITA_BUILD_DOCKER_PASSWORD")
+	if password == "" {
+		log.Printf("KNITA_BUILD_DOCKER_PASSWORD is not set, build will fail if %s "+
+			"does not already exist in public registry\n", builderDockerImage)
+	}
+
 	host.MustImport("build/docker/*", "")
 	host.MustExec(
 		exec.WithTag(knita.NameTag, "knita/build"),
+		exec.WithEnv("DOCKER_PASSWORD="+password),
 		exec.WithCommand("/bin/bash", "-c", `
-			cd build/docker
-			docker build -t knita/build:latest .`),
+			export DOCKER_CLI_EXPERIMENTAL=enabled
+			if ! docker manifest inspect `+builderDockerImage+` > /dev/null; then
+				echo $DOCKER_PASSWORD | docker login ghcr.io -u USERNAME --password-stdin
+				cd build/docker
+				docker buildx build --push --tag `+builderDockerImage+` --platform linux/amd64,linux/arm64 .
+			fi`),
 	)
+
+	return builderDockerImage
 }
 
-func protobuf(s *knita.Client) {
+// protobuf generates protobuf bindings for the languages used in the Knita repo.
+func protobuf(s *knita.Client, builderDockerImage string) {
 	container := s.MustRuntime(
 		runtime.WithTag(knita.NameTag, "protobuf"),
 		runtime.WithType(runtime.TypeDocker),
-		runtime.WithImage("knita/build:latest"),
-		runtime.WithPullStrategy(runtime.PullStrategyNever))
+		runtime.WithImage(builderDockerImage))
 	defer container.MustClose()
 
 	container.MustImport("api/**/*.proto", "")
@@ -79,12 +107,12 @@ func protobuf(s *knita.Client) {
 	container.MustExport("api/**/*.pb.go", "")
 }
 
-func unit(s *knita.Client) {
+// unit executes unit tests for the Knita repo.
+func unit(s *knita.Client, builderDockerImage string) {
 	container := s.MustRuntime(
 		runtime.WithTag(knita.NameTag, "unit-test"),
 		runtime.WithType(runtime.TypeDocker),
-		runtime.WithImage("knita/build:latest"),
-		runtime.WithPullStrategy(runtime.PullStrategyNever))
+		runtime.WithImage(builderDockerImage))
 	defer container.MustClose()
 
 	container.MustImport(".", ".")
@@ -93,7 +121,8 @@ func unit(s *knita.Client) {
 		exec.WithCommand("/bin/bash", "-c", "go test ./..."))
 }
 
-func build(s *knita.Client) {
+// build compiles the various binaries in the Knita repo, and saves them to ./build/output/
+func build(s *knita.Client, builderDockerImage string, knitaVersion knitaVersion) {
 	var targets = []struct {
 		os   string
 		arch []string
@@ -106,8 +135,7 @@ func build(s *knita.Client) {
 	container := s.MustRuntime(
 		runtime.WithTag(knita.NameTag, "build"),
 		runtime.WithType(runtime.TypeDocker),
-		runtime.WithImage("knita/build:latest"),
-		runtime.WithPullStrategy(runtime.PullStrategyNever))
+		runtime.WithImage(builderDockerImage))
 	defer container.MustClose()
 
 	container.MustImport(".", ".")
@@ -119,8 +147,9 @@ func build(s *knita.Client) {
 				defer wg.Done()
 				container.MustExec(
 					exec.WithTag(knita.NameTag, fmt.Sprintf("knita-%[1]s-%[2]s", os, arch)),
+					exec.WithEnv(fmt.Sprintf("LDFLAGS=-X github.com/knita-io/knita/internal/version.Version=%s", knitaVersion)),
 					exec.WithCommand("/bin/bash", "-c",
-						fmt.Sprintf("cd cmd/knita && env GOOS=%[1]s GOARCH=%[2]s go build -o ../../build/output/cli/knita-%[1]s-%[2]s .", os, arch)))
+						fmt.Sprintf("cd cmd/knita && env GOOS=%[1]s GOARCH=%[2]s go build -ldflags \"$LDFLAGS\" -o ../../build/output/cli/knita-%[1]s-%[2]s .", os, arch)))
 			}(target.os, arch)
 		}
 	}
@@ -160,25 +189,103 @@ func testSDK(s *knita.Client) {
 			knita build ./pattern.sh`))
 }
 
-func publishSDK(s *knita.Client) {
-	if os.Getenv("KNITA_PUBLISH_SDK") == "" {
-		log.Printf("\n\nKNITA_PUBLISH_SDK is unset; Skipping SDK publishing\n\n")
+// publishSDK builds and publishes Knita SDK to relevant package repositories when running against a release tag.
+// Requires the KNITA_BUILD_TWINE_PASSWORD env var be set for pushing the Python SDK to Pypi.
+func publishSDK(s *knita.Client, builderDockerImage string, knitaVersion knitaVersion) {
+	// See Python version string spec: https://peps.python.org/pep-0440/
+	if !knitaVersion.IsPublic() {
+		log.Printf("Build is not a release build, skipping SDK publishing: %s\n", knitaVersion)
 		return
+	}
+
+	password := os.Getenv("KNITA_BUILD_TWINE_PASSWORD")
+	if password == "" {
+		log.Fatal("KNITA_BUILD_TWINE_PASSWORD must be set when publishing SDKs")
 	}
 
 	container := s.MustRuntime(
 		runtime.WithTag(knita.NameTag, "sdk-publish"),
 		runtime.WithType(runtime.TypeDocker),
-		runtime.WithImage("knita/build:latest"),
-		runtime.WithPullStrategy(runtime.PullStrategyNever))
+		runtime.WithImage(builderDockerImage))
 	defer container.MustClose()
 
 	container.MustImport("sdk/python", "")
 	container.MustExec(
 		exec.WithTag(knita.NameTag, "python"),
-		exec.WithEnv("TWINE_PASSWORD="+os.Getenv("TWINE_PASSWORD")),
+		exec.WithEnv("TWINE_PASSWORD="+os.Getenv("KNITA_BUILD_TWINE_PASSWORD")),
 		exec.WithCommand("/bin/bash", "-c", `
 			cd sdk/python
+			sed -i -e 's/version = "0.0.0"/version = "`+knitaVersion.String()+`"/g' pyproject.toml
 			python3 -m build
 			twine upload --non-interactive -u __token__ -p $TWINE_PASSWORD dist/*`))
+}
+
+// mustGetKnitaVersion returns the Knita software version as derived from Git. Exits the process on error.
+func mustGetKnitaVersion() knitaVersion {
+	version, err := getKnitaVersion()
+	if err != nil {
+		log.Fatal(err)
+	}
+	return version
+}
+
+// getKnitaVersion returns the Knita software version as derived from Git.
+func getKnitaVersion() (knitaVersion, error) {
+	describe := bytes.NewBuffer(make([]byte, 0))
+	cmd := stdexec.Command("git", "describe", "--long", "--tags", "--always")
+	cmd.Stdout = describe
+	err := cmd.Run()
+	if err != nil {
+		return knitaVersion{}, fmt.Errorf("error running git describe: %w", err)
+	}
+	regex := regexp.MustCompile("(v?[0-9+]+\\.[0-9+]+\\.[0-9+]+)-([0-9]+)-(.*)$")
+	matches := regex.FindAllStringSubmatch(strings.Trim(describe.String(), "\n"), -1)
+	if len(matches) == 0 || len(matches[0]) != 4 {
+		return knitaVersion{}, fmt.Errorf("error unexpected number of matches in git describe regex: %v", matches)
+	}
+	semver := matches[0][1]
+	tagDistance := matches[0][2]
+	shortSHA := matches[0][3]
+	distance, err := strconv.ParseInt(tagDistance, 10, 64)
+	if err != nil {
+		return knitaVersion{}, fmt.Errorf("error parsing tag distance: %w", err)
+	}
+	return knitaVersion{semver: semver, tagDistance: int(distance), shortSHA: shortSHA}, nil
+}
+
+// mustFingerprint calculates a SHA256 hash of the contents of files.
+// Same files and contents in, same hash out. Useful for content addressable versioning.
+// Exits the process on error.
+func mustFingerprint(files ...string) string {
+	h := sha256.New()
+	for _, path := range files {
+		func() {
+			f, err := os.Open(path)
+			if err != nil {
+				log.Fatalf("error opening file %s: %v", path, err)
+			}
+			defer f.Close()
+			if _, err := io.Copy(h, f); err != nil {
+				log.Fatalf("error reading file %s: %v", path, err)
+			}
+		}()
+	}
+	return fmt.Sprintf("%x", h.Sum(nil))
+}
+
+type knitaVersion struct {
+	semver      string
+	tagDistance int
+	shortSHA    string
+}
+
+func (v knitaVersion) IsPublic() bool {
+	return v.tagDistance == 0
+}
+
+func (v knitaVersion) String() string {
+	if !v.IsPublic() {
+		return fmt.Sprintf("%s-%d-%s", v.semver, v.tagDistance, v.shortSHA)
+	}
+	return v.semver
 }

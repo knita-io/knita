@@ -1,6 +1,6 @@
 [project]
 name = "knita"
-version = "0.0.2"
+version = "0.0.0"
 description = "The Knita SDK for Python"
 readme = "README.md"
 authors = [{ name = "Knita" }]

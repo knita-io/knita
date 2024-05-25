@@ -7,7 +7,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          filter: tree:0
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
@@ -21,6 +28,8 @@ jobs:
         run: knita build ./build/pattern.sh
         env:
           DOCKER_API_VERSION: 1.43
+          KNITA_BUILD_DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          KNITA_BUILD_TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
