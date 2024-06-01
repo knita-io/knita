@@ -20,17 +20,19 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Director_Open_FullMethodName   = "/director.Director/Open"
-	Director_Exec_FullMethodName   = "/director.Director/Exec"
-	Director_Import_FullMethodName = "/director.Director/Import"
-	Director_Export_FullMethodName = "/director.Director/Export"
-	Director_Close_FullMethodName  = "/director.Director/Close"
+	Director_Workflow_FullMethodName = "/director.Director/Workflow"
+	Director_Open_FullMethodName     = "/director.Director/Open"
+	Director_Exec_FullMethodName     = "/director.Director/Exec"
+	Director_Import_FullMethodName   = "/director.Director/Import"
+	Director_Export_FullMethodName   = "/director.Director/Export"
+	Director_Close_FullMethodName    = "/director.Director/Close"
 )
 
 // DirectorClient is the client API for Director service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type DirectorClient interface {
+	Workflow(ctx context.Context, opts ...grpc.CallOption) (Director_WorkflowClient, error)
 	Open(ctx context.Context, in *OpenRequest, opts ...grpc.CallOption) (*OpenResponse, error)
 	Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (Director_ExecClient, error)
 	Import(ctx context.Context, in *ImportRequest, opts ...grpc.CallOption) (*ImportResponse, error)
@@ -46,6 +48,37 @@ func NewDirectorClient(cc grpc.ClientConnInterface) DirectorClient {
 	return &directorClient{cc}
 }
 
+func (c *directorClient) Workflow(ctx context.Context, opts ...grpc.CallOption) (Director_WorkflowClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Director_ServiceDesc.Streams[0], Director_Workflow_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &directorWorkflowClient{stream}
+	return x, nil
+}
+
+type Director_WorkflowClient interface {
+	Send(*WorkflowUpdate) error
+	Recv() (*WorkflowSignal, error)
+	grpc.ClientStream
+}
+
+type directorWorkflowClient struct {
+	grpc.ClientStream
+}
+
+func (x *directorWorkflowClient) Send(m *WorkflowUpdate) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *directorWorkflowClient) Recv() (*WorkflowSignal, error) {
+	m := new(WorkflowSignal)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func (c *directorClient) Open(ctx context.Context, in *OpenRequest, opts ...grpc.CallOption) (*OpenResponse, error) {
 	out := new(OpenResponse)
 	err := c.cc.Invoke(ctx, Director_Open_FullMethodName, in, out, opts...)
@@ -56,7 +89,7 @@ func (c *directorClient) Open(ctx context.Context, in *OpenRequest, opts ...grpc
 }
 
 func (c *directorClient) Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (Director_ExecClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Director_ServiceDesc.Streams[0], Director_Exec_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &Director_ServiceDesc.Streams[1], Director_Exec_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -118,6 +151,7 @@ func (c *directorClient) Close(ctx context.Context, in *v1.CloseRequest, opts ..
 // All implementations must embed UnimplementedDirectorServer
 // for forward compatibility
 type DirectorServer interface {
+	Workflow(Director_WorkflowServer) error
 	Open(context.Context, *OpenRequest) (*OpenResponse, error)
 	Exec(*ExecRequest, Director_ExecServer) error
 	Import(context.Context, *ImportRequest) (*ImportResponse, error)
@@ -130,6 +164,9 @@ type DirectorServer interface {
 type UnimplementedDirectorServer struct {
 }
 
+func (UnimplementedDirectorServer) Workflow(Director_WorkflowServer) error {
+	return status.Errorf(codes.Unimplemented, "method Workflow not implemented")
+}
 func (UnimplementedDirectorServer) Open(context.Context, *OpenRequest) (*OpenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Open not implemented")
 }
@@ -156,6 +193,32 @@ type UnsafeDirectorServer interface {
 
 func RegisterDirectorServer(s grpc.ServiceRegistrar, srv DirectorServer) {
 	s.RegisterService(&Director_ServiceDesc, srv)
+}
+
+func _Director_Workflow_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(DirectorServer).Workflow(&directorWorkflowServer{stream})
+}
+
+type Director_WorkflowServer interface {
+	Send(*WorkflowSignal) error
+	Recv() (*WorkflowUpdate, error)
+	grpc.ServerStream
+}
+
+type directorWorkflowServer struct {
+	grpc.ServerStream
+}
+
+func (x *directorWorkflowServer) Send(m *WorkflowSignal) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *directorWorkflowServer) Recv() (*WorkflowUpdate, error) {
+	m := new(WorkflowUpdate)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func _Director_Open_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -276,6 +339,12 @@ var Director_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "Workflow",
+			Handler:       _Director_Workflow_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
 		{
 			StreamName:    "Exec",
 			Handler:       _Director_Exec_Handler,

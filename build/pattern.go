@@ -22,7 +22,6 @@ import (
 func main() {
 	client := knita.MustNewClient()
 	client.Workflow().
-		WithInput(client).
 		WithJob(knita.Job(dockerImage)).
 		WithJob(knita.Job(getKnitaVersion)).
 		WithJob(knita.Job(protobuf)).
@@ -335,6 +334,7 @@ type JobBuildOutput struct{}
 
 type JobTestSDKInput struct {
 	Client *knita.Client
+	Build  *JobBuildOutput
 }
 
 type JobTestSDKOutput struct{}
@@ -343,6 +343,7 @@ type JobPublishSDKInput struct {
 	Client  *knita.Client
 	Docker  *JobDockerImageOutput
 	Version *JobKnitaVersionOutput
+	TestSDK *JobTestSDKOutput
 }
 
 type JobPublishSDKOutput struct{}

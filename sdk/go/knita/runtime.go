@@ -112,10 +112,7 @@ func (c *Runtime) ExecWithContext(ctx context.Context, opts ...exec.Opt) (*execu
 	}
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	stream, err := c.client.Exec(ctx, &directorv1.ExecRequest{
-		RuntimeId: c.runtimeID,
-		Opts:      o.ExecOpts,
-	})
+	stream, err := c.client.Exec(ctx, &directorv1.ExecRequest{RuntimeId: c.runtimeID, Opts: o.ExecOpts})
 	if err != nil {
 		return nil, fmt.Errorf("error in exec: %w", err)
 	}

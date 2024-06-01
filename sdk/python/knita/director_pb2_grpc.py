@@ -40,6 +40,11 @@ class DirectorStub(object):
         Args:
             channel: A grpc.Channel.
         """
+        self.Workflow = channel.stream_stream(
+                '/director.Director/Workflow',
+                request_serializer=director_dot_v1_dot_director__pb2.WorkflowUpdate.SerializeToString,
+                response_deserializer=director_dot_v1_dot_director__pb2.WorkflowSignal.FromString,
+                _registered_method=True)
         self.Open = channel.unary_unary(
                 '/director.Director/Open',
                 request_serializer=director_dot_v1_dot_director__pb2.OpenRequest.SerializeToString,
@@ -69,6 +74,12 @@ class DirectorStub(object):
 
 class DirectorServicer(object):
     """Missing associated documentation comment in .proto file."""
+
+    def Workflow(self, request_iterator, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
 
     def Open(self, request, context):
         """Missing associated documentation comment in .proto file."""
@@ -103,6 +114,11 @@ class DirectorServicer(object):
 
 def add_DirectorServicer_to_server(servicer, server):
     rpc_method_handlers = {
+            'Workflow': grpc.stream_stream_rpc_method_handler(
+                    servicer.Workflow,
+                    request_deserializer=director_dot_v1_dot_director__pb2.WorkflowUpdate.FromString,
+                    response_serializer=director_dot_v1_dot_director__pb2.WorkflowSignal.SerializeToString,
+            ),
             'Open': grpc.unary_unary_rpc_method_handler(
                     servicer.Open,
                     request_deserializer=director_dot_v1_dot_director__pb2.OpenRequest.FromString,
@@ -137,6 +153,33 @@ def add_DirectorServicer_to_server(servicer, server):
  # This class is part of an EXPERIMENTAL API.
 class Director(object):
     """Missing associated documentation comment in .proto file."""
+
+    @staticmethod
+    def Workflow(request_iterator,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.stream_stream(
+            request_iterator,
+            target,
+            '/director.Director/Workflow',
+            director_dot_v1_dot_director__pb2.WorkflowUpdate.SerializeToString,
+            director_dot_v1_dot_director__pb2.WorkflowSignal.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
 
     @staticmethod
     def Open(request,

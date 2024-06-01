@@ -1,5 +1,11 @@
 package v1
 
+import (
+	"time"
+
+	"google.golang.org/protobuf/types/known/durationpb"
+)
+
 type IsEvent_Payload interface {
 	isEvent_Payload
 }
@@ -64,6 +70,14 @@ func (e *Event_Stderr) GetRuntimeId() string {
 
 func (e *Event_RuntimeClosed) GetRuntimeId() string {
 	return e.RuntimeClosed.GetRuntimeId()
+}
+
+func NewJobStartEvent(jobID string, inputData []byte, depends []string) *Event {
+	return &Event{Payload: &Event_JobStart{JobStart: &JobStartEvent{JobId: jobID, InputData: inputData, Depends: depends}}}
+}
+
+func NewJobEndEvent(jobID string, duration time.Duration, outputData []byte) *Event {
+	return &Event{Payload: &Event_JobEnd{JobEnd: &JobEndEvent{JobId: jobID, Duration: durationpb.New(duration), OutputData: outputData}}}
 }
 
 func NewRuntimeOpenedEvent(runtimeID string, opts *Opts) *Event {

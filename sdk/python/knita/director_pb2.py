@@ -13,9 +13,10 @@ _sym_db = _symbol_database.Default()
 
 
 from . import executor_pb2 as executor_dot_v1_dot_executor__pb2
+from google.protobuf import duration_pb2 as google_dot_protobuf_dot_duration__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1a\x64irector/v1/director.proto\x12\x08\x64irector\x1a\x1a\x65xecutor/v1/executor.proto\"=\n\x0bOpenRequest\x12\x10\n\x08\x62uild_id\x18\x01 \x01(\t\x12\x1c\n\x04opts\x18\x02 \x01(\x0b\x32\x0e.executor.Opts\":\n\x0cOpenResponse\x12\x12\n\nruntime_id\x18\x01 \x01(\t\x12\x16\n\x0ework_directory\x18\x02 \x01(\t\"H\n\rImportRequest\x12\x12\n\nruntime_id\x18\x01 \x01(\t\x12\x10\n\x08src_path\x18\x02 \x01(\t\x12\x11\n\tdest_path\x18\x03 \x01(\t\"\x10\n\x0eImportResponse\"H\n\rExportRequest\x12\x12\n\nruntime_id\x18\x01 \x01(\t\x12\x10\n\x08src_path\x18\x02 \x01(\t\x12\x11\n\tdest_path\x18\x03 \x01(\t\"\x10\n\x0e\x45xportResponse\"\x0f\n\rEventsRequest\"C\n\x0b\x45xecRequest\x12\x12\n\nruntime_id\x18\x01 \x01(\t\x12 \n\x04opts\x18\x02 \x01(\x0b\x32\x12.executor.ExecOpts\"\x9c\x01\n\tExecEvent\x12*\n\x08\x65xec_end\x18\x01 \x01(\x0b\x32\x16.director.ExecEndEventH\x00\x12+\n\x06stdout\x18\x02 \x01(\x0b\x32\x19.director.ExecStdoutEventH\x00\x12+\n\x06stderr\x18\x03 \x01(\x0b\x32\x19.director.ExecStderrEventH\x00\x42\t\n\x07payload\"0\n\x0c\x45xecEndEvent\x12\r\n\x05\x65rror\x18\x01 \x01(\t\x12\x11\n\texit_code\x18\x02 \x01(\x05\"\x1f\n\x0f\x45xecStdoutEvent\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\"\x1f\n\x0f\x45xecStderrEvent\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\x32\xab\x02\n\x08\x44irector\x12\x35\n\x04Open\x12\x15.director.OpenRequest\x1a\x16.director.OpenResponse\x12\x34\n\x04\x45xec\x12\x15.director.ExecRequest\x1a\x13.director.ExecEvent0\x01\x12;\n\x06Import\x12\x17.director.ImportRequest\x1a\x18.director.ImportResponse\x12;\n\x06\x45xport\x12\x17.director.ExportRequest\x1a\x18.director.ExportResponse\x12\x38\n\x05\x43lose\x12\x16.executor.CloseRequest\x1a\x17.executor.CloseResponseB+Z)github.com/knita-io/knita/api/director/v1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1a\x64irector/v1/director.proto\x12\x08\x64irector\x1a\x1a\x65xecutor/v1/executor.proto\x1a\x1egoogle/protobuf/duration.proto\"\xe1\x01\n\x0eWorkflowUpdate\x12+\n\x07\x61\x64\x64_job\x18\x01 \x01(\x0b\x32\x18.director.WorkflowAddJobH\x00\x12/\n\tadd_input\x18\x02 \x01(\x0b\x32\x1a.director.WorkflowAddInputH\x00\x12/\n\tstart_job\x18\x03 \x01(\x0b\x32\x1a.director.WorkflowStartJobH\x00\x12\x35\n\x0c\x63omplete_job\x18\x04 \x01(\x0b\x32\x1d.director.WorkflowCompleteJobH\x00\x42\t\n\x07payload\"A\n\x0eWorkflowAddJob\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12\r\n\x05needs\x18\x02 \x03(\t\x12\x10\n\x08provides\x18\x03 \x03(\t\"$\n\x10WorkflowAddInput\x12\x10\n\x08input_id\x18\x01 \x01(\t\"6\n\x10WorkflowStartJob\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12\x12\n\ninput_data\x18\x02 \x01(\x0c\"g\n\x13WorkflowCompleteJob\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12+\n\x08\x64uration\x18\x02 \x01(\x0b\x32\x19.google.protobuf.Duration\x12\x13\n\x0boutput_data\x18\x03 \x01(\x0c\"L\n\x0eWorkflowSignal\x12/\n\tjob_ready\x18\x01 \x01(\x0b\x32\x1a.director.WorkflowJobReadyH\x00\x42\t\n\x07payload\"\"\n\x10WorkflowJobReady\x12\x0e\n\x06job_id\x18\x01 \x01(\t\"=\n\x0bOpenRequest\x12\x10\n\x08\x62uild_id\x18\x01 \x01(\t\x12\x1c\n\x04opts\x18\x02 \x01(\x0b\x32\x0e.executor.Opts\":\n\x0cOpenResponse\x12\x12\n\nruntime_id\x18\x01 \x01(\t\x12\x16\n\x0ework_directory\x18\x02 \x01(\t\"H\n\rImportRequest\x12\x12\n\nruntime_id\x18\x01 \x01(\t\x12\x10\n\x08src_path\x18\x02 \x01(\t\x12\x11\n\tdest_path\x18\x03 \x01(\t\"\x10\n\x0eImportResponse\"H\n\rExportRequest\x12\x12\n\nruntime_id\x18\x01 \x01(\t\x12\x10\n\x08src_path\x18\x02 \x01(\t\x12\x11\n\tdest_path\x18\x03 \x01(\t\"\x10\n\x0e\x45xportResponse\"\x0f\n\rEventsRequest\"C\n\x0b\x45xecRequest\x12\x12\n\nruntime_id\x18\x01 \x01(\t\x12 \n\x04opts\x18\x02 \x01(\x0b\x32\x12.executor.ExecOpts\"\x9c\x01\n\tExecEvent\x12*\n\x08\x65xec_end\x18\x01 \x01(\x0b\x32\x16.director.ExecEndEventH\x00\x12+\n\x06stdout\x18\x02 \x01(\x0b\x32\x19.director.ExecStdoutEventH\x00\x12+\n\x06stderr\x18\x03 \x01(\x0b\x32\x19.director.ExecStderrEventH\x00\x42\t\n\x07payload\"0\n\x0c\x45xecEndEvent\x12\r\n\x05\x65rror\x18\x01 \x01(\t\x12\x11\n\texit_code\x18\x02 \x01(\x05\"\x1f\n\x0f\x45xecStdoutEvent\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\"\x1f\n\x0f\x45xecStderrEvent\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\x32\xef\x02\n\x08\x44irector\x12\x42\n\x08Workflow\x12\x18.director.WorkflowUpdate\x1a\x18.director.WorkflowSignal(\x01\x30\x01\x12\x35\n\x04Open\x12\x15.director.OpenRequest\x1a\x16.director.OpenResponse\x12\x34\n\x04\x45xec\x12\x15.director.ExecRequest\x1a\x13.director.ExecEvent0\x01\x12;\n\x06Import\x12\x17.director.ImportRequest\x1a\x18.director.ImportResponse\x12;\n\x06\x45xport\x12\x17.director.ExportRequest\x1a\x18.director.ExportResponse\x12\x38\n\x05\x43lose\x12\x16.executor.CloseRequest\x1a\x17.executor.CloseResponseB+Z)github.com/knita-io/knita/api/director/v1b\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -23,30 +24,44 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'director.v1.director_pb2', 
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'Z)github.com/knita-io/knita/api/director/v1'
-  _globals['_OPENREQUEST']._serialized_start=68
-  _globals['_OPENREQUEST']._serialized_end=129
-  _globals['_OPENRESPONSE']._serialized_start=131
-  _globals['_OPENRESPONSE']._serialized_end=189
-  _globals['_IMPORTREQUEST']._serialized_start=191
-  _globals['_IMPORTREQUEST']._serialized_end=263
-  _globals['_IMPORTRESPONSE']._serialized_start=265
-  _globals['_IMPORTRESPONSE']._serialized_end=281
-  _globals['_EXPORTREQUEST']._serialized_start=283
-  _globals['_EXPORTREQUEST']._serialized_end=355
-  _globals['_EXPORTRESPONSE']._serialized_start=357
-  _globals['_EXPORTRESPONSE']._serialized_end=373
-  _globals['_EVENTSREQUEST']._serialized_start=375
-  _globals['_EVENTSREQUEST']._serialized_end=390
-  _globals['_EXECREQUEST']._serialized_start=392
-  _globals['_EXECREQUEST']._serialized_end=459
-  _globals['_EXECEVENT']._serialized_start=462
-  _globals['_EXECEVENT']._serialized_end=618
-  _globals['_EXECENDEVENT']._serialized_start=620
-  _globals['_EXECENDEVENT']._serialized_end=668
-  _globals['_EXECSTDOUTEVENT']._serialized_start=670
-  _globals['_EXECSTDOUTEVENT']._serialized_end=701
-  _globals['_EXECSTDERREVENT']._serialized_start=703
-  _globals['_EXECSTDERREVENT']._serialized_end=734
-  _globals['_DIRECTOR']._serialized_start=737
-  _globals['_DIRECTOR']._serialized_end=1036
+  _globals['_WORKFLOWUPDATE']._serialized_start=101
+  _globals['_WORKFLOWUPDATE']._serialized_end=326
+  _globals['_WORKFLOWADDJOB']._serialized_start=328
+  _globals['_WORKFLOWADDJOB']._serialized_end=393
+  _globals['_WORKFLOWADDINPUT']._serialized_start=395
+  _globals['_WORKFLOWADDINPUT']._serialized_end=431
+  _globals['_WORKFLOWSTARTJOB']._serialized_start=433
+  _globals['_WORKFLOWSTARTJOB']._serialized_end=487
+  _globals['_WORKFLOWCOMPLETEJOB']._serialized_start=489
+  _globals['_WORKFLOWCOMPLETEJOB']._serialized_end=592
+  _globals['_WORKFLOWSIGNAL']._serialized_start=594
+  _globals['_WORKFLOWSIGNAL']._serialized_end=670
+  _globals['_WORKFLOWJOBREADY']._serialized_start=672
+  _globals['_WORKFLOWJOBREADY']._serialized_end=706
+  _globals['_OPENREQUEST']._serialized_start=708
+  _globals['_OPENREQUEST']._serialized_end=769
+  _globals['_OPENRESPONSE']._serialized_start=771
+  _globals['_OPENRESPONSE']._serialized_end=829
+  _globals['_IMPORTREQUEST']._serialized_start=831
+  _globals['_IMPORTREQUEST']._serialized_end=903
+  _globals['_IMPORTRESPONSE']._serialized_start=905
+  _globals['_IMPORTRESPONSE']._serialized_end=921
+  _globals['_EXPORTREQUEST']._serialized_start=923
+  _globals['_EXPORTREQUEST']._serialized_end=995
+  _globals['_EXPORTRESPONSE']._serialized_start=997
+  _globals['_EXPORTRESPONSE']._serialized_end=1013
+  _globals['_EVENTSREQUEST']._serialized_start=1015
+  _globals['_EVENTSREQUEST']._serialized_end=1030
+  _globals['_EXECREQUEST']._serialized_start=1032
+  _globals['_EXECREQUEST']._serialized_end=1099
+  _globals['_EXECEVENT']._serialized_start=1102
+  _globals['_EXECEVENT']._serialized_end=1258
+  _globals['_EXECENDEVENT']._serialized_start=1260
+  _globals['_EXECENDEVENT']._serialized_end=1308
+  _globals['_EXECSTDOUTEVENT']._serialized_start=1310
+  _globals['_EXECSTDOUTEVENT']._serialized_end=1341
+  _globals['_EXECSTDERREVENT']._serialized_start=1343
+  _globals['_EXECSTDERREVENT']._serialized_end=1374
+  _globals['_DIRECTOR']._serialized_start=1377
+  _globals['_DIRECTOR']._serialized_end=1744
 # @@protoc_insertion_point(module_scope)

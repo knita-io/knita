@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"reflect"
 	"time"
 
 	"google.golang.org/grpc"
@@ -76,6 +75,7 @@ type Client struct {
 	fatalFunc FatalFunc
 	client    directorv1.DirectorClient
 	buildID   string
+	jobID     string
 }
 
 // MustNewClient is like Newclient, but it calls the configured FatalFunc if an error occurs.
@@ -134,6 +134,9 @@ func (c *Client) RuntimeWithContext(ctx context.Context, opts ...runtime.Opt) (*
 	for _, opt := range opts {
 		opt.Apply(o)
 	}
+	if c.jobID != "" {
+		o.Tags["job_id"] = c.jobID
+	}
 	res, err := c.client.Open(ctx, &directorv1.OpenRequest{BuildId: c.buildID, Opts: o})
 	if err != nil {
 		return nil, fmt.Errorf("error opening runtime: %w", err)
@@ -148,14 +151,20 @@ func (c *Client) RuntimeWithContext(ctx context.Context, opts ...runtime.Opt) (*
 }
 
 func (c *Client) Workflow() *Workflow {
-	return &Workflow{
-		log:                c.syslog,
-		fatalFunc:          c.fatalFunc,
-		director:           newDirector(),
-		typeToIOID:         map[reflect.Type]ioID{},
-		resolvedInputsByID: map[ioID]interface{}{},
-		providedInputsByID: map[ioID]struct{}{},
-		jobByID:            map[jobID]jobDescriptor{},
+	workflow, err := newWorkflow(c.syslog, c.fatalFunc, c)
+	if err != nil {
+		c.fatalFunc(err)
+	}
+	return workflow
+}
+
+func (c *Client) clone() *Client {
+	return &Client{
+		syslog:    c.syslog,
+		fatalFunc: c.fatalFunc,
+		client:    c.client,
+		buildID:   c.buildID,
+		jobID:     c.jobID,
 	}
 }
 

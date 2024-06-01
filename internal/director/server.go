@@ -2,7 +2,9 @@ package director
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"sync"
 
 	"github.com/google/uuid"
@@ -28,6 +30,69 @@ func NewServer(syslog *zap.SugaredLogger, stream event.Stream, controller *Build
 		stream:     stream,
 		controller: controller,
 		runtimes:   map[string]*Runtime{},
+	}
+}
+
+func (s *Server) Workflow(stream directorv1.Director_WorkflowServer) error {
+	workflow := newWorkflow(s.controller.Log())
+	for {
+		msg, err := stream.Recv()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return nil
+			} else {
+				err := fmt.Errorf("error reading from stream: %w", err)
+				s.syslog.Errorf("%v", err)
+				return err
+			}
+		}
+		switch p := msg.Payload.(type) {
+		case *directorv1.WorkflowUpdate_AddJob:
+			err := workflow.Enqueue(p.AddJob.JobId, p.AddJob.Needs, p.AddJob.Provides)
+			if err != nil {
+				return err
+			}
+		case *directorv1.WorkflowUpdate_AddInput:
+			err := workflow.AddInput("AddInput()", p.AddInput.InputId)
+			if err != nil {
+				return err
+			}
+		case *directorv1.WorkflowUpdate_StartJob:
+			dependencies, err := workflow.GetDependencies(p.StartJob.JobId)
+			if err != nil {
+				return err
+			}
+			s.controller.Log().Publish(executorv1.NewJobStartEvent(p.StartJob.JobId, p.StartJob.InputData, dependencies))
+		case *directorv1.WorkflowUpdate_CompleteJob:
+			err := workflow.CompleteJob(p.CompleteJob.JobId)
+			if err != nil {
+				return err
+			}
+			s.controller.Log().Publish(executorv1.NewJobEndEvent(
+				p.CompleteJob.JobId, p.CompleteJob.Duration.AsDuration(), p.CompleteJob.OutputData))
+		default:
+			return fmt.Errorf("error unsupported payload: %s", p)
+		}
+		nextJobID, err := workflow.Dequeue()
+		if err != nil {
+			if errors.Is(err, errNoReadyJobs) {
+				continue
+			}
+			if errors.Is(err, errQueueEmpty) {
+				return nil
+			}
+			return err
+		} else {
+			signal := &directorv1.WorkflowSignal{
+				Payload: &directorv1.WorkflowSignal_JobReady{
+					JobReady: &directorv1.WorkflowJobReady{JobId: nextJobID},
+				},
+			}
+			err := stream.Send(signal)
+			if err != nil {
+				return fmt.Errorf("error sending next job: %w", err)
+			}
+		}
 	}
 }
 

@@ -5,13 +5,55 @@ package director;
 option go_package = "github.com/knita-io/knita/api/director/v1";
 
 import "executor/v1/executor.proto";
+import "google/protobuf/duration.proto";
 
 service Director {
+  rpc Workflow(stream WorkflowUpdate) returns (stream WorkflowSignal);
   rpc Open(OpenRequest) returns (OpenResponse);
   rpc Exec(ExecRequest) returns (stream ExecEvent);
   rpc Import(ImportRequest) returns (ImportResponse);
   rpc Export(ExportRequest) returns (ExportResponse);
   rpc Close(executor.CloseRequest) returns (executor.CloseResponse);
+}
+
+message WorkflowUpdate {
+  oneof payload {
+    WorkflowAddJob add_job = 1;
+    WorkflowAddInput add_input = 2;
+    WorkflowStartJob start_job = 3;
+    WorkflowCompleteJob complete_job = 4;
+  }
+}
+
+message WorkflowAddJob {
+  string job_id = 1;
+  repeated string needs = 2;
+  repeated string provides = 3;
+}
+
+message WorkflowAddInput {
+  string input_id = 1;
+}
+
+message WorkflowStartJob {
+  string job_id = 1;
+  bytes input_data = 2;
+}
+
+message WorkflowCompleteJob {
+  string job_id = 1;
+  google.protobuf.Duration duration = 2;
+  bytes output_data = 3;
+}
+
+message WorkflowSignal {
+  oneof payload {
+    WorkflowJobReady job_ready = 1;
+  }
+}
+
+message WorkflowJobReady {
+  string job_id = 1;
 }
 
 message OpenRequest {

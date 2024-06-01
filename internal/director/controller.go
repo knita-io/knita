@@ -37,6 +37,10 @@ func (c *BuildController) BuildID() string {
 	return c.buildID
 }
 
+func (c *BuildController) Log() *Log {
+	return c.log
+}
+
 func (c *BuildController) Runtime(ctx context.Context, opts *executorv1.Opts) (*Runtime, error) {
 	log := c.syslog
 	log.Infow("Requesting runtime from broker...", "opts", opts)

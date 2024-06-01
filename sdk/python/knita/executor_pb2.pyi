@@ -1,3 +1,4 @@
+from google.protobuf import duration_pb2 as _duration_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
@@ -236,10 +237,11 @@ class EventsRequest(_message.Message):
     def __init__(self, runtime_id: _Optional[str] = ...) -> None: ...
 
 class Event(_message.Message):
-    __slots__ = ("build_id", "group_name", "sequence", "runtime_opened", "exec_start", "exec_end", "import_start", "import_end", "export_start", "export_end", "stdout", "stderr", "runtime_closed")
+    __slots__ = ("build_id", "group_name", "sequence", "job_start", "runtime_opened", "exec_start", "exec_end", "import_start", "import_end", "export_start", "export_end", "stdout", "stderr", "runtime_closed", "job_end")
     BUILD_ID_FIELD_NUMBER: _ClassVar[int]
     GROUP_NAME_FIELD_NUMBER: _ClassVar[int]
     SEQUENCE_FIELD_NUMBER: _ClassVar[int]
+    JOB_START_FIELD_NUMBER: _ClassVar[int]
     RUNTIME_OPENED_FIELD_NUMBER: _ClassVar[int]
     EXEC_START_FIELD_NUMBER: _ClassVar[int]
     EXEC_END_FIELD_NUMBER: _ClassVar[int]
@@ -250,9 +252,11 @@ class Event(_message.Message):
     STDOUT_FIELD_NUMBER: _ClassVar[int]
     STDERR_FIELD_NUMBER: _ClassVar[int]
     RUNTIME_CLOSED_FIELD_NUMBER: _ClassVar[int]
+    JOB_END_FIELD_NUMBER: _ClassVar[int]
     build_id: str
     group_name: str
     sequence: int
+    job_start: JobStartEvent
     runtime_opened: RuntimeOpenedEvent
     exec_start: ExecStartEvent
     exec_end: ExecEndEvent
@@ -263,19 +267,28 @@ class Event(_message.Message):
     stdout: StdoutEvent
     stderr: StderrEvent
     runtime_closed: RuntimeClosedEvent
-    def __init__(self, build_id: _Optional[str] = ..., group_name: _Optional[str] = ..., sequence: _Optional[int] = ..., runtime_opened: _Optional[_Union[RuntimeOpenedEvent, _Mapping]] = ..., exec_start: _Optional[_Union[ExecStartEvent, _Mapping]] = ..., exec_end: _Optional[_Union[ExecEndEvent, _Mapping]] = ..., import_start: _Optional[_Union[ImportStartEvent, _Mapping]] = ..., import_end: _Optional[_Union[ImportEndEvent, _Mapping]] = ..., export_start: _Optional[_Union[ExportStartEvent, _Mapping]] = ..., export_end: _Optional[_Union[ExportEndEvent, _Mapping]] = ..., stdout: _Optional[_Union[StdoutEvent, _Mapping]] = ..., stderr: _Optional[_Union[StderrEvent, _Mapping]] = ..., runtime_closed: _Optional[_Union[RuntimeClosedEvent, _Mapping]] = ...) -> None: ...
+    job_end: JobEndEvent
+    def __init__(self, build_id: _Optional[str] = ..., group_name: _Optional[str] = ..., sequence: _Optional[int] = ..., job_start: _Optional[_Union[JobStartEvent, _Mapping]] = ..., runtime_opened: _Optional[_Union[RuntimeOpenedEvent, _Mapping]] = ..., exec_start: _Optional[_Union[ExecStartEvent, _Mapping]] = ..., exec_end: _Optional[_Union[ExecEndEvent, _Mapping]] = ..., import_start: _Optional[_Union[ImportStartEvent, _Mapping]] = ..., import_end: _Optional[_Union[ImportEndEvent, _Mapping]] = ..., export_start: _Optional[_Union[ExportStartEvent, _Mapping]] = ..., export_end: _Optional[_Union[ExportEndEvent, _Mapping]] = ..., stdout: _Optional[_Union[StdoutEvent, _Mapping]] = ..., stderr: _Optional[_Union[StderrEvent, _Mapping]] = ..., runtime_closed: _Optional[_Union[RuntimeClosedEvent, _Mapping]] = ..., job_end: _Optional[_Union[JobEndEvent, _Mapping]] = ...) -> None: ...
 
 class JobStartEvent(_message.Message):
-    __slots__ = ("job_id",)
+    __slots__ = ("job_id", "input_data", "depends")
     JOB_ID_FIELD_NUMBER: _ClassVar[int]
+    INPUT_DATA_FIELD_NUMBER: _ClassVar[int]
+    DEPENDS_FIELD_NUMBER: _ClassVar[int]
     job_id: str
-    def __init__(self, job_id: _Optional[str] = ...) -> None: ...
+    input_data: bytes
+    depends: _containers.RepeatedScalarFieldContainer[str]
+    def __init__(self, job_id: _Optional[str] = ..., input_data: _Optional[bytes] = ..., depends: _Optional[_Iterable[str]] = ...) -> None: ...
 
 class JobEndEvent(_message.Message):
-    __slots__ = ("job_id",)
+    __slots__ = ("job_id", "duration", "output_data")
     JOB_ID_FIELD_NUMBER: _ClassVar[int]
+    DURATION_FIELD_NUMBER: _ClassVar[int]
+    OUTPUT_DATA_FIELD_NUMBER: _ClassVar[int]
     job_id: str
-    def __init__(self, job_id: _Optional[str] = ...) -> None: ...
+    duration: _duration_pb2.Duration
+    output_data: bytes
+    def __init__(self, job_id: _Optional[str] = ..., duration: _Optional[_Union[_duration_pb2.Duration, _Mapping]] = ..., output_data: _Optional[bytes] = ...) -> None: ...
 
 class RuntimeOpenedEvent(_message.Message):
     __slots__ = ("runtime_id", "opts")
