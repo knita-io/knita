@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/rs/xid"
 	"os"
 
 	"github.com/spf13/viper"
@@ -10,6 +11,9 @@ import (
 
 type config struct {
 	BindAddress string `mapstructure:"bind_address"`
+	// Name is the human-friendly name of the executor.
+	// This should be unique across all executors.
+	Name string `mapstructure:"name"`
 	// Labels the executor will advertise to the broker.
 	Labels []string `mapstructure:"labels"`
 }
@@ -17,6 +21,14 @@ type config struct {
 func fillDefaultValues(config *config) *config {
 	if config.BindAddress == "" {
 		config.BindAddress = "127.0.0.1:9091"
+	}
+	if config.Name == "" {
+		host, _ := os.Hostname()
+		if host == "" {
+			config.Name = fmt.Sprintf("%s (name unconfigured)", xid.New().String())
+		} else {
+			config.Name = host
+		}
 	}
 	return config
 }

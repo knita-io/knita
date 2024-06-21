@@ -15,6 +15,12 @@ RUNTIME_UNSPECIFIED: RuntimeType
 RUNTIME_HOST: RuntimeType
 RUNTIME_DOCKER: RuntimeType
 
+class ExecutorInfo(_message.Message):
+    __slots__ = ("name",)
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    name: str
+    def __init__(self, name: _Optional[str] = ...) -> None: ...
+
 class SystemInfo(_message.Message):
     __slots__ = ("os", "arch", "total_cpu_cores", "total_memory")
     OS_FIELD_NUMBER: _ClassVar[int]
@@ -32,12 +38,14 @@ class IntrospectRequest(_message.Message):
     def __init__(self) -> None: ...
 
 class IntrospectResponse(_message.Message):
-    __slots__ = ("sys_info", "labels")
+    __slots__ = ("sys_info", "executor_info", "labels")
     SYS_INFO_FIELD_NUMBER: _ClassVar[int]
+    EXECUTOR_INFO_FIELD_NUMBER: _ClassVar[int]
     LABELS_FIELD_NUMBER: _ClassVar[int]
     sys_info: SystemInfo
+    executor_info: ExecutorInfo
     labels: _containers.RepeatedScalarFieldContainer[str]
-    def __init__(self, sys_info: _Optional[_Union[SystemInfo, _Mapping]] = ..., labels: _Optional[_Iterable[str]] = ...) -> None: ...
+    def __init__(self, sys_info: _Optional[_Union[SystemInfo, _Mapping]] = ..., executor_info: _Optional[_Union[ExecutorInfo, _Mapping]] = ..., labels: _Optional[_Iterable[str]] = ...) -> None: ...
 
 class OpenRequest(_message.Message):
     __slots__ = ("build_id", "runtime_id", "opts")

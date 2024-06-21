@@ -121,16 +121,19 @@ var buildCMD = &cobra.Command{
 			return fmt.Errorf("error dialing local knita socket %s: %w", socket, err)
 		}
 		brokerClient := brokerv1.NewRuntimeBrokerClient(conn)
-		directorSysLog := syslog.Named("embedded_director")
+		directorSysLog := syslog.Named("director")
 		directorEventBroker := event.NewBroker(directorSysLog)
 		directorLog := director.NewLog(directorEventBroker, buildID)
 		defer directorLog.Close()
 		controller := director.NewBuildController(directorSysLog, directorLog, buildID, brokerClient, file.WriteDirFS(work))
 		directorServer := director.NewServer(directorSysLog, directorEventBroker, controller)
-
-		executorSysLog := syslog.Named("embedded_executor")
+		executorSysLog := syslog.Named("executor")
+		embeddedExecutorName, _ := os.Hostname()
+		if embeddedExecutorName == "" {
+			embeddedExecutorName = "knita-exec-local"
+		}
 		embeddedExecutorEventBroker := event.NewBroker(executorSysLog)
-		executor := executor.NewExecutor(executorSysLog, executor.Config{Labels: config.LocalExecutor.Labels}, embeddedExecutorEventBroker)
+		executor := executor.NewExecutor(executorSysLog, executor.Config{Name: embeddedExecutorName, Labels: config.LocalExecutor.Labels}, embeddedExecutorEventBroker)
 		defer executor.Stop()
 
 		var executors []*broker.ExecutorConfig
@@ -159,7 +162,7 @@ var buildCMD = &cobra.Command{
 				},
 			})
 		}
-		broker := broker.NewFixedBroker(syslog.Named("embedded_broker"), broker.Config{Executors: executors})
+		broker := broker.NewFixedBroker(syslog.Named("broker"), broker.Config{Executors: executors})
 
 		srv := grpc.NewServer()
 		executorv1.RegisterExecutorServer(srv, executor)

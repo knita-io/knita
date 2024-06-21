@@ -26,6 +26,7 @@ message RuntimeContract {
   string runtime_id = 3;
   executor.Opts opts = 4;
   executor.SystemInfo sys_info = 5;
+  executor.ExecutorInfo executor_info = 6;
 }
 
 message RuntimeSettlement {

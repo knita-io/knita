@@ -15,6 +15,10 @@ service Executor {
   rpc Events(EventsRequest) returns (stream Event);
 }
 
+message ExecutorInfo {
+  string name = 1;
+}
+
 message SystemInfo  {
   string os = 2;
   string arch = 3;
@@ -25,6 +29,7 @@ message SystemInfo  {
 message IntrospectRequest {}
 message IntrospectResponse{
   SystemInfo sys_info = 1;
+  ExecutorInfo executor_info = 3;
   repeated string labels = 2;
 }
 

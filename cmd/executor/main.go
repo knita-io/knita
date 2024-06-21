@@ -43,7 +43,7 @@ var rootCmd = &cobra.Command{
 		defer listener.Close()
 
 		eventBroker := event.NewBroker(syslog)
-		executor := executor.NewExecutor(syslog, executor.Config{Labels: config.Labels}, eventBroker)
+		executor := executor.NewExecutor(syslog, executor.Config{Name: config.Name, Labels: config.Labels}, eventBroker)
 		defer executor.Stop()
 
 		srv := grpc.NewServer(

@@ -22,6 +22,8 @@ import (
 type runtimeFactory func(ctx context.Context, buildID string, runtimeID string, opts *executorv1.Opts) (runtime.Runtime, error)
 
 type Config struct {
+	// Name is the name of the executor.
+	Name string
 	// Labels the executor will advertise to the broker.
 	Labels []string
 }
@@ -150,7 +152,8 @@ func (s *Executor) Export(req *executorv1.ExportRequest, stream executorv1.Execu
 
 func (s *Executor) Introspect(ctx context.Context, req *executorv1.IntrospectRequest) (*executorv1.IntrospectResponse, error) {
 	return &executorv1.IntrospectResponse{
-		SysInfo: s.getSysInfo(),
+		SysInfo:      s.getSysInfo(),
+		ExecutorInfo: &executorv1.ExecutorInfo{Name: s.config.Name},
 		Labels: append([]string{
 			stdruntime.GOOS,
 			stdruntime.GOARCH,

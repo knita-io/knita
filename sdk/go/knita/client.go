@@ -77,7 +77,7 @@ type Client struct {
 	buildID   string
 }
 
-// MustNewClient is like Newclient, but it calls the configured FatalFunc if an error occurs.
+// MustNewClient is like NewClient, but it calls the configured FatalFunc if an error occurs.
 func MustNewClient(opts ...Opt) *Client {
 	c, err := NewClient(opts...)
 	if err != nil {
