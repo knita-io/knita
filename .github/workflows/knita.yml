@@ -38,4 +38,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Knita CLI
-          path: build/output/cli/*
+          path: |
+            build/output/cli/*
+            build/output/executor/*
