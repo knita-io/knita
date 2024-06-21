@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/moby/moby/client"
+	"github.com/pbnjay/memory"
+	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"io"
 	stdruntime "runtime"
 	"sync"
-
-	"github.com/moby/moby/client"
-	"go.uber.org/zap"
+	"time"
 
 	executorv1 "github.com/knita-io/knita/api/executor/v1"
 	"github.com/knita-io/knita/internal/event"
@@ -18,23 +20,39 @@ import (
 	"github.com/knita-io/knita/internal/executor/runtime/host"
 )
 
+const deadlineExtensionPeriod = time.Minute * 2
+
 type runtimeFactory func(ctx context.Context, buildID string, runtimeID string, opts *executorv1.Opts) (runtime.Runtime, error)
+
+type Config struct {
+	// Name is the name of the executor.
+	Name string
+	// Labels the executor will advertise to the broker.
+	Labels []string
+}
 
 type Executor struct {
 	executorv1.UnimplementedExecutorServer
 	log            *zap.SugaredLogger
 	stream         event.Stream
 	runtimeFactory runtimeFactory
+	config         Config
+	ctx            context.Context
+	ctxCancel      context.CancelFunc
 
 	mu          sync.RWMutex
 	supervisors map[string]*RuntimeSupervisor
 }
 
-func NewExecutor(log *zap.SugaredLogger, stream event.Stream) *Executor {
+func NewExecutor(log *zap.SugaredLogger, config Config, stream event.Stream) *Executor {
+	ctx, cancel := context.WithCancel(context.Background())
 	log = log.Named("executor")
-	return &Executor{
+	exec := &Executor{
 		log:         log,
 		stream:      stream,
+		config:      config,
+		ctx:         ctx,
+		ctxCancel:   cancel,
 		supervisors: map[string]*RuntimeSupervisor{},
 		runtimeFactory: func(ctx context.Context, buildID string, runtimeID string, opts *executorv1.Opts) (runtime.Runtime, error) {
 			switch opts.Type {
@@ -60,6 +78,8 @@ func NewExecutor(log *zap.SugaredLogger, stream event.Stream) *Executor {
 			}
 		},
 	}
+	go exec.watchdog()
+	return exec
 }
 
 func (s *Executor) Events(req *executorv1.EventsRequest, stream executorv1.Executor_EventsServer) error {
@@ -142,14 +162,26 @@ func (s *Executor) Export(req *executorv1.ExportRequest, stream executorv1.Execu
 
 func (s *Executor) Introspect(ctx context.Context, req *executorv1.IntrospectRequest) (*executorv1.IntrospectResponse, error) {
 	return &executorv1.IntrospectResponse{
-		Os:   stdruntime.GOOS,
-		Arch: stdruntime.GOARCH,
-		Ncpu: uint32(stdruntime.NumCPU()),
-		Labels: []string{
+		SysInfo:      s.getSysInfo(),
+		ExecutorInfo: &executorv1.ExecutorInfo{Name: s.config.Name},
+		Labels: append([]string{
 			stdruntime.GOOS,
 			stdruntime.GOARCH,
-		},
+		}, s.config.Labels...),
 	}, nil
+}
+
+func (s *Executor) Heartbeat(ctx context.Context, req *executorv1.HeartbeatRequest) (*executorv1.HeartbeatResponse, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	supervisor, ok := s.supervisors[req.RuntimeId]
+	if !ok {
+		return nil, fmt.Errorf("error supervisor not found")
+	}
+	deadline := time.Now().Add(deadlineExtensionPeriod)
+	supervisor.SetDeadline(deadline)
+	s.log.Debugf("Extended runtime %s deadline to: %s", supervisor.runtime.ID(), deadline)
+	return &executorv1.HeartbeatResponse{ExtendedBy: durationpb.New(deadlineExtensionPeriod)}, nil
 }
 
 func (s *Executor) Open(ctx context.Context, req *executorv1.OpenRequest) (*executorv1.OpenResponse, error) {
@@ -163,16 +195,20 @@ func (s *Executor) Open(ctx context.Context, req *executorv1.OpenRequest) (*exec
 	if err != nil {
 		return nil, fmt.Errorf("error initializing runtime: %w", err)
 	}
-	rt.Log().Publish(executorv1.NewRuntimeOpenedEvent(req.RuntimeId, req.Opts))
+	rt.Log().Publish(executorv1.NewRuntimeOpenStartEvent(req.RuntimeId, req.Opts))
 	err = rt.Start(ctx)
 	if err != nil {
+		rt.Log().Publish(executorv1.NewRuntimeCloseStartEvent(req.RuntimeId))
 		rt.Close()
-		rt.Log().Publish(executorv1.NewRuntimeClosedEvent(req.RuntimeId))
+		rt.Log().Publish(executorv1.NewRuntimeCloseEndEvent(req.RuntimeId))
 		return nil, fmt.Errorf("error starting runtime: %w", err)
 	}
-	s.supervisors[req.RuntimeId] = NewRuntimeSupervisor(s.log, s.stream, rt)
+	rt.Log().Publish(executorv1.NewRuntimeOpenEndEvent(req.RuntimeId))
+	supervisor := NewRuntimeSupervisor(s.log, s.stream, rt)
+	supervisor.SetDeadline(time.Now().Add(deadlineExtensionPeriod))
+	s.supervisors[req.RuntimeId] = supervisor
 	s.log.Infow("Initialized runtime", "runtime_id", req.RuntimeId)
-	return &executorv1.OpenResponse{WorkDirectory: rt.Directory()}, nil
+	return &executorv1.OpenResponse{WorkDirectory: rt.Directory(), SysInfo: s.getSysInfo()}, nil
 }
 
 func (s *Executor) Close(ctx context.Context, req *executorv1.CloseRequest) (*executorv1.CloseResponse, error) {
@@ -184,8 +220,22 @@ func (s *Executor) Close(ctx context.Context, req *executorv1.CloseRequest) (*ex
 	delete(s.supervisors, req.RuntimeId)
 	s.mu.Unlock()
 	s.log.Infow("Closing runtime", "runtime_id", req.RuntimeId)
-	defer rt.runtime.Log().Publish(executorv1.NewRuntimeClosedEvent(req.RuntimeId))
+	rt.runtime.Log().Publish(executorv1.NewRuntimeCloseStartEvent(req.RuntimeId))
+	defer rt.runtime.Log().Publish(executorv1.NewRuntimeCloseEndEvent(req.RuntimeId))
 	return rt.Close(ctx, req)
+}
+
+func (s *Executor) Stop() {
+	s.ctxCancel()
+	var runtimeIDs []string
+	s.mu.Lock()
+	for id, _ := range s.supervisors {
+		runtimeIDs = append(runtimeIDs, id)
+	}
+	s.mu.Unlock()
+	for _, id := range runtimeIDs {
+		s.Close(context.Background(), &executorv1.CloseRequest{RuntimeId: id})
+	}
 }
 
 func (s *Executor) getSupervisor(id string) (*RuntimeSupervisor, error) {
@@ -198,14 +248,44 @@ func (s *Executor) getSupervisor(id string) (*RuntimeSupervisor, error) {
 	return supervisor, nil
 }
 
-func (s *Executor) Stop() {
-	var runtimeIDs []string
-	s.mu.Lock()
-	for id, _ := range s.supervisors {
-		runtimeIDs = append(runtimeIDs, id)
+func (s *Executor) getSysInfo() *executorv1.SystemInfo {
+	return &executorv1.SystemInfo{
+		Os:            stdruntime.GOOS,
+		Arch:          stdruntime.GOARCH,
+		TotalCpuCores: uint32(stdruntime.NumCPU()),
+		TotalMemory:   memory.TotalMemory(),
 	}
-	s.mu.Unlock()
-	for _, id := range runtimeIDs {
-		s.Close(context.Background(), &executorv1.CloseRequest{RuntimeId: id})
+}
+
+func (s *Executor) watchdog() {
+	for {
+		s.mu.Lock()
+		var (
+			deadlinedRuntimes []string
+			wakeupIn          = deadlineExtensionPeriod
+		)
+		for id, supervisor := range s.supervisors {
+			deadline := supervisor.GetDeadline()
+			if deadline.Before(time.Now()) {
+				deadlinedRuntimes = append(deadlinedRuntimes, id)
+				continue
+			}
+			deadlineIn := (time.Now().Sub(deadline)) + 1
+			if deadlineIn < wakeupIn {
+				wakeupIn = deadlineIn
+			}
+		}
+		s.mu.Unlock()
+
+		for _, id := range deadlinedRuntimes {
+			s.log.Warnf("Runtime %s has deadlined", id)
+			s.Close(context.Background(), &executorv1.CloseRequest{RuntimeId: id})
+		}
+
+		select {
+		case <-s.ctx.Done():
+			return
+		case <-time.After(wakeupIn):
+		}
 	}
 }

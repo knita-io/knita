@@ -10,6 +10,18 @@ opts = [{"type": "host", "tags": {"name": "host-test"}},
 
 for opts in opts:
     with cc.runtime(**opts) as runtime:
+        # Verify sysinfo is reported
+        if runtime.sys_info() is None:
+            raise Exception("sysinfo not set")
+        if runtime.sys_info().os == "":
+            raise Exception("sysinfo os not set")
+        if runtime.sys_info().arch == "":
+            raise Exception("sysinfo arch not set")
+        if runtime.sys_info().total_cpu_cores <= 0:
+            raise Exception("sysinfo cpu cores not set")
+        if runtime.sys_info().total_memory <= 0:
+            raise Exception("sysinfo memory not set")
+
         # Verify files can be imported
         expected_file_path = 'input/input.txt'
         with open(expected_file_path, "r") as file:

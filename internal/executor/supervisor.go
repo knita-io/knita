@@ -3,10 +3,10 @@ package executor
 import (
 	"context"
 	"fmt"
+	"go.uber.org/zap"
 	"os"
 	"sync"
-
-	"go.uber.org/zap"
+	"time"
 
 	"github.com/knita-io/knita/api/executor/v1"
 	"github.com/knita-io/knita/internal/event"
@@ -20,6 +20,7 @@ type RuntimeSupervisor struct {
 	runtime   runtime.Runtime
 	mu        sync.RWMutex
 	importers map[string]*file.Receiver
+	deadline  time.Time
 }
 
 func NewRuntimeSupervisor(log *zap.SugaredLogger, stream event.Stream, runtime runtime.Runtime) *RuntimeSupervisor {
@@ -29,6 +30,14 @@ func NewRuntimeSupervisor(log *zap.SugaredLogger, stream event.Stream, runtime r
 		runtime:   runtime,
 		importers: map[string]*file.Receiver{},
 	}
+}
+
+func (s *RuntimeSupervisor) GetDeadline() time.Time {
+	return s.deadline
+}
+
+func (s *RuntimeSupervisor) SetDeadline(t time.Time) {
+	s.deadline = t
 }
 
 func (s *RuntimeSupervisor) Exec(ctx context.Context, req *v1.ExecRequest) (*v1.ExecResponse, error) {

@@ -12,8 +12,9 @@ service RuntimeBroker {
 }
 
 message RuntimeTender {
-  string tender_id = 1;
-  executor.Opts opts = 2;
+  string build_id = 1;
+  string tender_id = 2;
+  executor.Opts opts = 3;
 }
 
 message RuntimeContracts {
@@ -21,9 +22,12 @@ message RuntimeContracts {
 }
 
 message RuntimeContract {
-  string contract_id = 1;
-  string runtime_id = 2;
-  executor.Opts opts = 3;
+  string tender_id = 1;
+  string contract_id = 2;
+  string runtime_id = 3;
+  executor.Opts opts = 4;
+  executor.SystemInfo sys_info = 5;
+  executor.ExecutorInfo executor_info = 6;
 }
 
 message RuntimeSettlement {
@@ -33,9 +37,14 @@ message RuntimeSettlement {
 message RuntimeConnectionInfo {
   oneof transport {
     RuntimeTransportUnix unix = 1;
+    RuntimeTransportTCP tcp = 2;
   }
 }
 
 message RuntimeTransportUnix {
   string socket_path = 1;
+}
+
+message RuntimeTransportTCP {
+  string address = 1;
 }

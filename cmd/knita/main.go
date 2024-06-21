@@ -48,7 +48,7 @@ var buildCMD = &cobra.Command{
 	Short: "Executes the specified build pattern",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Silence usage on error once we're inside the RunE function, as
-		// know this must be a valid command invocation at this point.
+		// we know this must be a valid command invocation at this point.
 		cmd.SilenceUsage = true
 
 		now := time.Now()
@@ -59,15 +59,30 @@ var buildCMD = &cobra.Command{
 			verbose = true
 		}
 
-		directorLogPath, err := makeLogFile("knita-", now)
-		if err != nil {
-			return fmt.Errorf("error making log file: %w", err)
+		var (
+			err        error
+			cliLogPath string
+		)
+		cliLogPathOverride := os.Getenv("KNITA_CLI_LOG_PATH")
+		if cliLogPathOverride != "" {
+			cliLogPath = cliLogPathOverride
+		} else {
+			cliLogPath, err = makeLogFile("knita-", now)
+			if err != nil {
+				return fmt.Errorf("error making cli log file: %w", err)
+			}
 		}
-		syslog, err := makeLogger(directorLogPath)
+		syslog, err := makeLogger(cliLogPath)
 		if err != nil {
 			return nil
 		}
 		defer syslog.Sync()
+
+		configFilePath, _ := cmd.Flags().GetString("config")
+		config, err := getConfig(syslog, configFilePath)
+		if err != nil {
+			return err
+		}
 
 		work, err := os.Getwd()
 		if err != nil {
@@ -112,22 +127,51 @@ var buildCMD = &cobra.Command{
 		}
 		conn, err := grpc.Dial(socket, grpc.WithInsecure(), grpc.WithDialer(dialer))
 		if err != nil {
-			return fmt.Errorf("error dialing local knit socket %s: %w", socket, err)
+			return fmt.Errorf("error dialing local knita socket %s: %w", socket, err)
 		}
 		brokerClient := brokerv1.NewRuntimeBrokerClient(conn)
-		directorSysLog := syslog.Named("embedded_director")
+		directorSysLog := syslog.Named("director")
 		directorEventBroker := event.NewBroker(directorSysLog)
 		directorLog := director.NewLog(directorEventBroker, buildID)
 		defer directorLog.Close()
 		controller := director.NewBuildController(directorSysLog, directorLog, buildID, brokerClient, file.WriteDirFS(work))
 		directorServer := director.NewServer(directorSysLog, directorEventBroker, controller)
-
-		executorSysLog := syslog.Named("embedded_executor")
+		executorSysLog := syslog.Named("executor")
+		embeddedExecutorName, _ := os.Hostname()
+		if embeddedExecutorName == "" {
+			embeddedExecutorName = "knita-exec-local"
+		}
 		embeddedExecutorEventBroker := event.NewBroker(executorSysLog)
-		executor := executor.NewExecutor(executorSysLog, embeddedExecutorEventBroker)
+		executor := executor.NewExecutor(executorSysLog, executor.Config{Name: embeddedExecutorName, Labels: config.LocalExecutor.Labels}, embeddedExecutorEventBroker)
 		defer executor.Stop()
 
-		broker := broker.NewLocalBroker(syslog.Named("embedded_broker"), socket)
+		var executors []*broker.ExecutorConfig
+		if !config.LocalExecutor.Disabled {
+			executors = append(executors, &broker.ExecutorConfig{
+				Name: "local",
+				Connection: &brokerv1.RuntimeConnectionInfo{
+					Transport: &brokerv1.RuntimeConnectionInfo_Unix{
+						Unix: &brokerv1.RuntimeTransportUnix{SocketPath: socket},
+					},
+				},
+			})
+		} else {
+			syslog.Warnf("Local builds are disabled")
+		}
+		for _, execConfig := range config.Broker.Executors {
+			if execConfig.Disabled {
+				continue
+			}
+			executors = append(executors, &broker.ExecutorConfig{
+				Name: execConfig.Name,
+				Connection: &brokerv1.RuntimeConnectionInfo{
+					Transport: &brokerv1.RuntimeConnectionInfo_Tcp{
+						Tcp: &brokerv1.RuntimeTransportTCP{Address: execConfig.Address},
+					},
+				},
+			})
+		}
+		broker := broker.NewFixedBroker(syslog.Named("broker"), broker.Config{Executors: executors})
 
 		srv := grpc.NewServer()
 		executorv1.RegisterExecutorServer(srv, executor)
@@ -203,11 +247,11 @@ func makeLogFile(prefix string, ts time.Time) (string, error) {
 	logPath := filepath.Join(logDirectory, fmt.Sprintf("%s%s.log", prefix, tsStr))
 	file, err := os.OpenFile(logPath, os.O_RDONLY|os.O_CREATE, 0666)
 	if err != nil {
-		return "", fmt.Errorf("error creating knita log file: %w", err)
+		return "", fmt.Errorf("error creating log file: %w", err)
 	}
 	err = file.Close()
 	if err != nil {
-		return "", fmt.Errorf("error closing knita log file: %w", err)
+		return "", fmt.Errorf("error closing log file: %w", err)
 	}
 	return logPath, nil
 }
@@ -230,9 +274,10 @@ func getSocketPath() (string, error) {
 }
 
 func main() {
+	buildCMD.PersistentFlags().BoolP("verbose", "v", false, "Set to true to disable the pretty build UI and send the build log directly to stdout")
+	buildCMD.PersistentFlags().StringP("config", "c", defaultConfigFilePath, "Specify a custom path to the Knita config file")
 	rootCmd.AddCommand(buildCMD)
 	rootCmd.AddCommand(versionCMD)
-	buildCMD.PersistentFlags().BoolP("verbose", "v", false, "Set to true to disable the pretty build UI and send the build log directly to stdout")
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}

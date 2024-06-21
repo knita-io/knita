@@ -3,3 +3,4 @@ test/sdk/python/output
 test/sdk/go/output
 .idea
 .DS_Store
+.scratch

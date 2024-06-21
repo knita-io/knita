@@ -1,3 +1,4 @@
+from google.protobuf import duration_pb2 as _duration_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
@@ -15,21 +16,37 @@ RUNTIME_UNSPECIFIED: RuntimeType
 RUNTIME_HOST: RuntimeType
 RUNTIME_DOCKER: RuntimeType
 
+class ExecutorInfo(_message.Message):
+    __slots__ = ("name",)
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    name: str
+    def __init__(self, name: _Optional[str] = ...) -> None: ...
+
+class SystemInfo(_message.Message):
+    __slots__ = ("os", "arch", "total_cpu_cores", "total_memory")
+    OS_FIELD_NUMBER: _ClassVar[int]
+    ARCH_FIELD_NUMBER: _ClassVar[int]
+    TOTAL_CPU_CORES_FIELD_NUMBER: _ClassVar[int]
+    TOTAL_MEMORY_FIELD_NUMBER: _ClassVar[int]
+    os: str
+    arch: str
+    total_cpu_cores: int
+    total_memory: int
+    def __init__(self, os: _Optional[str] = ..., arch: _Optional[str] = ..., total_cpu_cores: _Optional[int] = ..., total_memory: _Optional[int] = ...) -> None: ...
+
 class IntrospectRequest(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...
 
 class IntrospectResponse(_message.Message):
-    __slots__ = ("os", "arch", "ncpu", "labels")
-    OS_FIELD_NUMBER: _ClassVar[int]
-    ARCH_FIELD_NUMBER: _ClassVar[int]
-    NCPU_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ("sys_info", "executor_info", "labels")
+    SYS_INFO_FIELD_NUMBER: _ClassVar[int]
+    EXECUTOR_INFO_FIELD_NUMBER: _ClassVar[int]
     LABELS_FIELD_NUMBER: _ClassVar[int]
-    os: str
-    arch: str
-    ncpu: int
+    sys_info: SystemInfo
+    executor_info: ExecutorInfo
     labels: _containers.RepeatedScalarFieldContainer[str]
-    def __init__(self, os: _Optional[str] = ..., arch: _Optional[str] = ..., ncpu: _Optional[int] = ..., labels: _Optional[_Iterable[str]] = ...) -> None: ...
+    def __init__(self, sys_info: _Optional[_Union[SystemInfo, _Mapping]] = ..., executor_info: _Optional[_Union[ExecutorInfo, _Mapping]] = ..., labels: _Optional[_Iterable[str]] = ...) -> None: ...
 
 class OpenRequest(_message.Message):
     __slots__ = ("build_id", "runtime_id", "opts")
@@ -42,10 +59,24 @@ class OpenRequest(_message.Message):
     def __init__(self, build_id: _Optional[str] = ..., runtime_id: _Optional[str] = ..., opts: _Optional[_Union[Opts, _Mapping]] = ...) -> None: ...
 
 class OpenResponse(_message.Message):
-    __slots__ = ("work_directory",)
+    __slots__ = ("work_directory", "sys_info")
     WORK_DIRECTORY_FIELD_NUMBER: _ClassVar[int]
+    SYS_INFO_FIELD_NUMBER: _ClassVar[int]
     work_directory: str
-    def __init__(self, work_directory: _Optional[str] = ...) -> None: ...
+    sys_info: SystemInfo
+    def __init__(self, work_directory: _Optional[str] = ..., sys_info: _Optional[_Union[SystemInfo, _Mapping]] = ...) -> None: ...
+
+class HeartbeatRequest(_message.Message):
+    __slots__ = ("runtime_id",)
+    RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
+    runtime_id: str
+    def __init__(self, runtime_id: _Optional[str] = ...) -> None: ...
+
+class HeartbeatResponse(_message.Message):
+    __slots__ = ("extended_by",)
+    EXTENDED_BY_FIELD_NUMBER: _ClassVar[int]
+    extended_by: _duration_pb2.Duration
+    def __init__(self, extended_by: _Optional[_Union[_duration_pb2.Duration, _Mapping]] = ...) -> None: ...
 
 class Opts(_message.Message):
     __slots__ = ("type", "labels", "tags", "host", "docker")
@@ -236,11 +267,16 @@ class EventsRequest(_message.Message):
     def __init__(self, runtime_id: _Optional[str] = ...) -> None: ...
 
 class Event(_message.Message):
-    __slots__ = ("build_id", "group_name", "sequence", "runtime_opened", "exec_start", "exec_end", "import_start", "import_end", "export_start", "export_end", "stdout", "stderr", "runtime_closed")
+    __slots__ = ("build_id", "group_name", "sequence", "runtime_tender_start", "runtime_tender_end", "runtime_settlement_start", "runtime_settlement_end", "runtime_open_start", "runtime_open_end", "exec_start", "exec_end", "import_start", "import_end", "export_start", "export_end", "stdout", "stderr", "runtime_close_start", "runtime_close_end")
     BUILD_ID_FIELD_NUMBER: _ClassVar[int]
     GROUP_NAME_FIELD_NUMBER: _ClassVar[int]
     SEQUENCE_FIELD_NUMBER: _ClassVar[int]
-    RUNTIME_OPENED_FIELD_NUMBER: _ClassVar[int]
+    RUNTIME_TENDER_START_FIELD_NUMBER: _ClassVar[int]
+    RUNTIME_TENDER_END_FIELD_NUMBER: _ClassVar[int]
+    RUNTIME_SETTLEMENT_START_FIELD_NUMBER: _ClassVar[int]
+    RUNTIME_SETTLEMENT_END_FIELD_NUMBER: _ClassVar[int]
+    RUNTIME_OPEN_START_FIELD_NUMBER: _ClassVar[int]
+    RUNTIME_OPEN_END_FIELD_NUMBER: _ClassVar[int]
     EXEC_START_FIELD_NUMBER: _ClassVar[int]
     EXEC_END_FIELD_NUMBER: _ClassVar[int]
     IMPORT_START_FIELD_NUMBER: _ClassVar[int]
@@ -249,11 +285,17 @@ class Event(_message.Message):
     EXPORT_END_FIELD_NUMBER: _ClassVar[int]
     STDOUT_FIELD_NUMBER: _ClassVar[int]
     STDERR_FIELD_NUMBER: _ClassVar[int]
-    RUNTIME_CLOSED_FIELD_NUMBER: _ClassVar[int]
+    RUNTIME_CLOSE_START_FIELD_NUMBER: _ClassVar[int]
+    RUNTIME_CLOSE_END_FIELD_NUMBER: _ClassVar[int]
     build_id: str
     group_name: str
     sequence: int
-    runtime_opened: RuntimeOpenedEvent
+    runtime_tender_start: RuntimeTenderStartEvent
+    runtime_tender_end: RuntimeTenderEndEvent
+    runtime_settlement_start: RuntimeSettlementStartEvent
+    runtime_settlement_end: RuntimeSettlementEndEvent
+    runtime_open_start: RuntimeOpenStartEvent
+    runtime_open_end: RuntimeOpenEndEvent
     exec_start: ExecStartEvent
     exec_end: ExecEndEvent
     import_start: ImportStartEvent
@@ -262,10 +304,47 @@ class Event(_message.Message):
     export_end: ExportEndEvent
     stdout: StdoutEvent
     stderr: StderrEvent
-    runtime_closed: RuntimeClosedEvent
-    def __init__(self, build_id: _Optional[str] = ..., group_name: _Optional[str] = ..., sequence: _Optional[int] = ..., runtime_opened: _Optional[_Union[RuntimeOpenedEvent, _Mapping]] = ..., exec_start: _Optional[_Union[ExecStartEvent, _Mapping]] = ..., exec_end: _Optional[_Union[ExecEndEvent, _Mapping]] = ..., import_start: _Optional[_Union[ImportStartEvent, _Mapping]] = ..., import_end: _Optional[_Union[ImportEndEvent, _Mapping]] = ..., export_start: _Optional[_Union[ExportStartEvent, _Mapping]] = ..., export_end: _Optional[_Union[ExportEndEvent, _Mapping]] = ..., stdout: _Optional[_Union[StdoutEvent, _Mapping]] = ..., stderr: _Optional[_Union[StderrEvent, _Mapping]] = ..., runtime_closed: _Optional[_Union[RuntimeClosedEvent, _Mapping]] = ...) -> None: ...
+    runtime_close_start: RuntimeCloseStartEvent
+    runtime_close_end: RuntimeCloseEndEvent
+    def __init__(self, build_id: _Optional[str] = ..., group_name: _Optional[str] = ..., sequence: _Optional[int] = ..., runtime_tender_start: _Optional[_Union[RuntimeTenderStartEvent, _Mapping]] = ..., runtime_tender_end: _Optional[_Union[RuntimeTenderEndEvent, _Mapping]] = ..., runtime_settlement_start: _Optional[_Union[RuntimeSettlementStartEvent, _Mapping]] = ..., runtime_settlement_end: _Optional[_Union[RuntimeSettlementEndEvent, _Mapping]] = ..., runtime_open_start: _Optional[_Union[RuntimeOpenStartEvent, _Mapping]] = ..., runtime_open_end: _Optional[_Union[RuntimeOpenEndEvent, _Mapping]] = ..., exec_start: _Optional[_Union[ExecStartEvent, _Mapping]] = ..., exec_end: _Optional[_Union[ExecEndEvent, _Mapping]] = ..., import_start: _Optional[_Union[ImportStartEvent, _Mapping]] = ..., import_end: _Optional[_Union[ImportEndEvent, _Mapping]] = ..., export_start: _Optional[_Union[ExportStartEvent, _Mapping]] = ..., export_end: _Optional[_Union[ExportEndEvent, _Mapping]] = ..., stdout: _Optional[_Union[StdoutEvent, _Mapping]] = ..., stderr: _Optional[_Union[StderrEvent, _Mapping]] = ..., runtime_close_start: _Optional[_Union[RuntimeCloseStartEvent, _Mapping]] = ..., runtime_close_end: _Optional[_Union[RuntimeCloseEndEvent, _Mapping]] = ...) -> None: ...
 
-class RuntimeOpenedEvent(_message.Message):
+class RuntimeTenderStartEvent(_message.Message):
+    __slots__ = ("build_id", "tender_id", "opts")
+    BUILD_ID_FIELD_NUMBER: _ClassVar[int]
+    TENDER_ID_FIELD_NUMBER: _ClassVar[int]
+    OPTS_FIELD_NUMBER: _ClassVar[int]
+    build_id: str
+    tender_id: str
+    opts: Opts
+    def __init__(self, build_id: _Optional[str] = ..., tender_id: _Optional[str] = ..., opts: _Optional[_Union[Opts, _Mapping]] = ...) -> None: ...
+
+class RuntimeTenderEndEvent(_message.Message):
+    __slots__ = ("tender_id",)
+    TENDER_ID_FIELD_NUMBER: _ClassVar[int]
+    tender_id: str
+    def __init__(self, tender_id: _Optional[str] = ...) -> None: ...
+
+class RuntimeSettlementStartEvent(_message.Message):
+    __slots__ = ("tender_id", "contract_id", "runtime_id")
+    TENDER_ID_FIELD_NUMBER: _ClassVar[int]
+    CONTRACT_ID_FIELD_NUMBER: _ClassVar[int]
+    RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
+    tender_id: str
+    contract_id: str
+    runtime_id: str
+    def __init__(self, tender_id: _Optional[str] = ..., contract_id: _Optional[str] = ..., runtime_id: _Optional[str] = ...) -> None: ...
+
+class RuntimeSettlementEndEvent(_message.Message):
+    __slots__ = ("tender_id", "contract_id", "runtime_id")
+    TENDER_ID_FIELD_NUMBER: _ClassVar[int]
+    CONTRACT_ID_FIELD_NUMBER: _ClassVar[int]
+    RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
+    tender_id: str
+    contract_id: str
+    runtime_id: str
+    def __init__(self, tender_id: _Optional[str] = ..., contract_id: _Optional[str] = ..., runtime_id: _Optional[str] = ...) -> None: ...
+
+class RuntimeOpenStartEvent(_message.Message):
     __slots__ = ("runtime_id", "opts")
     RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
     OPTS_FIELD_NUMBER: _ClassVar[int]
@@ -273,7 +352,19 @@ class RuntimeOpenedEvent(_message.Message):
     opts: Opts
     def __init__(self, runtime_id: _Optional[str] = ..., opts: _Optional[_Union[Opts, _Mapping]] = ...) -> None: ...
 
-class RuntimeClosedEvent(_message.Message):
+class RuntimeOpenEndEvent(_message.Message):
+    __slots__ = ("runtime_id",)
+    RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
+    runtime_id: str
+    def __init__(self, runtime_id: _Optional[str] = ...) -> None: ...
+
+class RuntimeCloseStartEvent(_message.Message):
+    __slots__ = ("runtime_id",)
+    RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
+    runtime_id: str
+    def __init__(self, runtime_id: _Optional[str] = ...) -> None: ...
+
+class RuntimeCloseEndEvent(_message.Message):
     __slots__ = ("runtime_id",)
     RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
     runtime_id: str

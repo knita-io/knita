@@ -30,25 +30,27 @@ type Container interface {
 }
 
 type Manager struct {
-	stream      event.Stream
-	done        func()
-	writer      io.Writer
-	container   *ElementContainer
-	ticker      *time.Ticker
-	exitC       chan struct{}
-	doneC       chan struct{}
-	started     bool
-	mu          sync.Mutex
-	needsUpdate bool
+	stream              event.Stream
+	done                func()
+	writer              io.Writer
+	container           *ElementContainer
+	ticker              *time.Ticker
+	exitC               chan struct{}
+	doneC               chan struct{}
+	started             bool
+	mu                  sync.Mutex
+	needsUpdate         bool
+	runtimeIDToTenderID map[string]string
 }
 
 func NewManager(stream event.Stream) *Manager {
 	ui := &Manager{
-		stream:      stream,
-		writer:      os.Stdout,
-		needsUpdate: true,
-		doneC:       make(chan struct{}),
-		exitC:       make(chan struct{}),
+		stream:              stream,
+		writer:              os.Stdout,
+		needsUpdate:         true,
+		doneC:               make(chan struct{}),
+		exitC:               make(chan struct{}),
+		runtimeIDToTenderID: make(map[string]string),
 	}
 	ui.container = NewElementContainer(ui)
 	return ui
@@ -136,38 +138,52 @@ func (ui *Manager) onEventCallback(event *executorv1.Event) {
 	defer ui.mu.Unlock()
 
 	switch p := event.Payload.(type) {
-	case *executorv1.Event_RuntimeOpened:
-		ui.AddChildElement(NewRuntimeElement(ui, p.RuntimeOpened.RuntimeId, p.RuntimeOpened.Opts))
-	case *executorv1.Event_RuntimeClosed:
-		withElement(ui, p.RuntimeClosed.RuntimeId, func(ele *RuntimeElement) {
+	case *executorv1.Event_RuntimeTenderStart:
+		ui.AddChildElement(NewRuntimeElement(ui, p.RuntimeTenderStart.TenderId, p.RuntimeTenderStart.Opts))
+		withElement(ui, p.RuntimeTenderStart.TenderId, func(ele *RuntimeElement) {
+			ele.StartTendering()
+		})
+	case *executorv1.Event_RuntimeSettlementEnd:
+		ui.runtimeIDToTenderID[p.RuntimeSettlementEnd.RuntimeId] = p.RuntimeSettlementEnd.TenderId
+		withElement(ui, p.RuntimeSettlementEnd.TenderId, func(ele *RuntimeElement) {
+			ele.EndTendering()
+			ele.StartOpening()
+		})
+	case *executorv1.Event_RuntimeOpenEnd:
+		withElement(ui, ui.runtimeIDToTenderID[p.RuntimeOpenEnd.RuntimeId], func(ele *RuntimeElement) {
+			ele.EndOpening()
+		})
+	case *executorv1.Event_RuntimeCloseEnd:
+		withElement(ui, ui.runtimeIDToTenderID[p.RuntimeCloseEnd.RuntimeId], func(ele *RuntimeElement) {
 			ele.Complete("") // TODO would be nice to get the error from a failed runtime
+			delete(ui.runtimeIDToTenderID, p.RuntimeCloseEnd.RuntimeId)
 		})
 	case *executorv1.Event_ExecStart:
-		withElement(ui, p.ExecStart.RuntimeId, func(ele *RuntimeElement) {
+		withElement(ui, ui.runtimeIDToTenderID[p.ExecStart.RuntimeId], func(ele *RuntimeElement) {
 			ele.StartExec()
 			ele.AddChildElement(NewExecElement(ui, p.ExecStart.ExecId, p.ExecStart.Opts))
 		})
 	case *executorv1.Event_ExecEnd:
-		withElement(ui, p.ExecEnd.RuntimeId, func(ele *RuntimeElement) {
+		withElement(ui, ui.runtimeIDToTenderID[p.ExecEnd.RuntimeId], func(ele *RuntimeElement) {
 			ele.EndExec()
 		})
 		withElement(ui, p.ExecEnd.ExecId, func(ele *ExecElement) {
 			ele.Complete(p.ExecEnd.ExitCode, p.ExecEnd.Error)
 		})
 	case *executorv1.Event_ImportStart:
-		withElement(ui, p.ImportStart.RuntimeId, func(ele *RuntimeElement) {
+		withElement(ui, ui.runtimeIDToTenderID[p.ImportStart.RuntimeId], func(ele *RuntimeElement) {
 			ele.StartImport()
 		})
 	case *executorv1.Event_ImportEnd:
-		withElement(ui, p.ImportEnd.RuntimeId, func(ele *RuntimeElement) {
+		withElement(ui, ui.runtimeIDToTenderID[p.ImportEnd.RuntimeId], func(ele *RuntimeElement) {
 			ele.EndImport()
 		})
 	case *executorv1.Event_ExportStart:
-		withElement(ui, p.ExportStart.RuntimeId, func(ele *RuntimeElement) {
+		withElement(ui, ui.runtimeIDToTenderID[p.ExportStart.RuntimeId], func(ele *RuntimeElement) {
 			ele.StartExport()
 		})
 	case *executorv1.Event_ExportEnd:
-		withElement(ui, p.ExportEnd.RuntimeId, func(ele *RuntimeElement) {
+		withElement(ui, ui.runtimeIDToTenderID[p.ExportEnd.RuntimeId], func(ele *RuntimeElement) {
 			ele.EndExport()
 		})
 	case *executorv1.Event_Stdout:

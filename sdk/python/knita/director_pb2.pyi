@@ -14,12 +14,14 @@ class OpenRequest(_message.Message):
     def __init__(self, build_id: _Optional[str] = ..., opts: _Optional[_Union[_executor_pb2.Opts, _Mapping]] = ...) -> None: ...
 
 class OpenResponse(_message.Message):
-    __slots__ = ("runtime_id", "work_directory")
+    __slots__ = ("runtime_id", "work_directory", "sys_info")
     RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
     WORK_DIRECTORY_FIELD_NUMBER: _ClassVar[int]
+    SYS_INFO_FIELD_NUMBER: _ClassVar[int]
     runtime_id: str
     work_directory: str
-    def __init__(self, runtime_id: _Optional[str] = ..., work_directory: _Optional[str] = ...) -> None: ...
+    sys_info: _executor_pb2.SystemInfo
+    def __init__(self, runtime_id: _Optional[str] = ..., work_directory: _Optional[str] = ..., sys_info: _Optional[_Union[_executor_pb2.SystemInfo, _Mapping]] = ...) -> None: ...
 
 class ImportRequest(_message.Message):
     __slots__ = ("runtime_id", "src_path", "dest_path")
@@ -62,14 +64,20 @@ class ExecRequest(_message.Message):
     def __init__(self, runtime_id: _Optional[str] = ..., opts: _Optional[_Union[_executor_pb2.ExecOpts, _Mapping]] = ...) -> None: ...
 
 class ExecEvent(_message.Message):
-    __slots__ = ("exec_end", "stdout", "stderr")
+    __slots__ = ("exec_start", "exec_end", "stdout", "stderr")
+    EXEC_START_FIELD_NUMBER: _ClassVar[int]
     EXEC_END_FIELD_NUMBER: _ClassVar[int]
     STDOUT_FIELD_NUMBER: _ClassVar[int]
     STDERR_FIELD_NUMBER: _ClassVar[int]
+    exec_start: ExecStartEvent
     exec_end: ExecEndEvent
     stdout: ExecStdoutEvent
     stderr: ExecStderrEvent
-    def __init__(self, exec_end: _Optional[_Union[ExecEndEvent, _Mapping]] = ..., stdout: _Optional[_Union[ExecStdoutEvent, _Mapping]] = ..., stderr: _Optional[_Union[ExecStderrEvent, _Mapping]] = ...) -> None: ...
+    def __init__(self, exec_start: _Optional[_Union[ExecStartEvent, _Mapping]] = ..., exec_end: _Optional[_Union[ExecEndEvent, _Mapping]] = ..., stdout: _Optional[_Union[ExecStdoutEvent, _Mapping]] = ..., stderr: _Optional[_Union[ExecStderrEvent, _Mapping]] = ...) -> None: ...
+
+class ExecStartEvent(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
 
 class ExecEndEvent(_message.Message):
     __slots__ = ("error", "exit_code")

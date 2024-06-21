@@ -22,6 +22,7 @@ message OpenRequest {
 message OpenResponse {
   string runtime_id = 1;
   string work_directory = 2;
+  executor.SystemInfo sys_info = 3;
 }
 
 message ImportRequest {
@@ -49,11 +50,14 @@ message ExecRequest {
 
 message ExecEvent {
   oneof payload {
+    ExecStartEvent exec_start = 4;
     ExecEndEvent exec_end = 1;
     ExecStdoutEvent stdout = 2;
     ExecStderrEvent stderr = 3;
   }
 }
+
+message ExecStartEvent {}
 
 message ExecEndEvent {
   string error = 1;

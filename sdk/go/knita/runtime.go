@@ -18,12 +18,18 @@ type Runtime struct {
 	fatalFunc           FatalFunc
 	runtimeID           string
 	remoteWorkDirectory string
+	remoteSysInfo       *executorv1.SystemInfo
 	client              directorv1.DirectorClient
 }
 
 // ID returns the unique ID of the runtime.
 func (c *Runtime) ID() string {
 	return c.runtimeID
+}
+
+// SysInfo returns information about the runtime execution environment.
+func (c *Runtime) SysInfo() *executorv1.SystemInfo {
+	return c.remoteSysInfo
 }
 
 // WorkDirectory returns the fully qualified remote work directory of the runtime.

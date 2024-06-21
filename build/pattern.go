@@ -9,7 +9,6 @@ import (
 	"os"
 	stdexec "os/exec"
 	"regexp"
-	stdruntime "runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -33,7 +32,7 @@ func main() {
 // dockerImage builds the knita/build Docker image that is used by subsequent build targets.
 // This image is versioned based on the content of the Dockerfile, and published to a publicly
 // readable repository. If you're building Knita and need to change this Dockerfile, you will
-// need write permissions to the repo. Open a GitHub issue to discuss.
+// need write permissions to the repository. Open a GitHub issue to discuss.
 func dockerImage(input *JobDockerImageInput) (*JobDockerImageOutput, error) {
 	fingerprint := mustFingerprint("build/docker/Dockerfile")
 	builderDockerImage := fmt.Sprintf("ghcr.io/knita-io/knita/build:%s", fingerprint)
@@ -149,17 +148,23 @@ func build(input *JobBuildInput) (*JobBuildOutput, error) {
 			wg.Add(1)
 			go func(os string, arch string) {
 				defer wg.Done()
+				ldFLagsEnv := fmt.Sprintf("LDFLAGS=-X github.com/knita-io/knita/internal/version.Version=%s", input.Version.KnitaVersion)
 				container.MustExec(
-					exec.WithTag(knita.NameTag, fmt.Sprintf("knita-%[1]s-%[2]s", os, arch)),
-					exec.WithEnv(fmt.Sprintf("LDFLAGS=-X github.com/knita-io/knita/internal/version.Version=%s", input.Version.KnitaVersion)),
+					exec.WithTag(knita.NameTag, fmt.Sprintf("knita-cli-%[1]s-%[2]s", os, arch)),
+					exec.WithEnv(ldFLagsEnv),
 					exec.WithCommand("/bin/bash", "-c",
 						fmt.Sprintf("cd cmd/knita && env GOOS=%[1]s GOARCH=%[2]s go build -ldflags \"$LDFLAGS\" -o ../../build/output/cli/knita-%[1]s-%[2]s .", os, arch)))
+				container.MustExec(
+					exec.WithTag(knita.NameTag, fmt.Sprintf("knita-executor-%[1]s-%[2]s", os, arch)),
+					exec.WithEnv(ldFLagsEnv),
+					exec.WithCommand("/bin/bash", "-c",
+						fmt.Sprintf("cd cmd/executor && env GOOS=%[1]s GOARCH=%[2]s go build -ldflags \"$LDFLAGS\" -o ../../build/output/executor/knita-executor-%[1]s-%[2]s .", os, arch)))
 			}(target.os, arch)
 		}
 	}
 	wg.Wait()
-	container.MustExport("build/output/cli/knita-*", "build/output/cli/")
-
+	container.MustExport("build/output/cli/*", "")
+	container.MustExport("build/output/executor/*", "")
 	return &JobBuildOutput{}, nil
 }
 
@@ -171,7 +176,7 @@ func testSDK(input *JobTestSDKInput) (*JobTestSDKOutput, error) {
 		runtime.WithType(runtime.TypeHost))
 	defer host.MustClose()
 
-	host.MustImport(fmt.Sprintf("build/output/cli/knita-%s-%s", stdruntime.GOOS, stdruntime.GOARCH), "knita")
+	host.MustImport(fmt.Sprintf("build/output/cli/knita-%s-%s", host.SysInfo().Os, host.SysInfo().Arch), "knita")
 	host.MustImport("go.mod", "")
 	host.MustImport("api", "")
 	host.MustImport("test", "")

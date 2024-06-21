@@ -68,4 +68,4 @@ class Client:
 
         req = director_pb2.OpenRequest(build_id=self.__build_id, opts=opts)
         res = self.__director_stub.Open(req)
-        return runtime.Runtime(res.runtime_id, res.work_directory, self.__director_stub)
+        return runtime.Runtime(res.runtime_id, res.work_directory, res.sys_info, self.__director_stub)

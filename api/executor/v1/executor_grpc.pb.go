@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 const (
 	Executor_Introspect_FullMethodName = "/executor.Executor/Introspect"
 	Executor_Open_FullMethodName       = "/executor.Executor/Open"
+	Executor_Heartbeat_FullMethodName  = "/executor.Executor/Heartbeat"
 	Executor_Exec_FullMethodName       = "/executor.Executor/Exec"
 	Executor_Import_FullMethodName     = "/executor.Executor/Import"
 	Executor_Export_FullMethodName     = "/executor.Executor/Export"
@@ -34,6 +35,7 @@ const (
 type ExecutorClient interface {
 	Introspect(ctx context.Context, in *IntrospectRequest, opts ...grpc.CallOption) (*IntrospectResponse, error)
 	Open(ctx context.Context, in *OpenRequest, opts ...grpc.CallOption) (*OpenResponse, error)
+	Heartbeat(ctx context.Context, in *HeartbeatRequest, opts ...grpc.CallOption) (*HeartbeatResponse, error)
 	Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (*ExecResponse, error)
 	Import(ctx context.Context, opts ...grpc.CallOption) (Executor_ImportClient, error)
 	Export(ctx context.Context, in *ExportRequest, opts ...grpc.CallOption) (Executor_ExportClient, error)
@@ -61,6 +63,15 @@ func (c *executorClient) Introspect(ctx context.Context, in *IntrospectRequest, 
 func (c *executorClient) Open(ctx context.Context, in *OpenRequest, opts ...grpc.CallOption) (*OpenResponse, error) {
 	out := new(OpenResponse)
 	err := c.cc.Invoke(ctx, Executor_Open_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *executorClient) Heartbeat(ctx context.Context, in *HeartbeatRequest, opts ...grpc.CallOption) (*HeartbeatResponse, error) {
+	out := new(HeartbeatResponse)
+	err := c.cc.Invoke(ctx, Executor_Heartbeat_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -189,6 +200,7 @@ func (x *executorEventsClient) Recv() (*Event, error) {
 type ExecutorServer interface {
 	Introspect(context.Context, *IntrospectRequest) (*IntrospectResponse, error)
 	Open(context.Context, *OpenRequest) (*OpenResponse, error)
+	Heartbeat(context.Context, *HeartbeatRequest) (*HeartbeatResponse, error)
 	Exec(context.Context, *ExecRequest) (*ExecResponse, error)
 	Import(Executor_ImportServer) error
 	Export(*ExportRequest, Executor_ExportServer) error
@@ -206,6 +218,9 @@ func (UnimplementedExecutorServer) Introspect(context.Context, *IntrospectReques
 }
 func (UnimplementedExecutorServer) Open(context.Context, *OpenRequest) (*OpenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Open not implemented")
+}
+func (UnimplementedExecutorServer) Heartbeat(context.Context, *HeartbeatRequest) (*HeartbeatResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Heartbeat not implemented")
 }
 func (UnimplementedExecutorServer) Exec(context.Context, *ExecRequest) (*ExecResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Exec not implemented")
@@ -267,6 +282,24 @@ func _Executor_Open_Handler(srv interface{}, ctx context.Context, dec func(inter
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ExecutorServer).Open(ctx, req.(*OpenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Executor_Heartbeat_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HeartbeatRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExecutorServer).Heartbeat(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Executor_Heartbeat_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ExecutorServer).Heartbeat(ctx, req.(*HeartbeatRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -389,6 +422,10 @@ var Executor_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Open",
 			Handler:    _Executor_Open_Handler,
+		},
+		{
+			MethodName: "Heartbeat",
+			Handler:    _Executor_Heartbeat_Handler,
 		},
 		{
 			MethodName: "Exec",

@@ -31,7 +31,8 @@ if _version_not_supported:
 
 
 class ExecutorStub(object):
-    """Missing associated documentation comment in .proto file."""
+    """TODO split into executor and runtime services?
+    """
 
     def __init__(self, channel):
         """Constructor.
@@ -48,6 +49,11 @@ class ExecutorStub(object):
                 '/executor.Executor/Open',
                 request_serializer=executor_dot_v1_dot_executor__pb2.OpenRequest.SerializeToString,
                 response_deserializer=executor_dot_v1_dot_executor__pb2.OpenResponse.FromString,
+                _registered_method=True)
+        self.Heartbeat = channel.unary_unary(
+                '/executor.Executor/Heartbeat',
+                request_serializer=executor_dot_v1_dot_executor__pb2.HeartbeatRequest.SerializeToString,
+                response_deserializer=executor_dot_v1_dot_executor__pb2.HeartbeatResponse.FromString,
                 _registered_method=True)
         self.Exec = channel.unary_unary(
                 '/executor.Executor/Exec',
@@ -77,7 +83,8 @@ class ExecutorStub(object):
 
 
 class ExecutorServicer(object):
-    """Missing associated documentation comment in .proto file."""
+    """TODO split into executor and runtime services?
+    """
 
     def Introspect(self, request, context):
         """Missing associated documentation comment in .proto file."""
@@ -86,6 +93,12 @@ class ExecutorServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def Open(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Heartbeat(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -134,6 +147,11 @@ def add_ExecutorServicer_to_server(servicer, server):
                     request_deserializer=executor_dot_v1_dot_executor__pb2.OpenRequest.FromString,
                     response_serializer=executor_dot_v1_dot_executor__pb2.OpenResponse.SerializeToString,
             ),
+            'Heartbeat': grpc.unary_unary_rpc_method_handler(
+                    servicer.Heartbeat,
+                    request_deserializer=executor_dot_v1_dot_executor__pb2.HeartbeatRequest.FromString,
+                    response_serializer=executor_dot_v1_dot_executor__pb2.HeartbeatResponse.SerializeToString,
+            ),
             'Exec': grpc.unary_unary_rpc_method_handler(
                     servicer.Exec,
                     request_deserializer=executor_dot_v1_dot_executor__pb2.ExecRequest.FromString,
@@ -167,7 +185,8 @@ def add_ExecutorServicer_to_server(servicer, server):
 
  # This class is part of an EXPERIMENTAL API.
 class Executor(object):
-    """Missing associated documentation comment in .proto file."""
+    """TODO split into executor and runtime services?
+    """
 
     @staticmethod
     def Introspect(request,
@@ -213,6 +232,33 @@ class Executor(object):
             '/executor.Executor/Open',
             executor_dot_v1_dot_executor__pb2.OpenRequest.SerializeToString,
             executor_dot_v1_dot_executor__pb2.OpenResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Heartbeat(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/executor.Executor/Heartbeat',
+            executor_dot_v1_dot_executor__pb2.HeartbeatRequest.SerializeToString,
+            executor_dot_v1_dot_executor__pb2.HeartbeatResponse.FromString,
             options,
             channel_credentials,
             insecure,

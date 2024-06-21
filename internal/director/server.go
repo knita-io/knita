@@ -47,7 +47,8 @@ func (s *Server) Open(ctx context.Context, req *directorv1.OpenRequest) (*direct
 	s.mu.Unlock()
 	return &directorv1.OpenResponse{
 		RuntimeId:     runtime.ID(),
-		WorkDirectory: runtime.WorkDirectory(""), // TODO do we need an equiv of this function in the SDK client?
+		WorkDirectory: runtime.WorkDirectory(""),
+		SysInfo:       runtime.SysInfo(),
 	}, nil
 }
 
@@ -66,6 +67,11 @@ func (s *Server) Exec(req *directorv1.ExecRequest, stream directorv1.Director_Ex
 		}
 		execEvent := &directorv1.ExecEvent{}
 		switch p := event.Payload.(type) {
+		case *executorv1.Event_ExecStart:
+			if p.ExecStart.RuntimeId != runtime.ID() || p.ExecStart.ExecId != execID {
+				return
+			}
+			execEvent.Payload = &directorv1.ExecEvent_ExecStart{ExecStart: &directorv1.ExecStartEvent{}}
 		case *executorv1.Event_Stdout:
 			src, ok := p.Stdout.Source.Source.(*executorv1.LogEventSource_Exec)
 			if !ok || src.Exec.RuntimeId != runtime.ID() || src.Exec.ExecId != execID || src.Exec.System {
@@ -93,7 +99,7 @@ func (s *Server) Exec(req *directorv1.ExecRequest, stream directorv1.Director_Ex
 		default:
 			return
 		}
-		s.syslog.Debugf("Forwarded exec event to SDK: %#v", execEvent)
+		s.syslog.Debugf("Forwarded exec event to SDK: %T", execEvent.Payload)
 		if err := stream.Send(execEvent); err != nil {
 			s.syslog.Errorf("Exec stream closed early: %v", err)
 			closed = true
