@@ -30,6 +30,10 @@ jobs:
           DOCKER_API_VERSION: 1.43
           KNITA_BUILD_DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
           KNITA_BUILD_TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
+          KNITA_CLI_LOG_PATH: /tmp/knita-cli.log
+      - name: Capture Knita CLI log
+        if: success() || failure()
+        run: cat /tmp/knita-cli.log
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

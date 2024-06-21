@@ -59,11 +59,20 @@ var buildCMD = &cobra.Command{
 			verbose = true
 		}
 
-		directorLogPath, err := makeLogFile("knita-", now)
-		if err != nil {
-			return fmt.Errorf("error making log file: %w", err)
+		var (
+			err        error
+			cliLogPath string
+		)
+		cliLogPathOverride := os.Getenv("KNITA_CLI_LOG_PATH")
+		if cliLogPathOverride != "" {
+			cliLogPath = cliLogPathOverride
+		} else {
+			cliLogPath, err = makeLogFile("knita-", now)
+			if err != nil {
+				return fmt.Errorf("error making cli log file: %w", err)
+			}
 		}
-		syslog, err := makeLogger(directorLogPath)
+		syslog, err := makeLogger(cliLogPath)
 		if err != nil {
 			return nil
 		}
@@ -238,11 +247,11 @@ func makeLogFile(prefix string, ts time.Time) (string, error) {
 	logPath := filepath.Join(logDirectory, fmt.Sprintf("%s%s.log", prefix, tsStr))
 	file, err := os.OpenFile(logPath, os.O_RDONLY|os.O_CREATE, 0666)
 	if err != nil {
-		return "", fmt.Errorf("error creating knita log file: %w", err)
+		return "", fmt.Errorf("error creating log file: %w", err)
 	}
 	err = file.Close()
 	if err != nil {
-		return "", fmt.Errorf("error closing knita log file: %w", err)
+		return "", fmt.Errorf("error closing log file: %w", err)
 	}
 	return logPath, nil
 }

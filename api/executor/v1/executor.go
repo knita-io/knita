@@ -82,8 +82,8 @@ func (e *Event_RuntimeCloseEnd) GetRuntimeId() string {
 	return e.RuntimeCloseEnd.GetRuntimeId()
 }
 
-func NewRuntimeTenderStartEvent(tenderID string, opts *Opts) *Event {
-	return &Event{Payload: &Event_RuntimeTenderStart{RuntimeTenderStart: &RuntimeTenderStartEvent{TenderId: tenderID, Opts: opts}}}
+func NewRuntimeTenderStartEvent(buildID string, tenderID string, opts *Opts) *Event {
+	return &Event{Payload: &Event_RuntimeTenderStart{RuntimeTenderStart: &RuntimeTenderStartEvent{BuildId: buildID, TenderId: tenderID, Opts: opts}}}
 }
 
 func NewRuntimeTenderEndEvent(tenderID string) *Event {

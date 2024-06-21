@@ -99,7 +99,7 @@ func (s *Server) Exec(req *directorv1.ExecRequest, stream directorv1.Director_Ex
 		default:
 			return
 		}
-		s.syslog.Debugf("Forwarded exec event to SDK: %#v", execEvent)
+		s.syslog.Debugf("Forwarded exec event to SDK: %T", execEvent.Payload)
 		if err := stream.Send(execEvent); err != nil {
 			s.syslog.Errorf("Exec stream closed early: %v", err)
 			closed = true

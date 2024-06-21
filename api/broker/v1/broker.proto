@@ -12,8 +12,9 @@ service RuntimeBroker {
 }
 
 message RuntimeTender {
-  string tender_id = 1;
-  executor.Opts opts = 2;
+  string build_id = 1;
+  string tender_id = 2;
+  executor.Opts opts = 3;
 }
 
 message RuntimeContracts {

@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
-	stdruntime "runtime"
-	"sync"
-
 	"github.com/moby/moby/client"
 	"github.com/pbnjay/memory"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"io"
+	stdruntime "runtime"
+	"sync"
+	"time"
 
 	executorv1 "github.com/knita-io/knita/api/executor/v1"
 	"github.com/knita-io/knita/internal/event"
@@ -18,6 +19,8 @@ import (
 	"github.com/knita-io/knita/internal/executor/runtime/docker"
 	"github.com/knita-io/knita/internal/executor/runtime/host"
 )
+
+const deadlineExtensionPeriod = time.Minute * 2
 
 type runtimeFactory func(ctx context.Context, buildID string, runtimeID string, opts *executorv1.Opts) (runtime.Runtime, error)
 
@@ -34,17 +37,22 @@ type Executor struct {
 	stream         event.Stream
 	runtimeFactory runtimeFactory
 	config         Config
+	ctx            context.Context
+	ctxCancel      context.CancelFunc
 
 	mu          sync.RWMutex
 	supervisors map[string]*RuntimeSupervisor
 }
 
 func NewExecutor(log *zap.SugaredLogger, config Config, stream event.Stream) *Executor {
+	ctx, cancel := context.WithCancel(context.Background())
 	log = log.Named("executor")
-	return &Executor{
+	exec := &Executor{
 		log:         log,
 		stream:      stream,
 		config:      config,
+		ctx:         ctx,
+		ctxCancel:   cancel,
 		supervisors: map[string]*RuntimeSupervisor{},
 		runtimeFactory: func(ctx context.Context, buildID string, runtimeID string, opts *executorv1.Opts) (runtime.Runtime, error) {
 			switch opts.Type {
@@ -70,6 +78,8 @@ func NewExecutor(log *zap.SugaredLogger, config Config, stream event.Stream) *Ex
 			}
 		},
 	}
+	go exec.watchdog()
+	return exec
 }
 
 func (s *Executor) Events(req *executorv1.EventsRequest, stream executorv1.Executor_EventsServer) error {
@@ -161,6 +171,19 @@ func (s *Executor) Introspect(ctx context.Context, req *executorv1.IntrospectReq
 	}, nil
 }
 
+func (s *Executor) Heartbeat(ctx context.Context, req *executorv1.HeartbeatRequest) (*executorv1.HeartbeatResponse, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	supervisor, ok := s.supervisors[req.RuntimeId]
+	if !ok {
+		return nil, fmt.Errorf("error supervisor not found")
+	}
+	deadline := time.Now().Add(deadlineExtensionPeriod)
+	supervisor.SetDeadline(deadline)
+	s.log.Debugf("Extended runtime %s deadline to: %s", supervisor.runtime.ID(), deadline)
+	return &executorv1.HeartbeatResponse{ExtendedBy: durationpb.New(deadlineExtensionPeriod)}, nil
+}
+
 func (s *Executor) Open(ctx context.Context, req *executorv1.OpenRequest) (*executorv1.OpenResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -181,7 +204,9 @@ func (s *Executor) Open(ctx context.Context, req *executorv1.OpenRequest) (*exec
 		return nil, fmt.Errorf("error starting runtime: %w", err)
 	}
 	rt.Log().Publish(executorv1.NewRuntimeOpenEndEvent(req.RuntimeId))
-	s.supervisors[req.RuntimeId] = NewRuntimeSupervisor(s.log, s.stream, rt)
+	supervisor := NewRuntimeSupervisor(s.log, s.stream, rt)
+	supervisor.SetDeadline(time.Now().Add(deadlineExtensionPeriod))
+	s.supervisors[req.RuntimeId] = supervisor
 	s.log.Infow("Initialized runtime", "runtime_id", req.RuntimeId)
 	return &executorv1.OpenResponse{WorkDirectory: rt.Directory(), SysInfo: s.getSysInfo()}, nil
 }
@@ -201,6 +226,7 @@ func (s *Executor) Close(ctx context.Context, req *executorv1.CloseRequest) (*ex
 }
 
 func (s *Executor) Stop() {
+	s.ctxCancel()
 	var runtimeIDs []string
 	s.mu.Lock()
 	for id, _ := range s.supervisors {
@@ -228,5 +254,38 @@ func (s *Executor) getSysInfo() *executorv1.SystemInfo {
 		Arch:          stdruntime.GOARCH,
 		TotalCpuCores: uint32(stdruntime.NumCPU()),
 		TotalMemory:   memory.TotalMemory(),
+	}
+}
+
+func (s *Executor) watchdog() {
+	for {
+		s.mu.Lock()
+		var (
+			deadlinedRuntimes []string
+			wakeupIn          = deadlineExtensionPeriod
+		)
+		for id, supervisor := range s.supervisors {
+			deadline := supervisor.GetDeadline()
+			if deadline.Before(time.Now()) {
+				deadlinedRuntimes = append(deadlinedRuntimes, id)
+				continue
+			}
+			deadlineIn := (time.Now().Sub(deadline)) + 1
+			if deadlineIn < wakeupIn {
+				wakeupIn = deadlineIn
+			}
+		}
+		s.mu.Unlock()
+
+		for _, id := range deadlinedRuntimes {
+			s.log.Warnf("Runtime %s has deadlined", id)
+			s.Close(context.Background(), &executorv1.CloseRequest{RuntimeId: id})
+		}
+
+		select {
+		case <-s.ctx.Done():
+			return
+		case <-time.After(wakeupIn):
+		}
 	}
 }

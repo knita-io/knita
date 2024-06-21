@@ -45,8 +45,8 @@ func (c *BuildController) Runtime(ctx context.Context, opts *executorv1.Opts) (*
 	log := c.syslog
 	log.Infow("Requesting runtime from broker...", "opts", opts)
 	tenderID := uuid.New().String()
-	tender := &brokerv1.RuntimeTender{TenderId: tenderID, Opts: opts}
-	c.log.Publish(executorv1.NewRuntimeTenderStartEvent(tenderID, opts))
+	tender := &brokerv1.RuntimeTender{BuildId: c.buildID, TenderId: tenderID, Opts: opts}
+	c.log.Publish(executorv1.NewRuntimeTenderStartEvent(c.buildID, tenderID, opts))
 	runtimeRes, err := c.broker.Tender(ctx, tender)
 	if err != nil {
 		return nil, fmt.Errorf("error brokering runtime: %w", err)
@@ -91,7 +91,7 @@ func (c *BuildController) Runtime(ctx context.Context, opts *executorv1.Opts) (*
 	}
 	log.Info("Connected to executor")
 	r := newRuntime(c.syslog, c.log, c.buildID, rid, rClient, c.localWorkFS, contract.Opts)
-	err = r.start(ctx)
+	err = r.Start(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error creating runtime: %w", err)
 	}

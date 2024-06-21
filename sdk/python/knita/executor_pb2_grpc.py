@@ -50,6 +50,11 @@ class ExecutorStub(object):
                 request_serializer=executor_dot_v1_dot_executor__pb2.OpenRequest.SerializeToString,
                 response_deserializer=executor_dot_v1_dot_executor__pb2.OpenResponse.FromString,
                 _registered_method=True)
+        self.Heartbeat = channel.unary_unary(
+                '/executor.Executor/Heartbeat',
+                request_serializer=executor_dot_v1_dot_executor__pb2.HeartbeatRequest.SerializeToString,
+                response_deserializer=executor_dot_v1_dot_executor__pb2.HeartbeatResponse.FromString,
+                _registered_method=True)
         self.Exec = channel.unary_unary(
                 '/executor.Executor/Exec',
                 request_serializer=executor_dot_v1_dot_executor__pb2.ExecRequest.SerializeToString,
@@ -88,6 +93,12 @@ class ExecutorServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def Open(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Heartbeat(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -135,6 +146,11 @@ def add_ExecutorServicer_to_server(servicer, server):
                     servicer.Open,
                     request_deserializer=executor_dot_v1_dot_executor__pb2.OpenRequest.FromString,
                     response_serializer=executor_dot_v1_dot_executor__pb2.OpenResponse.SerializeToString,
+            ),
+            'Heartbeat': grpc.unary_unary_rpc_method_handler(
+                    servicer.Heartbeat,
+                    request_deserializer=executor_dot_v1_dot_executor__pb2.HeartbeatRequest.FromString,
+                    response_serializer=executor_dot_v1_dot_executor__pb2.HeartbeatResponse.SerializeToString,
             ),
             'Exec': grpc.unary_unary_rpc_method_handler(
                     servicer.Exec,
@@ -216,6 +232,33 @@ class Executor(object):
             '/executor.Executor/Open',
             executor_dot_v1_dot_executor__pb2.OpenRequest.SerializeToString,
             executor_dot_v1_dot_executor__pb2.OpenResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Heartbeat(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/executor.Executor/Heartbeat',
+            executor_dot_v1_dot_executor__pb2.HeartbeatRequest.SerializeToString,
+            executor_dot_v1_dot_executor__pb2.HeartbeatResponse.FromString,
             options,
             channel_credentials,
             insecure,

@@ -4,10 +4,13 @@ package executor;
 
 option go_package = "github.com/knita-io/knita/api/executor/v1";
 
+import "google/protobuf/duration.proto";
+
 // TODO split into executor and runtime services?
 service Executor {
   rpc Introspect(IntrospectRequest) returns (IntrospectResponse);
   rpc Open(OpenRequest) returns (OpenResponse);
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
   rpc Exec(ExecRequest) returns (ExecResponse);
   rpc Import(stream FileTransfer) returns (ImportResponse);
   rpc Export(ExportRequest) returns (stream FileTransfer);
@@ -42,6 +45,14 @@ message OpenRequest {
 message OpenResponse {
   string work_directory = 1;
   SystemInfo sys_info = 2;
+}
+
+message HeartbeatRequest {
+  string runtime_id = 1;
+}
+
+message HeartbeatResponse {
+  google.protobuf.Duration extended_by = 1;
 }
 
 enum RuntimeType {
@@ -183,8 +194,9 @@ message Event {
 }
 
 message RuntimeTenderStartEvent {
-  string tender_id = 1;
-  Opts opts = 2;
+  string build_id = 1;
+  string tender_id = 2;
+  Opts opts = 3;
 }
 
 message RuntimeTenderEndEvent {
