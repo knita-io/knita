@@ -101,16 +101,16 @@ func generateProtos(client *knita.Client) {
 	golang.MustExec(
 		exec.WithTag("name", "protobuf"),
 		exec.WithCommand("/bin/bash", "-c", `
-            protoc \
-            --proto_path=internal/api \
-            --go_out=internal/api \
-            --go_opt=paths=source_relative \
-            --go-grpc_out=internal/api \
-            --go-grpc_opt=paths=source_relative \
-            broker/v1/broker.proto \
-            executor/v1/executor.proto \
-            director/v1/director.proto \
-            observer/v1/observer.proto`))
+                  protoc \
+                  --proto_path=internal/api \
+                  --go_out=internal/api \
+                  --go_opt=paths=source_relative \
+                  --go-grpc_out=internal/api \
+                  --go-grpc_opt=paths=source_relative \
+                  broker/v1/broker.proto \
+                  executor/v1/executor.proto \
+                  director/v1/director.proto \
+                  observer/v1/observer.proto`))
 
 	// Export the generated Golang protobuf models back into the local source tree
 	golang.MustExport("internal/api/**/*.pb.go", "")
@@ -128,7 +128,7 @@ func buildBinaries(client *knita.Client) {
 	golang.MustImport(".", ".")
 
 	// Cross compile the Knita CLI for each target OS and Architecture
-	// NOTE: Matrices can be expressed by using a for loop.
+	// NOTE: Matrices are expressed by using a for loop.
 	for _, target := range []struct {
 		os   string
 		arch []string
