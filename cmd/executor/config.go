@@ -1,8 +1,8 @@
 package main
 
 import (
-	"errors"
 	"fmt"
+	"os"
 
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -14,28 +14,29 @@ type config struct {
 	Labels []string `mapstructure:"labels"`
 }
 
-func getConfig(syslog *zap.SugaredLogger) (*config, error) {
-	v := viper.New()
-	v.SetConfigName(".knita")
-	v.SetConfigType("yaml")
-	v.AddConfigPath("$HOME")
-	v.AutomaticEnv()
-
-	v.SetDefault("bind_address", "127.0.0.1:9091")
-
-	err := v.ReadInConfig()
-	var notFoundErr viper.ConfigFileNotFoundError
-	if err != nil {
-		if errors.As(err, &notFoundErr) {
-			return &config{}, nil
-		}
-		return nil, fmt.Errorf("error reading config file: %w", err)
+func fillDefaultValues(config *config) *config {
+	if config.BindAddress == "" {
+		config.BindAddress = "127.0.0.1:9091"
 	}
-	syslog.Infof("using config file: %s", v.ConfigFileUsed())
+	return config
+}
+
+func getConfig(syslog *zap.SugaredLogger, configFilePath string) (*config, error) {
+	v := viper.New()
+	v.AutomaticEnv()
+	_, err := os.Stat(configFilePath)
+	if err == nil {
+		v.SetConfigFile(configFilePath)
+		err := v.ReadInConfig()
+		if err != nil {
+			return nil, fmt.Errorf("error reading config file: %w", err)
+		}
+		syslog.Infof("using config file: %s", v.ConfigFileUsed())
+	}
 	conf := &config{}
 	err = v.Unmarshal(conf)
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshaling config file: %w", err)
 	}
-	return conf, nil
+	return fillDefaultValues(conf), nil
 }

@@ -69,7 +69,8 @@ var buildCMD = &cobra.Command{
 		}
 		defer syslog.Sync()
 
-		config, err := getConfig(syslog)
+		configFilePath, _ := cmd.Flags().GetString("config")
+		config, err := getConfig(syslog, configFilePath)
 		if err != nil {
 			return err
 		}
@@ -261,9 +262,10 @@ func getSocketPath() (string, error) {
 }
 
 func main() {
+	buildCMD.PersistentFlags().BoolP("verbose", "v", false, "Set to true to disable the pretty build UI and send the build log directly to stdout")
+	buildCMD.PersistentFlags().StringP("config", "c", defaultConfigFilePath, "Specify a custom path to the Knita config file")
 	rootCmd.AddCommand(buildCMD)
 	rootCmd.AddCommand(versionCMD)
-	buildCMD.PersistentFlags().BoolP("verbose", "v", false, "Set to true to disable the pretty build UI and send the build log directly to stdout")
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}

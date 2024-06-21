@@ -15,6 +15,7 @@ import (
 	executorv1 "github.com/knita-io/knita/api/executor/v1"
 	"github.com/knita-io/knita/internal/event"
 	"github.com/knita-io/knita/internal/executor"
+	"github.com/knita-io/knita/internal/server"
 	"github.com/knita-io/knita/internal/version"
 )
 
@@ -29,7 +30,8 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			return nil
 		}
-		config, err := getConfig(syslog)
+		configFilePath, _ := cmd.Flags().GetString("config")
+		config, err := getConfig(syslog, configFilePath)
 		if err != nil {
 			return err
 		}
@@ -44,7 +46,9 @@ var rootCmd = &cobra.Command{
 		executor := executor.NewExecutor(syslog, executor.Config{Labels: config.Labels}, eventBroker)
 		defer executor.Stop()
 
-		srv := grpc.NewServer()
+		srv := grpc.NewServer(
+			grpc.ChainUnaryInterceptor(server.MakeUnaryServerLogInterceptor(syslog.Named("grpc_server"))),
+			grpc.ChainStreamInterceptor(server.MakeStreamServerLogInterceptor(syslog.Named("grpc_server"))))
 		executorv1.RegisterExecutorServer(srv, executor)
 		go func() {
 			err := srv.Serve(listener)
@@ -82,6 +86,7 @@ func makeLogger() (*zap.SugaredLogger, error) {
 }
 
 func main() {
+	rootCmd.PersistentFlags().StringP("config", "c", defaultConfigFilePath, "Specify a custom path to the executor config file")
 	rootCmd.AddCommand(versionCMD)
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
