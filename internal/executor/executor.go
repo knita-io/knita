@@ -21,21 +21,28 @@ import (
 
 type runtimeFactory func(ctx context.Context, buildID string, runtimeID string, opts *executorv1.Opts) (runtime.Runtime, error)
 
+type Config struct {
+	// Labels the executor will advertise to the broker.
+	Labels []string
+}
+
 type Executor struct {
 	executorv1.UnimplementedExecutorServer
 	log            *zap.SugaredLogger
 	stream         event.Stream
 	runtimeFactory runtimeFactory
+	config         Config
 
 	mu          sync.RWMutex
 	supervisors map[string]*RuntimeSupervisor
 }
 
-func NewExecutor(log *zap.SugaredLogger, stream event.Stream) *Executor {
+func NewExecutor(log *zap.SugaredLogger, config Config, stream event.Stream) *Executor {
 	log = log.Named("executor")
 	return &Executor{
 		log:         log,
 		stream:      stream,
+		config:      config,
 		supervisors: map[string]*RuntimeSupervisor{},
 		runtimeFactory: func(ctx context.Context, buildID string, runtimeID string, opts *executorv1.Opts) (runtime.Runtime, error) {
 			switch opts.Type {
@@ -144,10 +151,10 @@ func (s *Executor) Export(req *executorv1.ExportRequest, stream executorv1.Execu
 func (s *Executor) Introspect(ctx context.Context, req *executorv1.IntrospectRequest) (*executorv1.IntrospectResponse, error) {
 	return &executorv1.IntrospectResponse{
 		SysInfo: s.getSysInfo(),
-		Labels: []string{
+		Labels: append([]string{
 			stdruntime.GOOS,
 			stdruntime.GOARCH,
-		},
+		}, s.config.Labels...),
 	}, nil
 }
 

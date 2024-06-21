@@ -23,7 +23,7 @@ var rootCmd = &cobra.Command{
 	Short: "Starts the Knita Executor server",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Silence usage on error once we're inside the RunE function, as
-		// know this must be a valid command invocation at this point.
+		// we know this must be a valid command invocation at this point.
 		cmd.SilenceUsage = true
 		syslog, err := makeLogger()
 		if err != nil {
@@ -41,7 +41,7 @@ var rootCmd = &cobra.Command{
 		defer listener.Close()
 
 		eventBroker := event.NewBroker(syslog)
-		executor := executor.NewExecutor(syslog, eventBroker)
+		executor := executor.NewExecutor(syslog, executor.Config{Labels: config.Labels}, eventBroker)
 		defer executor.Stop()
 
 		srv := grpc.NewServer()

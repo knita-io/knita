@@ -84,7 +84,7 @@ class Runtime:
         return self.__runtime_id
 
     def sys_info(self) -> executor_pb2.SystemInfo:
-        """Returns information about the configuration of the runtime."""
+        """Returns information about the runtime execution environment."""
         return self.__remote_sys_info
 
     def work_directory(self, rel_path: str = None) -> str:

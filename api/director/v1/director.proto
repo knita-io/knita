@@ -50,11 +50,14 @@ message ExecRequest {
 
 message ExecEvent {
   oneof payload {
+    ExecStartEvent exec_start = 4;
     ExecEndEvent exec_end = 1;
     ExecStdoutEvent stdout = 2;
     ExecStderrEvent stderr = 3;
   }
 }
+
+message ExecStartEvent {}
 
 message ExecEndEvent {
   string error = 1;

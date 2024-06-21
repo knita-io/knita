@@ -32,7 +32,7 @@ func main() {
 // dockerImage builds the knita/build Docker image that is used by subsequent build targets.
 // This image is versioned based on the content of the Dockerfile, and published to a publicly
 // readable repository. If you're building Knita and need to change this Dockerfile, you will
-// need write permissions to the repo. Open a GitHub issue to discuss.
+// need write permissions to the repository. Open a GitHub issue to discuss.
 func dockerImage(input *JobDockerImageInput) (*JobDockerImageOutput, error) {
 	fingerprint := mustFingerprint("build/docker/Dockerfile")
 	builderDockerImage := fmt.Sprintf("ghcr.io/knita-io/knita/build:%s", fingerprint)

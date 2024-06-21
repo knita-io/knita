@@ -64,14 +64,20 @@ class ExecRequest(_message.Message):
     def __init__(self, runtime_id: _Optional[str] = ..., opts: _Optional[_Union[_executor_pb2.ExecOpts, _Mapping]] = ...) -> None: ...
 
 class ExecEvent(_message.Message):
-    __slots__ = ("exec_end", "stdout", "stderr")
+    __slots__ = ("exec_start", "exec_end", "stdout", "stderr")
+    EXEC_START_FIELD_NUMBER: _ClassVar[int]
     EXEC_END_FIELD_NUMBER: _ClassVar[int]
     STDOUT_FIELD_NUMBER: _ClassVar[int]
     STDERR_FIELD_NUMBER: _ClassVar[int]
+    exec_start: ExecStartEvent
     exec_end: ExecEndEvent
     stdout: ExecStdoutEvent
     stderr: ExecStderrEvent
-    def __init__(self, exec_end: _Optional[_Union[ExecEndEvent, _Mapping]] = ..., stdout: _Optional[_Union[ExecStdoutEvent, _Mapping]] = ..., stderr: _Optional[_Union[ExecStderrEvent, _Mapping]] = ...) -> None: ...
+    def __init__(self, exec_start: _Optional[_Union[ExecStartEvent, _Mapping]] = ..., exec_end: _Optional[_Union[ExecEndEvent, _Mapping]] = ..., stdout: _Optional[_Union[ExecStdoutEvent, _Mapping]] = ..., stderr: _Optional[_Union[ExecStderrEvent, _Mapping]] = ...) -> None: ...
+
+class ExecStartEvent(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
 
 class ExecEndEvent(_message.Message):
     __slots__ = ("error", "exit_code")

@@ -10,6 +10,8 @@ import (
 
 type config struct {
 	BindAddress string `mapstructure:"bind_address"`
+	// Labels the executor will advertise to the broker.
+	Labels []string `mapstructure:"labels"`
 }
 
 func getConfig(syslog *zap.SugaredLogger) (*config, error) {

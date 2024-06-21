@@ -67,6 +67,11 @@ func (s *Server) Exec(req *directorv1.ExecRequest, stream directorv1.Director_Ex
 		}
 		execEvent := &directorv1.ExecEvent{}
 		switch p := event.Payload.(type) {
+		case *executorv1.Event_ExecStart:
+			if p.ExecStart.RuntimeId != runtime.ID() || p.ExecStart.ExecId != execID {
+				return
+			}
+			execEvent.Payload = &directorv1.ExecEvent_ExecStart{ExecStart: &directorv1.ExecStartEvent{}}
 		case *executorv1.Event_Stdout:
 			src, ok := p.Stdout.Source.Source.(*executorv1.LogEventSource_Exec)
 			if !ok || src.Exec.RuntimeId != runtime.ID() || src.Exec.ExecId != execID || src.Exec.System {

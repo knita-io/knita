@@ -48,7 +48,7 @@ var buildCMD = &cobra.Command{
 	Short: "Executes the specified build pattern",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Silence usage on error once we're inside the RunE function, as
-		// know this must be a valid command invocation at this point.
+		// we know this must be a valid command invocation at this point.
 		cmd.SilenceUsage = true
 
 		now := time.Now()
@@ -117,7 +117,7 @@ var buildCMD = &cobra.Command{
 		}
 		conn, err := grpc.Dial(socket, grpc.WithInsecure(), grpc.WithDialer(dialer))
 		if err != nil {
-			return fmt.Errorf("error dialing local knit socket %s: %w", socket, err)
+			return fmt.Errorf("error dialing local knita socket %s: %w", socket, err)
 		}
 		brokerClient := brokerv1.NewRuntimeBrokerClient(conn)
 		directorSysLog := syslog.Named("embedded_director")
@@ -129,11 +129,11 @@ var buildCMD = &cobra.Command{
 
 		executorSysLog := syslog.Named("embedded_executor")
 		embeddedExecutorEventBroker := event.NewBroker(executorSysLog)
-		executor := executor.NewExecutor(executorSysLog, embeddedExecutorEventBroker)
+		executor := executor.NewExecutor(executorSysLog, executor.Config{Labels: config.LocalExecutor.Labels}, embeddedExecutorEventBroker)
 		defer executor.Stop()
 
 		var executors []*broker.ExecutorConfig
-		if !config.Broker.DisableLocalExecutor {
+		if !config.LocalExecutor.Disabled {
 			executors = append(executors, &broker.ExecutorConfig{
 				Name: "local",
 				Connection: &brokerv1.RuntimeConnectionInfo{

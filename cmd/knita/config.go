@@ -9,13 +9,21 @@ import (
 )
 
 type config struct {
-	Broker localBrokerConfig `mapstructure:"broker"`
+	Broker        localBrokerConfig   `mapstructure:"broker"`
+	LocalExecutor localExecutorConfig `mapstructure:"executor"`
 }
 
 type localBrokerConfig struct {
-	DisableLocalExecutor bool                  `mapstructure:"disable_local_executor"`
-	Executors            []*executorConfig     `mapstructure:"executors"`
-	Upstream             *upstreamBrokerConfig `mapstructure:"upstream"`
+	Executors []*executorConfig     `mapstructure:"executors"`
+	Upstream  *upstreamBrokerConfig `mapstructure:"upstream"`
+}
+
+type localExecutorConfig struct {
+	// Disabled determines if the Knita CLI will run local builds.
+	// If true, a local or upstream broker must be configured.
+	Disabled bool `mapstructure:"disabled"`
+	// Labels the executor will advertise to the broker.
+	Labels []string `mapstructure:"labels"`
 }
 
 type executorConfig struct {

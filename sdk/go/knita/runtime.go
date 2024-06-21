@@ -27,7 +27,7 @@ func (c *Runtime) ID() string {
 	return c.runtimeID
 }
 
-// SysInfo returns information about the configuration of the runtime.
+// SysInfo returns information about the runtime execution environment.
 func (c *Runtime) SysInfo() *executorv1.SystemInfo {
 	return c.remoteSysInfo
 }
