@@ -47,7 +47,8 @@ func (s *Server) Open(ctx context.Context, req *directorv1.OpenRequest) (*direct
 	s.mu.Unlock()
 	return &directorv1.OpenResponse{
 		RuntimeId:     runtime.ID(),
-		WorkDirectory: runtime.WorkDirectory(""), // TODO do we need an equiv of this function in the SDK client?
+		WorkDirectory: runtime.WorkDirectory(""),
+		SysInfo:       runtime.SysInfo(),
 	}, nil
 }
 

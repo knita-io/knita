@@ -33,6 +33,23 @@ func main() {
 			rt := factory()
 			defer rt.MustClose()
 
+			// Verify sysinfo is reported
+			if rt.SysInfo() == nil {
+				log.Fatalf("sysinfo not set")
+			}
+			if rt.SysInfo().Os == "" {
+				log.Fatalf("sysinfo os not set")
+			}
+			if rt.SysInfo().Arch == "" {
+				log.Fatalf("sysinfo arch not set")
+			}
+			if rt.SysInfo().TotalCpuCores <= 0 {
+				log.Fatalf("sysinfo cpu cores not set")
+			}
+			if rt.SysInfo().TotalMemory <= 0 {
+				log.Fatalf("sysinfo memory not set")
+			}
+
 			// Verify files can be imported
 			expectedFilePath := "input/input.txt"
 			buf, err := os.ReadFile(expectedFilePath)

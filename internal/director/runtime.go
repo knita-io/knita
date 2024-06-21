@@ -25,6 +25,7 @@ type Runtime struct {
 	client              executorv1.ExecutorClient
 	eventCancel         context.CancelFunc
 	remoteWorkDirectory string
+	remoteSysInfo       *executorv1.SystemInfo
 }
 
 func newRuntime(
@@ -94,6 +95,7 @@ func (c *Runtime) start(ctx context.Context) error {
 	}
 	c.syslog.Infow("Opened runtime")
 	c.remoteWorkDirectory = openRes.WorkDirectory
+	c.remoteSysInfo = openRes.SysInfo
 	return nil
 }
 
@@ -106,6 +108,10 @@ func (c *Runtime) WorkDirectory(path string) string {
 		return c.remoteWorkDirectory
 	}
 	return filepath.Join(c.remoteWorkDirectory, path)
+}
+
+func (c *Runtime) SysInfo() *executorv1.SystemInfo {
+	return c.remoteSysInfo
 }
 
 func (c *Runtime) Import(ctx context.Context, src string, dest string) error {
@@ -212,8 +218,8 @@ func (c *Runtime) Close(ctx context.Context) error {
 			c.eventCancel()
 			close(doneC)
 		}, event.WithPredicate(func(event *executorv1.Event) bool {
-			closed, ok := event.Payload.(*executorv1.Event_RuntimeClosed)
-			return ok && closed.RuntimeClosed.RuntimeId == c.runtimeID
+			closed, ok := event.Payload.(*executorv1.Event_RuntimeCloseEnd)
+			return ok && closed.RuntimeCloseEnd.RuntimeId == c.runtimeID
 		}))
 		defer done()
 	} else {

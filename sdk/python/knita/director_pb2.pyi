@@ -14,12 +14,14 @@ class OpenRequest(_message.Message):
     def __init__(self, build_id: _Optional[str] = ..., opts: _Optional[_Union[_executor_pb2.Opts, _Mapping]] = ...) -> None: ...
 
 class OpenResponse(_message.Message):
-    __slots__ = ("runtime_id", "work_directory")
+    __slots__ = ("runtime_id", "work_directory", "sys_info")
     RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
     WORK_DIRECTORY_FIELD_NUMBER: _ClassVar[int]
+    SYS_INFO_FIELD_NUMBER: _ClassVar[int]
     runtime_id: str
     work_directory: str
-    def __init__(self, runtime_id: _Optional[str] = ..., work_directory: _Optional[str] = ...) -> None: ...
+    sys_info: _executor_pb2.SystemInfo
+    def __init__(self, runtime_id: _Optional[str] = ..., work_directory: _Optional[str] = ..., sys_info: _Optional[_Union[_executor_pb2.SystemInfo, _Mapping]] = ...) -> None: ...
 
 class ImportRequest(_message.Message):
     __slots__ = ("runtime_id", "src_path", "dest_path")

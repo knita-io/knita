@@ -14,8 +14,20 @@ type RuntimeEvent interface {
 	GetRuntimeId() string
 }
 
-func (e *Event_RuntimeOpened) GetRuntimeId() string {
-	return e.RuntimeOpened.GetRuntimeId()
+func (e *Event_RuntimeSettlementStart) GetRuntimeId() string {
+	return e.RuntimeSettlementStart.GetRuntimeId()
+}
+
+func (e *Event_RuntimeSettlementEnd) GetRuntimeId() string {
+	return e.RuntimeSettlementEnd.GetRuntimeId()
+}
+
+func (e *Event_RuntimeOpenStart) GetRuntimeId() string {
+	return e.RuntimeOpenStart.GetRuntimeId()
+}
+
+func (e *Event_RuntimeOpenEnd) GetRuntimeId() string {
+	return e.RuntimeOpenEnd.GetRuntimeId()
 }
 
 func (e *Event_ExecStart) GetRuntimeId() string {
@@ -62,16 +74,44 @@ func (e *Event_Stderr) GetRuntimeId() string {
 	return ""
 }
 
-func (e *Event_RuntimeClosed) GetRuntimeId() string {
-	return e.RuntimeClosed.GetRuntimeId()
+func (e *Event_RuntimeCloseStart) GetRuntimeId() string {
+	return e.RuntimeCloseStart.GetRuntimeId()
 }
 
-func NewRuntimeOpenedEvent(runtimeID string, opts *Opts) *Event {
-	return &Event{Payload: &Event_RuntimeOpened{RuntimeOpened: &RuntimeOpenedEvent{RuntimeId: runtimeID, Opts: opts}}}
+func (e *Event_RuntimeCloseEnd) GetRuntimeId() string {
+	return e.RuntimeCloseEnd.GetRuntimeId()
 }
 
-func NewRuntimeClosedEvent(runtimeID string) *Event {
-	return &Event{Payload: &Event_RuntimeClosed{RuntimeClosed: &RuntimeClosedEvent{RuntimeId: runtimeID}}}
+func NewRuntimeTenderStartEvent(tenderID string, opts *Opts) *Event {
+	return &Event{Payload: &Event_RuntimeTenderStart{RuntimeTenderStart: &RuntimeTenderStartEvent{TenderId: tenderID, Opts: opts}}}
+}
+
+func NewRuntimeTenderEndEvent(tenderID string) *Event {
+	return &Event{Payload: &Event_RuntimeTenderEnd{RuntimeTenderEnd: &RuntimeTenderEndEvent{TenderId: tenderID}}}
+}
+
+func NewRuntimeSettlementStartEvent(tenderID string, contractID string, runtimeID string) *Event {
+	return &Event{Payload: &Event_RuntimeSettlementStart{RuntimeSettlementStart: &RuntimeSettlementStartEvent{TenderId: tenderID, ContractId: contractID, RuntimeId: runtimeID}}}
+}
+
+func NewRuntimeSettlementEndEvent(tenderID string, contractID string, runtimeID string) *Event {
+	return &Event{Payload: &Event_RuntimeSettlementEnd{RuntimeSettlementEnd: &RuntimeSettlementEndEvent{TenderId: tenderID, ContractId: contractID, RuntimeId: runtimeID}}}
+}
+
+func NewRuntimeOpenStartEvent(runtimeID string, opts *Opts) *Event {
+	return &Event{Payload: &Event_RuntimeOpenStart{RuntimeOpenStart: &RuntimeOpenStartEvent{RuntimeId: runtimeID, Opts: opts}}}
+}
+
+func NewRuntimeOpenEndEvent(runtimeID string) *Event {
+	return &Event{Payload: &Event_RuntimeOpenEnd{RuntimeOpenEnd: &RuntimeOpenEndEvent{RuntimeId: runtimeID}}}
+}
+
+func NewRuntimeCloseStartEvent(runtimeID string) *Event {
+	return &Event{Payload: &Event_RuntimeCloseStart{RuntimeCloseStart: &RuntimeCloseStartEvent{RuntimeId: runtimeID}}}
+}
+
+func NewRuntimeCloseEndEvent(runtimeID string) *Event {
+	return &Event{Payload: &Event_RuntimeCloseEnd{RuntimeCloseEnd: &RuntimeCloseEndEvent{RuntimeId: runtimeID}}}
 }
 
 func NewExecStartEvent(runtimeID string, execID string, opts *ExecOpts) *Event {

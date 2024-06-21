@@ -31,7 +31,8 @@ if _version_not_supported:
 
 
 class ExecutorStub(object):
-    """Missing associated documentation comment in .proto file."""
+    """TODO split into executor and runtime services?
+    """
 
     def __init__(self, channel):
         """Constructor.
@@ -77,7 +78,8 @@ class ExecutorStub(object):
 
 
 class ExecutorServicer(object):
-    """Missing associated documentation comment in .proto file."""
+    """TODO split into executor and runtime services?
+    """
 
     def Introspect(self, request, context):
         """Missing associated documentation comment in .proto file."""
@@ -167,7 +169,8 @@ def add_ExecutorServicer_to_server(servicer, server):
 
  # This class is part of an EXPERIMENTAL API.
 class Executor(object):
-    """Missing associated documentation comment in .proto file."""
+    """TODO split into executor and runtime services?
+    """
 
     @staticmethod
     def Introspect(request,

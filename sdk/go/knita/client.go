@@ -143,6 +143,7 @@ func (c *Client) RuntimeWithContext(ctx context.Context, opts ...runtime.Opt) (*
 		client:              c.client,
 		runtimeID:           res.RuntimeId,
 		remoteWorkDirectory: res.WorkDirectory,
+		remoteSysInfo:       res.SysInfo,
 	}, nil
 }
 

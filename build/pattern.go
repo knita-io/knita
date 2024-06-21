@@ -9,7 +9,6 @@ import (
 	"os"
 	stdexec "os/exec"
 	"regexp"
-	stdruntime "runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -177,7 +176,7 @@ func testSDK(input *JobTestSDKInput) (*JobTestSDKOutput, error) {
 		runtime.WithType(runtime.TypeHost))
 	defer host.MustClose()
 
-	host.MustImport(fmt.Sprintf("build/output/cli/knita-%s-%s", stdruntime.GOOS, stdruntime.GOARCH), "knita")
+	host.MustImport(fmt.Sprintf("build/output/cli/knita-%s-%s", host.SysInfo().Os, host.SysInfo().Arch), "knita")
 	host.MustImport("go.mod", "")
 	host.MustImport("api", "")
 	host.MustImport("test", "")

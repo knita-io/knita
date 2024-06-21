@@ -63,6 +63,10 @@ func (b *FixedBroker) Tender(ctx context.Context, req *brokerv1.RuntimeTender) (
 				ContractId: executor.id,
 				RuntimeId:  uuid.New().String(),
 				Opts:       req.Opts,
+				// TODO: We don't currently enforce any resource limits on Docker containers, so it's
+				//  accurate to just pass the executor host's sys info back as part of the contract, but
+				//  eventually this will need to change.
+				SysInfo: executor.introspection.SysInfo,
 			})
 		}
 	}

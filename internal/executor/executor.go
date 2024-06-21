@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/moby/moby/client"
+	"github.com/pbnjay/memory"
 	"go.uber.org/zap"
 
 	executorv1 "github.com/knita-io/knita/api/executor/v1"
@@ -142,9 +143,7 @@ func (s *Executor) Export(req *executorv1.ExportRequest, stream executorv1.Execu
 
 func (s *Executor) Introspect(ctx context.Context, req *executorv1.IntrospectRequest) (*executorv1.IntrospectResponse, error) {
 	return &executorv1.IntrospectResponse{
-		Os:   stdruntime.GOOS,
-		Arch: stdruntime.GOARCH,
-		Ncpu: uint32(stdruntime.NumCPU()),
+		SysInfo: s.getSysInfo(),
 		Labels: []string{
 			stdruntime.GOOS,
 			stdruntime.GOARCH,
@@ -163,16 +162,18 @@ func (s *Executor) Open(ctx context.Context, req *executorv1.OpenRequest) (*exec
 	if err != nil {
 		return nil, fmt.Errorf("error initializing runtime: %w", err)
 	}
-	rt.Log().Publish(executorv1.NewRuntimeOpenedEvent(req.RuntimeId, req.Opts))
+	rt.Log().Publish(executorv1.NewRuntimeOpenStartEvent(req.RuntimeId, req.Opts))
 	err = rt.Start(ctx)
 	if err != nil {
+		rt.Log().Publish(executorv1.NewRuntimeCloseStartEvent(req.RuntimeId))
 		rt.Close()
-		rt.Log().Publish(executorv1.NewRuntimeClosedEvent(req.RuntimeId))
+		rt.Log().Publish(executorv1.NewRuntimeCloseEndEvent(req.RuntimeId))
 		return nil, fmt.Errorf("error starting runtime: %w", err)
 	}
+	rt.Log().Publish(executorv1.NewRuntimeOpenEndEvent(req.RuntimeId))
 	s.supervisors[req.RuntimeId] = NewRuntimeSupervisor(s.log, s.stream, rt)
 	s.log.Infow("Initialized runtime", "runtime_id", req.RuntimeId)
-	return &executorv1.OpenResponse{WorkDirectory: rt.Directory()}, nil
+	return &executorv1.OpenResponse{WorkDirectory: rt.Directory(), SysInfo: s.getSysInfo()}, nil
 }
 
 func (s *Executor) Close(ctx context.Context, req *executorv1.CloseRequest) (*executorv1.CloseResponse, error) {
@@ -184,8 +185,21 @@ func (s *Executor) Close(ctx context.Context, req *executorv1.CloseRequest) (*ex
 	delete(s.supervisors, req.RuntimeId)
 	s.mu.Unlock()
 	s.log.Infow("Closing runtime", "runtime_id", req.RuntimeId)
-	defer rt.runtime.Log().Publish(executorv1.NewRuntimeClosedEvent(req.RuntimeId))
+	rt.runtime.Log().Publish(executorv1.NewRuntimeCloseStartEvent(req.RuntimeId))
+	defer rt.runtime.Log().Publish(executorv1.NewRuntimeCloseEndEvent(req.RuntimeId))
 	return rt.Close(ctx, req)
+}
+
+func (s *Executor) Stop() {
+	var runtimeIDs []string
+	s.mu.Lock()
+	for id, _ := range s.supervisors {
+		runtimeIDs = append(runtimeIDs, id)
+	}
+	s.mu.Unlock()
+	for _, id := range runtimeIDs {
+		s.Close(context.Background(), &executorv1.CloseRequest{RuntimeId: id})
+	}
 }
 
 func (s *Executor) getSupervisor(id string) (*RuntimeSupervisor, error) {
@@ -198,14 +212,11 @@ func (s *Executor) getSupervisor(id string) (*RuntimeSupervisor, error) {
 	return supervisor, nil
 }
 
-func (s *Executor) Stop() {
-	var runtimeIDs []string
-	s.mu.Lock()
-	for id, _ := range s.supervisors {
-		runtimeIDs = append(runtimeIDs, id)
-	}
-	s.mu.Unlock()
-	for _, id := range runtimeIDs {
-		s.Close(context.Background(), &executorv1.CloseRequest{RuntimeId: id})
+func (s *Executor) getSysInfo() *executorv1.SystemInfo {
+	return &executorv1.SystemInfo{
+		Os:            stdruntime.GOOS,
+		Arch:          stdruntime.GOARCH,
+		TotalCpuCores: uint32(stdruntime.NumCPU()),
+		TotalMemory:   memory.TotalMemory(),
 	}
 }

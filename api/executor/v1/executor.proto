@@ -4,6 +4,7 @@ package executor;
 
 option go_package = "github.com/knita-io/knita/api/executor/v1";
 
+// TODO split into executor and runtime services?
 service Executor {
   rpc Introspect(IntrospectRequest) returns (IntrospectResponse);
   rpc Open(OpenRequest) returns (OpenResponse);
@@ -14,12 +15,17 @@ service Executor {
   rpc Events(EventsRequest) returns (stream Event);
 }
 
+message SystemInfo  {
+  string os = 2;
+  string arch = 3;
+  uint32 total_cpu_cores = 4;
+  uint64 total_memory = 5;
+}
+
 message IntrospectRequest {}
 message IntrospectResponse{
-  string os = 1;
-  string arch = 2;
-  uint32 ncpu = 4;
-  repeated string labels = 3;
+  SystemInfo sys_info = 1;
+  repeated string labels = 2;
 }
 
 message OpenRequest {
@@ -30,6 +36,7 @@ message OpenRequest {
 
 message OpenResponse {
   string work_directory = 1;
+  SystemInfo sys_info = 2;
 }
 
 enum RuntimeType {
@@ -148,28 +155,64 @@ message EventsRequest {
 
 message Event {
   string build_id = 1;
-  string group_name = 3;
-  uint64 sequence = 4;
+  string group_name = 2;
+  uint64 sequence = 3;
   oneof payload {
-    RuntimeOpenedEvent runtime_opened = 5;
-    ExecStartEvent exec_start = 6;
-    ExecEndEvent exec_end = 7;
-    ImportStartEvent import_start = 8;
-    ImportEndEvent import_end = 9;
-    ExportStartEvent export_start = 10;
-    ExportEndEvent export_end = 11;
-    StdoutEvent stdout = 12;
-    StderrEvent stderr = 13;
-    RuntimeClosedEvent runtime_closed = 14;
+    RuntimeTenderStartEvent runtime_tender_start = 4;
+    RuntimeTenderEndEvent runtime_tender_end = 5;
+    RuntimeSettlementStartEvent runtime_settlement_start = 6;
+    RuntimeSettlementEndEvent runtime_settlement_end = 7;
+    RuntimeOpenStartEvent runtime_open_start = 8;
+    RuntimeOpenEndEvent runtime_open_end = 9;
+    ExecStartEvent exec_start = 10;
+    ExecEndEvent exec_end = 11;
+    ImportStartEvent import_start = 12;
+    ImportEndEvent import_end = 13;
+    ExportStartEvent export_start = 14;
+    ExportEndEvent export_end = 15;
+    StdoutEvent stdout = 16;
+    StderrEvent stderr = 17;
+    RuntimeCloseStartEvent runtime_close_start = 18;
+    RuntimeCloseEndEvent runtime_close_end = 19;
   }
 }
 
-message RuntimeOpenedEvent {
+message RuntimeTenderStartEvent {
+  string tender_id = 1;
+  Opts opts = 2;
+}
+
+message RuntimeTenderEndEvent {
+  string tender_id = 1;
+  // TODO contracts (need events to be in their own package to avoid circular dependency on broker)
+}
+
+message RuntimeSettlementStartEvent {
+  string tender_id = 1;
+  string contract_id = 2;
+  string runtime_id = 3;
+}
+
+message RuntimeSettlementEndEvent {
+  string tender_id = 1;
+  string contract_id = 2;
+  string runtime_id = 3;
+}
+
+message RuntimeOpenStartEvent {
   string runtime_id = 1;
   Opts opts = 2;
 }
 
-message RuntimeClosedEvent {
+message RuntimeOpenEndEvent {
+  string runtime_id = 1;
+}
+
+message RuntimeCloseStartEvent {
+  string runtime_id = 1;
+}
+
+message RuntimeCloseEndEvent {
   string runtime_id = 1;
 }
 

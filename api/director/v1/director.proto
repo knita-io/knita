@@ -22,6 +22,7 @@ message OpenRequest {
 message OpenResponse {
   string runtime_id = 1;
   string work_directory = 2;
+  executor.SystemInfo sys_info = 3;
 }
 
 message ImportRequest {

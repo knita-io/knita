@@ -43,24 +43,25 @@ func (c *BuildController) Log() *Log {
 func (c *BuildController) Runtime(ctx context.Context, opts *executorv1.Opts) (*Runtime, error) {
 	log := c.syslog
 	log.Infow("Requesting runtime from broker...", "opts", opts)
-	runtimeRes, err := c.broker.Tender(ctx, &brokerv1.RuntimeTender{
-		TenderId: uuid.New().String(),
-		Opts:     opts,
-	})
+	tenderID := uuid.New().String()
+	c.log.Publish(executorv1.NewRuntimeTenderStartEvent(tenderID, opts))
+	runtimeRes, err := c.broker.Tender(ctx, &brokerv1.RuntimeTender{TenderId: tenderID, Opts: opts})
 	if err != nil {
 		return nil, fmt.Errorf("error brokering runtime: %w", err)
 	}
+	c.log.Publish(executorv1.NewRuntimeTenderEndEvent(tenderID))
 	if len(runtimeRes.Contracts) == 0 {
 		return nil, fmt.Errorf("error no runtime contracts received; unable to locate suitable executor to host runtime")
 	}
 	contract := runtimeRes.Contracts[0]
 	rid := contract.RuntimeId
 	log.Infow("Selected runtime contract", "contract_id", contract.ContractId)
-
+	c.log.Publish(executorv1.NewRuntimeSettlementStartEvent(tenderID, contract.ContractId, rid))
 	settlementRes, err := c.broker.Settle(ctx, contract)
 	if err != nil {
 		return nil, fmt.Errorf("error settling contract: %w", err)
 	}
+	c.log.Publish(executorv1.NewRuntimeSettlementEndEvent(tenderID, contract.ContractId, rid))
 	log.Infow("Settled runtime contract", "contract_id", contract.ContractId)
 	log = log.With("runtime_id", rid)
 

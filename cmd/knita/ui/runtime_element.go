@@ -14,23 +14,25 @@ import (
 type RuntimeElement struct {
 	*ElementContainer
 	ui             *Manager
-	runtimeID      string
+	tenderID       string
 	opts           *executorv1.Opts
 	height         int
 	message        string
 	complete       bool
 	err            string
+	tendering      bool
+	opening        bool
 	currentExecs   int
 	currentImports int
 	currentExports int
 }
 
-func NewRuntimeElement(ui *Manager, runtimeID string, opts *executorv1.Opts) *RuntimeElement {
-	return &RuntimeElement{ui: ui, runtimeID: runtimeID, opts: opts, height: 1, ElementContainer: NewElementContainer(ui)}
+func NewRuntimeElement(ui *Manager, tenderID string, opts *executorv1.Opts) *RuntimeElement {
+	return &RuntimeElement{ui: ui, tenderID: tenderID, opts: opts, height: 1, ElementContainer: NewElementContainer(ui)}
 }
 
 func (e *RuntimeElement) ID() string {
-	return e.runtimeID
+	return e.tenderID
 }
 
 func (e *RuntimeElement) Update(fc int) {
@@ -42,7 +44,7 @@ func (e *RuntimeElement) Height() int {
 }
 
 func (e *RuntimeElement) Render(writer io.Writer, width int) {
-	displayName := e.runtimeID
+	displayName := e.tenderID
 	if e.opts.Tags != nil {
 		name, ok := e.opts.Tags["name"]
 		if ok {
@@ -58,6 +60,12 @@ func (e *RuntimeElement) Render(writer io.Writer, width int) {
 		}
 	} else {
 		var states []string
+		if e.tendering {
+			states = append(states, "locating")
+		}
+		if e.opening {
+			states = append(states, "provisioning")
+		}
 		if e.currentExecs > 0 {
 			states = append(states, "executing")
 		}
@@ -78,6 +86,26 @@ func (e *RuntimeElement) Render(writer io.Writer, width int) {
 	tput.ClearLine(writer)
 	fmt.Fprint(writer, text)
 	e.ElementContainer.Render(writer, width)
+}
+
+func (e *RuntimeElement) StartTendering() {
+	e.tendering = true
+	e.ui.notifyUpdate()
+}
+
+func (e *RuntimeElement) EndTendering() {
+	e.tendering = false
+	e.ui.notifyUpdate()
+}
+
+func (e *RuntimeElement) StartOpening() {
+	e.opening = true
+	e.ui.notifyUpdate()
+}
+
+func (e *RuntimeElement) EndOpening() {
+	e.opening = false
+	e.ui.notifyUpdate()
 }
 
 func (e *RuntimeElement) StartExec() {

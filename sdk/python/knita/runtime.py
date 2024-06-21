@@ -64,11 +64,13 @@ class Runtime:
     """
     __runtime_id: str
     __remote_work_directory: str
+    __remote_sys_info: executor_pb2.SystemInfo
     __director_stub: director_pb2_grpc.DirectorStub
 
-    def __init__(self, runtime_id, remote_work_directory, director_stub):
+    def __init__(self, runtime_id: str, remote_work_directory: str, remote_sys_info: executor_pb2.SystemInfo, director_stub: director_pb2_grpc.DirectorStub):
         self.__runtime_id = runtime_id
         self.__remote_work_directory = remote_work_directory
+        self.__remote_sys_info = remote_sys_info
         self.__director_stub = director_stub
 
     def __enter__(self):
@@ -77,11 +79,15 @@ class Runtime:
     def __exit__(self, *args):
         self.close()
 
-    def id(self):
+    def id(self) -> str:
         """Returns the unique ID of the runtime."""
         return self.__runtime_id
 
-    def work_directory(self, rel_path: str = None):
+    def sys_info(self) -> executor_pb2.SystemInfo:
+        """Returns information about the configuration of the runtime."""
+        return self.__remote_sys_info
+
+    def work_directory(self, rel_path: str = None) -> str:
         """Returns the fully qualified remote work directory of the runtime.
         Specify a relative path to have it joined to the work directory.
         This is helpful when exec'ing commands that reference file paths within the runtime."""
