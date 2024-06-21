@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -68,12 +67,19 @@ func (c *BuildController) Runtime(ctx context.Context, opts *executorv1.Opts) (*
 	var rClient executorv1.ExecutorClient
 	switch trans := settlementRes.ConnectionInfo.Transport.(type) {
 	case *brokerv1.RuntimeConnectionInfo_Unix:
-		dialer := func(addr string, t time.Duration) (net.Conn, error) {
-			return net.Dial("unix", addr)
+		dialer := func(ctx context.Context, addr string) (net.Conn, error) {
+			var d net.Dialer
+			return d.DialContext(ctx, "unix", addr)
 		}
-		conn, err := grpc.Dial(trans.Unix.SocketPath, grpc.WithInsecure(), grpc.WithDialer(dialer), grpc.WithBlock())
+		conn, err := grpc.DialContext(ctx, trans.Unix.SocketPath, grpc.WithInsecure(), grpc.WithContextDialer(dialer), grpc.WithBlock())
 		if err != nil {
-			return nil, fmt.Errorf("error dialing mediator: %w", err)
+			return nil, fmt.Errorf("error dialing executor via unix domain socket: %w", err)
+		}
+		rClient = executorv1.NewExecutorClient(conn)
+	case *brokerv1.RuntimeConnectionInfo_Tcp:
+		conn, err := grpc.DialContext(ctx, trans.Tcp.Address, grpc.WithInsecure(), grpc.WithBlock())
+		if err != nil {
+			return nil, fmt.Errorf("error dialing executor via tcp: %w", err)
 		}
 		rClient = executorv1.NewExecutorClient(conn)
 	default:

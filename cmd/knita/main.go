@@ -69,6 +69,11 @@ var buildCMD = &cobra.Command{
 		}
 		defer syslog.Sync()
 
+		config, err := getConfig(syslog)
+		if err != nil {
+			return err
+		}
+
 		work, err := os.Getwd()
 		if err != nil {
 			return fmt.Errorf("error getting current working directory: %w", err)
@@ -127,7 +132,33 @@ var buildCMD = &cobra.Command{
 		executor := executor.NewExecutor(executorSysLog, embeddedExecutorEventBroker)
 		defer executor.Stop()
 
-		broker := broker.NewLocalBroker(syslog.Named("embedded_broker"), socket)
+		var executors []*broker.ExecutorConfig
+		if !config.Broker.DisableLocalExecutor {
+			executors = append(executors, &broker.ExecutorConfig{
+				Name: "local",
+				Connection: &brokerv1.RuntimeConnectionInfo{
+					Transport: &brokerv1.RuntimeConnectionInfo_Unix{
+						Unix: &brokerv1.RuntimeTransportUnix{SocketPath: socket},
+					},
+				},
+			})
+		} else {
+			syslog.Warnf("Local builds are disabled")
+		}
+		for _, execConfig := range config.Broker.Executors {
+			if execConfig.Disabled {
+				continue
+			}
+			executors = append(executors, &broker.ExecutorConfig{
+				Name: execConfig.Name,
+				Connection: &brokerv1.RuntimeConnectionInfo{
+					Transport: &brokerv1.RuntimeConnectionInfo_Tcp{
+						Tcp: &brokerv1.RuntimeTransportTCP{Address: execConfig.Address},
+					},
+				},
+			})
+		}
+		broker := broker.NewFixedBroker(syslog.Named("embedded_broker"), broker.Config{Executors: executors})
 
 		srv := grpc.NewServer()
 		executorv1.RegisterExecutorServer(srv, executor)

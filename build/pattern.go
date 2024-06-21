@@ -149,17 +149,23 @@ func build(input *JobBuildInput) (*JobBuildOutput, error) {
 			wg.Add(1)
 			go func(os string, arch string) {
 				defer wg.Done()
+				ldFLagsEnv := fmt.Sprintf("LDFLAGS=-X github.com/knita-io/knita/internal/version.Version=%s", input.Version.KnitaVersion)
 				container.MustExec(
-					exec.WithTag(knita.NameTag, fmt.Sprintf("knita-%[1]s-%[2]s", os, arch)),
-					exec.WithEnv(fmt.Sprintf("LDFLAGS=-X github.com/knita-io/knita/internal/version.Version=%s", input.Version.KnitaVersion)),
+					exec.WithTag(knita.NameTag, fmt.Sprintf("knita-cli-%[1]s-%[2]s", os, arch)),
+					exec.WithEnv(ldFLagsEnv),
 					exec.WithCommand("/bin/bash", "-c",
 						fmt.Sprintf("cd cmd/knita && env GOOS=%[1]s GOARCH=%[2]s go build -ldflags \"$LDFLAGS\" -o ../../build/output/cli/knita-%[1]s-%[2]s .", os, arch)))
+				container.MustExec(
+					exec.WithTag(knita.NameTag, fmt.Sprintf("knita-executor-%[1]s-%[2]s", os, arch)),
+					exec.WithEnv(ldFLagsEnv),
+					exec.WithCommand("/bin/bash", "-c",
+						fmt.Sprintf("cd cmd/executor && env GOOS=%[1]s GOARCH=%[2]s go build -ldflags \"$LDFLAGS\" -o ../../build/output/executor/knita-executor-%[1]s-%[2]s .", os, arch)))
 			}(target.os, arch)
 		}
 	}
 	wg.Wait()
-	container.MustExport("build/output/cli/knita-*", "build/output/cli/")
-
+	container.MustExport("build/output/cli/*", "")
+	container.MustExport("build/output/executor/*", "")
 	return &JobBuildOutput{}, nil
 }
 

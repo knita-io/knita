@@ -21,9 +21,10 @@ message RuntimeContracts {
 }
 
 message RuntimeContract {
-  string contract_id = 1;
-  string runtime_id = 2;
-  executor.Opts opts = 3;
+  string tender_id = 1;
+  string contract_id = 2;
+  string runtime_id = 3;
+  executor.Opts opts = 4;
 }
 
 message RuntimeSettlement {
@@ -33,9 +34,14 @@ message RuntimeSettlement {
 message RuntimeConnectionInfo {
   oneof transport {
     RuntimeTransportUnix unix = 1;
+    RuntimeTransportTCP tcp = 2;
   }
 }
 
 message RuntimeTransportUnix {
   string socket_path = 1;
+}
+
+message RuntimeTransportTCP {
+  string address = 1;
 }
