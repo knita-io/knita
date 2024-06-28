@@ -15,7 +15,7 @@ import (
 	"github.com/knita-io/knita/internal/file"
 )
 
-type BuildController struct {
+type Build struct {
 	syslog      *zap.SugaredLogger
 	log         *Log
 	buildID     string
@@ -23,8 +23,8 @@ type BuildController struct {
 	localWorkFS file.WriteFS
 }
 
-func NewBuildController(syslog *zap.SugaredLogger, log *Log, buildID string, broker brokerv1.RuntimeBrokerClient, localWorkFS file.WriteFS) *BuildController {
-	return &BuildController{
+func NewBuild(syslog *zap.SugaredLogger, log *Log, buildID string, broker brokerv1.RuntimeBrokerClient, localWorkFS file.WriteFS) *Build {
+	return &Build{
 		syslog:      syslog.Named("director"),
 		log:         log,
 		buildID:     buildID,
@@ -33,15 +33,18 @@ func NewBuildController(syslog *zap.SugaredLogger, log *Log, buildID string, bro
 	}
 }
 
-func (c *BuildController) BuildID() string {
+// BuildID returns the build ID associated with the Build.
+func (c *Build) BuildID() string {
 	return c.buildID
 }
 
-func (c *BuildController) Log() *Log {
+// Log returns the log associated with the Build.
+func (c *Build) Log() *Log {
 	return c.log
 }
 
-func (c *BuildController) Runtime(ctx context.Context, opts *executorv1.Opts) (*Runtime, error) {
+// Runtime requests a runtime from the broker configured with the given options.
+func (c *Build) Runtime(ctx context.Context, opts *executorv1.Opts) (*Runtime, error) {
 	log := c.syslog
 	log.Infow("Requesting runtime from broker...", "opts", opts)
 	tenderID := uuid.New().String()
@@ -100,7 +103,7 @@ func (c *BuildController) Runtime(ctx context.Context, opts *executorv1.Opts) (*
 
 // makeSelectionReport generates a concise text report about the runtime tender process
 // and results, suitable for inclusion in the build log.
-func (c *BuildController) makeSelectionReport(
+func (c *Build) makeSelectionReport(
 	tender *brokerv1.RuntimeTender,
 	contracts []*brokerv1.RuntimeContract,
 	selectedContractOrNil *brokerv1.RuntimeContract,

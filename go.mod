@@ -9,6 +9,7 @@ require (
 	github.com/chelnak/ysmrr v0.4.0
 	github.com/docker/docker v26.0.0+incompatible
 	github.com/google/uuid v1.6.0
+	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.1.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/mattn/go-isatty v0.0.20
 	github.com/moby/moby v26.0.0+incompatible

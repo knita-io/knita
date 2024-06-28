@@ -15,7 +15,7 @@ import (
 )
 
 type RuntimeSupervisor struct {
-	log       *zap.SugaredLogger
+	syslog    *zap.SugaredLogger
 	stream    event.Stream
 	runtime   runtime.Runtime
 	mu        sync.RWMutex
@@ -23,9 +23,9 @@ type RuntimeSupervisor struct {
 	deadline  time.Time
 }
 
-func NewRuntimeSupervisor(log *zap.SugaredLogger, stream event.Stream, runtime runtime.Runtime) *RuntimeSupervisor {
+func NewRuntimeSupervisor(syslog *zap.SugaredLogger, stream event.Stream, runtime runtime.Runtime) *RuntimeSupervisor {
 	return &RuntimeSupervisor{
-		log:       log.Named("mediator").With("runtime_id", runtime.ID()),
+		syslog:    syslog.Named("mediator").With("runtime_id", runtime.ID()),
 		stream:    stream,
 		runtime:   runtime,
 		importers: map[string]*file.Receiver{},
@@ -56,7 +56,7 @@ func (s *RuntimeSupervisor) Import(req *v1.FileTransfer) error {
 	imp, ok := s.importers[req.FileId]
 	if !ok {
 		// TODO garbage collect imports if the next request never comes?
-		imp = file.NewReceiver(s.log, s.runtime, file.WithRecvCallback(func(header *v1.FileTransferHeader) {
+		imp = file.NewReceiver(s.syslog, s.runtime, file.WithRecvCallback(func(header *v1.FileTransferHeader) {
 			if header.IsDir {
 				s.runtime.Log().Printf("Imported directory src=%s, dest=%s, mode=%s", header.SrcPath, header.DestPath, os.FileMode(header.Mode))
 			} else {
@@ -77,7 +77,7 @@ func (s *RuntimeSupervisor) Import(req *v1.FileTransfer) error {
 }
 
 func (s *RuntimeSupervisor) Export(req *v1.ExportRequest, stream v1.Executor_ExportServer) error {
-	sender := file.NewSender(s.log, s.runtime.ReadFS(), s.runtime.ID(), file.WithSendCallback(func(header *v1.FileTransferHeader) {
+	sender := file.NewSender(s.syslog, s.runtime.ReadFS(), s.runtime.ID(), file.WithSendCallback(func(header *v1.FileTransferHeader) {
 		if header.IsDir {
 			s.runtime.Log().Printf("Exported directory src=%s, dest=%s, mode=%s", header.SrcPath, header.DestPath, os.FileMode(header.Mode))
 		} else {

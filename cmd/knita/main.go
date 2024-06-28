@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
+	"github.com/knita-io/knita/internal/broker/fixed"
+	"github.com/knita-io/knita/internal/server"
 	"io"
 	"log"
 	"net"
@@ -21,7 +24,6 @@ import (
 	directorv1 "github.com/knita-io/knita/api/director/v1"
 	executorv1 "github.com/knita-io/knita/api/executor/v1"
 	"github.com/knita-io/knita/cmd/knita/ui"
-	"github.com/knita-io/knita/internal/broker"
 	"github.com/knita-io/knita/internal/director"
 	"github.com/knita-io/knita/internal/event"
 	"github.com/knita-io/knita/internal/executor"
@@ -134,7 +136,7 @@ var buildCMD = &cobra.Command{
 		directorEventBroker := event.NewBroker(directorSysLog)
 		directorLog := director.NewLog(directorEventBroker, buildID)
 		defer directorLog.Close()
-		controller := director.NewBuildController(directorSysLog, directorLog, buildID, brokerClient, file.WriteDirFS(work))
+		controller := director.NewBuild(directorSysLog, directorLog, buildID, brokerClient, file.WriteDirFS(work))
 		directorServer := director.NewServer(directorSysLog, directorEventBroker, controller)
 		executorSysLog := syslog.Named("executor")
 		embeddedExecutorName, _ := os.Hostname()
@@ -142,12 +144,12 @@ var buildCMD = &cobra.Command{
 			embeddedExecutorName = "knita-exec-local"
 		}
 		embeddedExecutorEventBroker := event.NewBroker(executorSysLog)
-		executor := executor.NewExecutor(executorSysLog, executor.Config{Name: embeddedExecutorName, Labels: config.LocalExecutor.Labels}, embeddedExecutorEventBroker)
+		executor := executor.NewServer(executorSysLog, executor.Config{Name: embeddedExecutorName, Labels: config.LocalExecutor.Labels}, embeddedExecutorEventBroker)
 		defer executor.Stop()
 
-		var executors []*broker.ExecutorConfig
+		var executors []*fixed.ExecutorConfig
 		if !config.LocalExecutor.Disabled {
-			executors = append(executors, &broker.ExecutorConfig{
+			executors = append(executors, &fixed.ExecutorConfig{
 				Name: "local",
 				Connection: &brokerv1.RuntimeConnectionInfo{
 					Transport: &brokerv1.RuntimeConnectionInfo_Unix{
@@ -162,7 +164,7 @@ var buildCMD = &cobra.Command{
 			if execConfig.Disabled {
 				continue
 			}
-			executors = append(executors, &broker.ExecutorConfig{
+			executors = append(executors, &fixed.ExecutorConfig{
 				Name: execConfig.Name,
 				Connection: &brokerv1.RuntimeConnectionInfo{
 					Transport: &brokerv1.RuntimeConnectionInfo_Tcp{
@@ -171,9 +173,15 @@ var buildCMD = &cobra.Command{
 				},
 			})
 		}
-		broker := broker.NewFixedBroker(syslog.Named("broker"), broker.Config{Executors: executors})
+		broker := fixed.NewServer(syslog.Named("broker"), fixed.Config{Executors: executors})
 
-		srv := grpc.NewServer()
+		srv := grpc.NewServer(
+			grpc.ChainUnaryInterceptor(
+				recovery.UnaryServerInterceptor(),
+				server.MakeUnaryServerLogInterceptor(syslog.Named("grpc"))),
+			grpc.ChainStreamInterceptor(
+				recovery.StreamServerInterceptor(),
+				server.MakeStreamServerLogInterceptor(syslog.Named("grpc"))))
 		executorv1.RegisterExecutorServer(srv, executor)
 		brokerv1.RegisterRuntimeBrokerServer(srv, broker)
 		directorv1.RegisterDirectorServer(srv, directorServer)

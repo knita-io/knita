@@ -23,13 +23,13 @@ type Runtime struct {
 	log       *runtime.Log
 }
 
-func NewRuntime(log *zap.SugaredLogger, buildID string, runtimeID string, stream event.Stream) (*Runtime, error) {
+func NewRuntime(syslog *zap.SugaredLogger, buildID string, runtimeID string, stream event.Stream) (*Runtime, error) {
 	baseDir, err := os.MkdirTemp("", "knita-host-*")
 	if err != nil {
 		return nil, fmt.Errorf("error creating runtime base dir: %w", err)
 	}
 	return &Runtime{
-		syslog:    log.Named("local_runtime"),
+		syslog:    syslog.Named("local_runtime"),
 		runtimeID: runtimeID,
 		baseDir:   baseDir,
 		WriteFS:   file.WriteDirFS(baseDir),

@@ -1,4 +1,4 @@
-package broker
+package fixed
 
 import (
 	"context"
@@ -32,8 +32,8 @@ type executorState struct {
 	introspection *executorv1.IntrospectResponse
 }
 
-// FixedBroker brokers runtimes across a fixed (at run time) set of well-known remote executors.
-type FixedBroker struct {
+// Server brokers runtimes across a fixed (at run time) set of well-known remote executors.
+type Server struct {
 	brokerv1.UnimplementedRuntimeBrokerServer
 	syslog        *zap.SugaredLogger
 	config        Config
@@ -41,15 +41,20 @@ type FixedBroker struct {
 	executorsByID map[string]*executorState
 }
 
-func NewFixedBroker(syslog *zap.SugaredLogger, config Config) *FixedBroker {
-	return &FixedBroker{
+// NewServer creates a new instance of the Server struct with the provided logger and config.
+func NewServer(syslog *zap.SugaredLogger, config Config) *Server {
+	return &Server{
 		syslog:        syslog.Named("fixed_broker"),
 		config:        config,
 		executorsByID: make(map[string]*executorState),
 	}
 }
 
-func (b *FixedBroker) Tender(ctx context.Context, req *brokerv1.RuntimeTender) (*brokerv1.RuntimeContracts, error) {
+// Tender brokers a runtime contract based on the provided runtime tender.
+func (b *Server) Tender(ctx context.Context, req *brokerv1.RuntimeTender) (*brokerv1.RuntimeContracts, error) {
+	if err := validateRuntimeTender(req); err != nil {
+		return nil, err
+	}
 	b.initOnce.Do(b.init)
 	syslog := b.syslog.With("tender_id", req.TenderId)
 	syslog.Infow("Brokering runtime contract...")
@@ -75,7 +80,11 @@ func (b *FixedBroker) Tender(ctx context.Context, req *brokerv1.RuntimeTender) (
 	return &brokerv1.RuntimeContracts{Contracts: contracts}, nil
 }
 
-func (b *FixedBroker) Settle(ctx context.Context, req *brokerv1.RuntimeContract) (*brokerv1.RuntimeSettlement, error) {
+// Settle settles the contract identified by the provided runtime contract.
+func (b *Server) Settle(ctx context.Context, req *brokerv1.RuntimeContract) (*brokerv1.RuntimeSettlement, error) {
+	if err := validateRuntimeContract(req); err != nil {
+		return nil, err
+	}
 	syslog := b.syslog.With("contract_id", req.ContractId)
 	syslog.Infow("Settling contract...")
 	executor, ok := b.executorsByID[req.ContractId]
@@ -87,11 +96,14 @@ func (b *FixedBroker) Settle(ctx context.Context, req *brokerv1.RuntimeContract)
 	return &brokerv1.RuntimeSettlement{ConnectionInfo: executor.config.Connection}, nil
 }
 
-func (b *FixedBroker) canBid(intro *executorv1.IntrospectResponse, tender *brokerv1.RuntimeTender) bool {
+func (b *Server) canBid(intro *executorv1.IntrospectResponse, tender *brokerv1.RuntimeTender) bool {
 	return isSubset(tender.Opts.Labels, intro.Labels)
 }
 
-func (b *FixedBroker) init() {
+// init initializes the server by initializing each executor based on the provided configuration.
+// If there is an error during initialization, it logs a warning message and continues.
+// This method is intended to be called only once during the server's initialization process.
+func (b *Server) init() {
 	b.syslog.Infof("Initializing executors...")
 	for _, execConfig := range b.config.Executors {
 		err := b.initExecutor(execConfig)
@@ -104,7 +116,11 @@ func (b *FixedBroker) init() {
 	}
 }
 
-func (b *FixedBroker) initExecutor(execConfig *ExecutorConfig) error {
+// initExecutor initializes the executor based on the provided configuration.
+// It dials the executor using the connection information, performs an introspection,
+// and stores the executor state in the Server's executorsByID map.
+// It returns an error if there is an issue dialing the executor or introspecting the executor.
+func (b *Server) initExecutor(execConfig *ExecutorConfig) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	client, done, err := b.dialExecutor(ctx, execConfig.Connection)
@@ -126,7 +142,10 @@ func (b *FixedBroker) initExecutor(execConfig *ExecutorConfig) error {
 	return nil
 }
 
-func (b *FixedBroker) dialExecutor(ctx context.Context, connInfo *brokerv1.RuntimeConnectionInfo) (executorv1.ExecutorClient, func(), error) {
+// dialExecutor dials the executor based on the provided connection information.
+// It returns an ExecutorClient and a cleanup function to close the connection.
+// It returns an error if there is an issue dialing the executor.
+func (b *Server) dialExecutor(ctx context.Context, connInfo *brokerv1.RuntimeConnectionInfo) (executorv1.ExecutorClient, func(), error) {
 	switch t := connInfo.Transport.(type) {
 	case *brokerv1.RuntimeConnectionInfo_Unix:
 		dialer := func(ctx context.Context, addr string) (net.Conn, error) {
@@ -147,4 +166,67 @@ func (b *FixedBroker) dialExecutor(ctx context.Context, connInfo *brokerv1.Runti
 	default:
 		return nil, nil, fmt.Errorf("error unsupported connection type: %T", t)
 	}
+}
+
+// validateRuntimeTender validates the fields of a RuntimeTender request.
+// It returns an error if any of the mandatory fields are empty, otherwise returns nil.
+func validateRuntimeTender(req *brokerv1.RuntimeTender) error {
+	if req == nil {
+		return fmt.Errorf("nil request")
+	}
+	if req.TenderId == "" {
+		return fmt.Errorf("empty tender_id")
+	}
+	if req.BuildId == "" {
+		return fmt.Errorf("empty build_id")
+	}
+	if req.Opts == nil {
+		return fmt.Errorf("empty opts")
+	}
+	// NOTE opts are not validated here as the broker client (and possibly the executor that
+	// wins the tender) may be newer than the broker server. The broker server should only
+	// validate inputs strictly needed to complete the tender and otherwise defer to the executor.
+	return nil
+}
+
+// validateRuntimeContract validates the fields of a RuntimeContract request.
+// It returns an error if any of the mandatory fields are empty, otherwise returns nil.
+func validateRuntimeContract(req *brokerv1.RuntimeContract) error {
+	if req == nil {
+		return fmt.Errorf("nil request")
+	}
+	if req.TenderId == "" {
+		return fmt.Errorf("empty tender_id")
+	}
+	if req.ContractId == "" {
+		return fmt.Errorf("empty contract_id")
+	}
+	if req.RuntimeId == "" {
+		return fmt.Errorf("empty runtime_id")
+	}
+	if req.Opts == nil {
+		return fmt.Errorf("empty opts")
+	}
+	return nil
+}
+
+// subset returns true if the first array is completely
+// contained in the second array. There must be at least
+// the same number of duplicate values in second as there
+// are in first.
+func isSubset(first, second []string) bool {
+	set := make(map[string]int)
+	for _, value := range second {
+		set[value] += 1
+	}
+	for _, value := range first {
+		if count, found := set[value]; !found {
+			return false
+		} else if count < 1 {
+			return false
+		} else {
+			set[value] = count - 1
+		}
+	}
+	return true
 }

@@ -73,7 +73,7 @@ func (c *Runtime) SysInfo() *executorv1.SystemInfo {
 }
 
 // Import files and directories from the local filesystem to the remote runtime.
-// Events associated with the import be published to the configured event stream.
+// Events associated with the import will be published to the configured event stream.
 func (c *Runtime) Import(ctx context.Context, src string, dest string) error {
 	if filepath.IsAbs(src) {
 		return fmt.Errorf("error src dir must be relative")
