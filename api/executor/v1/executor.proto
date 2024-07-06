@@ -6,16 +6,15 @@ option go_package = "github.com/knita-io/knita/api/executor/v1";
 
 import "google/protobuf/duration.proto";
 
-// TODO split into executor and runtime services?
 service Executor {
   rpc Introspect(IntrospectRequest) returns (IntrospectResponse);
+  rpc Events(EventsRequest) returns (stream Event);
   rpc Open(OpenRequest) returns (OpenResponse);
   rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
   rpc Exec(ExecRequest) returns (ExecResponse);
   rpc Import(stream FileTransfer) returns (ImportResponse);
   rpc Export(ExportRequest) returns (stream FileTransfer);
   rpc Close(CloseRequest) returns (CloseResponse);
-  rpc Events(EventsRequest) returns (stream Event);
 }
 
 message ExecutorInfo {

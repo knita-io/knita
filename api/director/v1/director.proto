@@ -41,8 +41,6 @@ message ExportRequest {
 
 message ExportResponse {}
 
-message EventsRequest {}
-
 message ExecRequest {
   string runtime_id = 1;
   executor.ExecOpts opts = 2;
@@ -50,19 +48,14 @@ message ExecRequest {
 
 message ExecEvent {
   oneof payload {
-    ExecStartEvent exec_start = 4;
-    ExecEndEvent exec_end = 1;
+    ExecStartEvent exec_start = 1;
     ExecStdoutEvent stdout = 2;
     ExecStderrEvent stderr = 3;
+    ExecEndEvent exec_end = 4;
   }
 }
 
 message ExecStartEvent {}
-
-message ExecEndEvent {
-  string error = 1;
-  int32 exit_code = 2;
-}
 
 message ExecStdoutEvent {
   bytes data = 1;
@@ -70,4 +63,9 @@ message ExecStdoutEvent {
 
 message ExecStderrEvent {
   bytes data = 1;
+}
+
+message ExecEndEvent {
+  string error = 1;
+  int32 exit_code = 2;
 }

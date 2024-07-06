@@ -45,19 +45,20 @@ type Runtime struct {
 	}
 }
 
-func NewRuntime(log *zap.SugaredLogger, buildID string, runtimeID string, stream event.Stream, opts *executorv1.DockerOpts, client *client.Client) (*Runtime, error) {
+func NewRuntime(syslog *zap.SugaredLogger, stream event.Stream, buildID string, runtimeID string, opts *executorv1.DockerOpts, client *client.Client) (*Runtime, error) {
 	baseDir, err := os.MkdirTemp("", "knita-docker-*")
 	if err != nil {
 		return nil, fmt.Errorf("error creating runtime base dir: %w", err)
 	}
+	syslog = syslog.Named("docker_runtime")
 	return &Runtime{
-		syslog:           log.Named("docker_runtime"),
+		syslog:           syslog,
 		runtimeID:        runtimeID,
 		log:              runtime.NewLog(stream, buildID, runtimeID),
 		baseDir:          baseDir,
 		WriteFS:          file.WriteDirFS(baseDir),
 		opts:             opts,
-		containerManager: NewContainerManager(log, client),
+		containerManager: NewContainerManager(syslog, client),
 	}, nil
 }
 

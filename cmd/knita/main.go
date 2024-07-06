@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
+	"github.com/knita-io/knita/internal/broker/fixed"
+	"github.com/knita-io/knita/internal/server"
 	"io"
 	"log"
 	"net"
@@ -21,7 +24,6 @@ import (
 	directorv1 "github.com/knita-io/knita/api/director/v1"
 	executorv1 "github.com/knita-io/knita/api/executor/v1"
 	"github.com/knita-io/knita/cmd/knita/ui"
-	"github.com/knita-io/knita/internal/broker"
 	"github.com/knita-io/knita/internal/director"
 	"github.com/knita-io/knita/internal/event"
 	"github.com/knita-io/knita/internal/executor"
@@ -130,25 +132,20 @@ var buildCMD = &cobra.Command{
 			return fmt.Errorf("error dialing local knita socket %s: %w", socket, err)
 		}
 		brokerClient := brokerv1.NewRuntimeBrokerClient(conn)
-		directorSysLog := syslog.Named("director")
-		directorEventBroker := event.NewBroker(directorSysLog)
-		directorLog := director.NewLog(directorEventBroker, buildID)
-		defer directorLog.Close()
-		controller := director.NewBuildController(directorSysLog, directorLog, buildID, brokerClient, file.WriteDirFS(work))
-		directorServer := director.NewServer(directorSysLog, directorEventBroker, controller)
-		executorSysLog := syslog.Named("executor")
+		buildLog := director.NewLog(event.NewBroker(syslog), buildID)
+		defer buildLog.Close()
+		build := director.NewBuild(syslog, buildLog, buildID, brokerClient, file.WriteDirFS(work))
+		directorServer := director.NewServer(syslog, build)
 		embeddedExecutorName, _ := os.Hostname()
 		if embeddedExecutorName == "" {
 			embeddedExecutorName = "knita-exec-local"
 		}
-		embeddedExecutorEventBroker := event.NewBroker(executorSysLog)
-		executor := executor.NewExecutor(executorSysLog, executor.Config{Name: embeddedExecutorName, Labels: config.LocalExecutor.Labels}, embeddedExecutorEventBroker)
+		executor := executor.NewServer(syslog, executor.Config{Name: embeddedExecutorName, Labels: config.Executors.Local.Labels})
 		defer executor.Stop()
 
-		var executors []*broker.ExecutorConfig
-		if !config.LocalExecutor.Disabled {
-			executors = append(executors, &broker.ExecutorConfig{
-				Name: "local",
+		var executors []*fixed.ExecutorConfig
+		if !config.Executors.Local.Disabled {
+			executors = append(executors, &fixed.ExecutorConfig{
 				Connection: &brokerv1.RuntimeConnectionInfo{
 					Transport: &brokerv1.RuntimeConnectionInfo_Unix{
 						Unix: &brokerv1.RuntimeTransportUnix{SocketPath: socket},
@@ -158,12 +155,11 @@ var buildCMD = &cobra.Command{
 		} else {
 			syslog.Warnf("Local builds are disabled")
 		}
-		for _, execConfig := range config.Broker.Executors {
+		for _, execConfig := range config.Executors.Remote {
 			if execConfig.Disabled {
 				continue
 			}
-			executors = append(executors, &broker.ExecutorConfig{
-				Name: execConfig.Name,
+			executors = append(executors, &fixed.ExecutorConfig{
 				Connection: &brokerv1.RuntimeConnectionInfo{
 					Transport: &brokerv1.RuntimeConnectionInfo_Tcp{
 						Tcp: &brokerv1.RuntimeTransportTCP{Address: execConfig.Address},
@@ -171,9 +167,15 @@ var buildCMD = &cobra.Command{
 				},
 			})
 		}
-		broker := broker.NewFixedBroker(syslog.Named("broker"), broker.Config{Executors: executors})
+		broker := fixed.NewServer(syslog, fixed.Config{Executors: executors})
 
-		srv := grpc.NewServer()
+		srv := grpc.NewServer(
+			grpc.ChainUnaryInterceptor(
+				recovery.UnaryServerInterceptor(),
+				server.MakeUnaryServerLogInterceptor(syslog.Named("grpc"))),
+			grpc.ChainStreamInterceptor(
+				recovery.StreamServerInterceptor(),
+				server.MakeStreamServerLogInterceptor(syslog.Named("grpc"))))
 		executorv1.RegisterExecutorServer(srv, executor)
 		brokerv1.RegisterRuntimeBrokerServer(srv, broker)
 		directorv1.RegisterDirectorServer(srv, directorServer)
@@ -188,12 +190,12 @@ var buildCMD = &cobra.Command{
 
 		var uiManager *ui.Manager
 		if !verbose {
-			uiManager = ui.NewManager(directorEventBroker)
+			uiManager = ui.NewManager(buildLog.Stream())
 			uiManager.Start()
 			defer uiManager.Stop()
 		}
 
-		directorEventBroker.Subscribe(func(event *executorv1.Event) {
+		buildLog.Stream().Subscribe(func(event *executorv1.Event) {
 			switch p := event.Payload.(type) {
 			case *executorv1.Event_Stdout:
 				buildOut.Write([]byte(fmt.Sprintf("%s", string(p.Stdout.Data))))
@@ -210,8 +212,8 @@ var buildCMD = &cobra.Command{
 
 		execCmd := exec.Command(args[0], args[:1]...)
 		execCmd.Env = env
-		execCmd.Stdout = directorLog.Stdout()
-		execCmd.Stderr = directorLog.Stderr()
+		execCmd.Stdout = buildLog.Stdout()
+		execCmd.Stderr = buildLog.Stderr()
 		err = execCmd.Run()
 		if !verbose {
 			uiManager.Stop()

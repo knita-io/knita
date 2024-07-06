@@ -8,15 +8,14 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/spf13/cobra"
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
-
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	executorv1 "github.com/knita-io/knita/api/executor/v1"
-	"github.com/knita-io/knita/internal/event"
 	"github.com/knita-io/knita/internal/executor"
 	"github.com/knita-io/knita/internal/server"
 	"github.com/knita-io/knita/internal/version"
+	"github.com/spf13/cobra"
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
 )
 
 var rootCmd = &cobra.Command{
@@ -42,13 +41,16 @@ var rootCmd = &cobra.Command{
 		}
 		defer listener.Close()
 
-		eventBroker := event.NewBroker(syslog)
-		executor := executor.NewExecutor(syslog, executor.Config{Name: config.Name, Labels: config.Labels}, eventBroker)
+		executor := executor.NewServer(syslog, executor.Config{Name: config.Name, Labels: config.Labels})
 		defer executor.Stop()
 
 		srv := grpc.NewServer(
-			grpc.ChainUnaryInterceptor(server.MakeUnaryServerLogInterceptor(syslog.Named("grpc_server"))),
-			grpc.ChainStreamInterceptor(server.MakeStreamServerLogInterceptor(syslog.Named("grpc_server"))))
+			grpc.ChainUnaryInterceptor(
+				recovery.UnaryServerInterceptor(),
+				server.MakeUnaryServerLogInterceptor(syslog.Named("grpc"))),
+			grpc.ChainStreamInterceptor(
+				recovery.StreamServerInterceptor(),
+				server.MakeStreamServerLogInterceptor(syslog.Named("grpc"))))
 		executorv1.RegisterExecutorServer(srv, executor)
 		go func() {
 			err := srv.Serve(listener)

@@ -10,6 +10,7 @@ import (
 )
 
 type config struct {
+	// The address (in the form `ip:port`) to bind to.
 	BindAddress string `mapstructure:"bind_address"`
 	// Name is the human-friendly name of the executor.
 	// This should be unique across all executors.

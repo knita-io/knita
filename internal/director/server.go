@@ -10,35 +10,30 @@ import (
 
 	directorv1 "github.com/knita-io/knita/api/director/v1"
 	executorv1 "github.com/knita-io/knita/api/executor/v1"
-	"github.com/knita-io/knita/internal/event"
 )
 
 type Server struct {
-	syslog     *zap.SugaredLogger
-	stream     event.Stream
-	controller *BuildController
-	mu         sync.RWMutex
-	runtimes   map[string]*Runtime
+	syslog   *zap.SugaredLogger
+	build    *Build
+	mu       sync.RWMutex
+	runtimes map[string]*Runtime
 	directorv1.UnimplementedDirectorServer
 }
 
-func NewServer(syslog *zap.SugaredLogger, stream event.Stream, controller *BuildController) *Server {
+func NewServer(syslog *zap.SugaredLogger, build *Build) *Server {
 	return &Server{
-		syslog:     syslog,
-		stream:     stream,
-		controller: controller,
-		runtimes:   map[string]*Runtime{},
+		syslog:   syslog,
+		build:    build,
+		runtimes: map[string]*Runtime{},
 	}
 }
 
+// Open opens a new runtime.
 func (s *Server) Open(ctx context.Context, req *directorv1.OpenRequest) (*directorv1.OpenResponse, error) {
-	if req.BuildId == "" {
-		return nil, fmt.Errorf("error build id must be set")
+	if err := s.validateOpenRequest(req); err != nil {
+		return nil, err
 	}
-	if req.BuildId != s.controller.BuildID() {
-		return nil, fmt.Errorf("error invalid build id")
-	}
-	runtime, err := s.controller.Runtime(ctx, req.Opts)
+	runtime, err := s.build.Runtime(ctx, req.Opts)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +47,11 @@ func (s *Server) Open(ctx context.Context, req *directorv1.OpenRequest) (*direct
 	}, nil
 }
 
+// Exec executes a command inside the specified runtime and streams the output back to the client.
 func (s *Server) Exec(req *directorv1.ExecRequest, stream directorv1.Director_ExecServer) error {
+	if err := validateExecRequest(req); err != nil {
+		return err
+	}
 	runtime, err := s.getRuntime(req.RuntimeId)
 	if err != nil {
 		return err
@@ -61,7 +60,7 @@ func (s *Server) Exec(req *directorv1.ExecRequest, stream directorv1.Director_Ex
 		closed bool
 		execID = uuid.New().String()
 	)
-	done := s.stream.Subscribe(func(event *executorv1.Event) {
+	done := s.build.Log().Stream().Subscribe(func(event *executorv1.Event) {
 		if closed {
 			return
 		}
@@ -114,7 +113,11 @@ func (s *Server) Exec(req *directorv1.ExecRequest, stream directorv1.Director_Ex
 	return err
 }
 
+// Import files and directories from the local filesystem to the remote runtime.
 func (s *Server) Import(ctx context.Context, req *directorv1.ImportRequest) (*directorv1.ImportResponse, error) {
+	if err := validateImportRequest(req); err != nil {
+		return nil, err
+	}
 	runtime, err := s.getRuntime(req.RuntimeId)
 	if err != nil {
 		return nil, err
@@ -126,7 +129,11 @@ func (s *Server) Import(ctx context.Context, req *directorv1.ImportRequest) (*di
 	return &directorv1.ImportResponse{}, nil
 }
 
+// Export files and directories from the remote runtime to the local filesystem.
 func (s *Server) Export(ctx context.Context, req *directorv1.ExportRequest) (*directorv1.ExportResponse, error) {
+	if err := validateExportRequest(req); err != nil {
+		return nil, err
+	}
 	runtime, err := s.getRuntime(req.RuntimeId)
 	if err != nil {
 		return nil, err
@@ -138,7 +145,11 @@ func (s *Server) Export(ctx context.Context, req *directorv1.ExportRequest) (*di
 	return &directorv1.ExportResponse{}, nil
 }
 
+// Close the runtime. The runtime cannot be reused after a call to close.
 func (s *Server) Close(ctx context.Context, req *executorv1.CloseRequest) (*executorv1.CloseResponse, error) {
+	if err := validateCloseRequest(req); err != nil {
+		return nil, err
+	}
 	s.mu.Lock()
 	runtime, ok := s.runtimes[req.RuntimeId]
 	if ok {
@@ -155,12 +166,88 @@ func (s *Server) Close(ctx context.Context, req *executorv1.CloseRequest) (*exec
 	return &executorv1.CloseResponse{}, nil
 }
 
+// getRuntime returns the runtime with the specified ID.
 func (s *Server) getRuntime(runtimeID string) (*Runtime, error) {
 	s.mu.RLock()
+	defer s.mu.RUnlock()
 	runtime, ok := s.runtimes[runtimeID]
-	s.mu.RUnlock()
 	if !ok {
 		return nil, fmt.Errorf("error runtime not found: %s", runtimeID)
 	}
 	return runtime, nil
+}
+
+// validateOpenRequest validates an OpenRequest.
+func (s *Server) validateOpenRequest(req *directorv1.OpenRequest) error {
+	if req == nil {
+		return fmt.Errorf("nil request")
+	}
+	if req.BuildId == "" {
+		return fmt.Errorf("empty build_id")
+	}
+	if req.BuildId != s.build.BuildID() {
+		return fmt.Errorf("invalid build_id")
+	}
+	if req.Opts == nil {
+		return fmt.Errorf("empty opts")
+	}
+	return nil
+}
+
+// validateExecRequest validates an ExecRequest.
+func validateExecRequest(req *directorv1.ExecRequest) error {
+	if req == nil {
+		return fmt.Errorf("nil request")
+	}
+	if req.RuntimeId == "" {
+		return fmt.Errorf("empty runtime_id")
+	}
+	if req.Opts == nil {
+		return fmt.Errorf("empty opts")
+	}
+	if req.Opts.Name == "" {
+		return fmt.Errorf("empty opts name")
+	}
+	return nil
+}
+
+// validateImportRequest validates an ImportRequest.
+func validateImportRequest(req *directorv1.ImportRequest) error {
+	if req == nil {
+		return fmt.Errorf("nil request")
+	}
+	if req.RuntimeId == "" {
+		return fmt.Errorf("empty runtime_id")
+	}
+	if req.SrcPath == "" {
+		return fmt.Errorf("empty source path")
+	}
+	// NOTE: An empty dest path is valid
+	return nil
+}
+
+// validateExportRequest validates an ExportRequest.
+func validateExportRequest(req *directorv1.ExportRequest) error {
+	if req == nil {
+		return fmt.Errorf("nil request")
+	}
+	if req.RuntimeId == "" {
+		return fmt.Errorf("empty runtime_id")
+	}
+	if req.SrcPath == "" {
+		return fmt.Errorf("empty src_path")
+	}
+	// NOTE: An empty dest path is valid
+	return nil
+}
+
+// validateCloseRequest validates a CloseRequest.
+func validateCloseRequest(req *executorv1.CloseRequest) error {
+	if req == nil {
+		return fmt.Errorf("nil request")
+	}
+	if req.RuntimeId == "" {
+		return fmt.Errorf("empty runtime_id")
+	}
+	return nil
 }

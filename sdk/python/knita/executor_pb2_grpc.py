@@ -31,8 +31,7 @@ if _version_not_supported:
 
 
 class ExecutorStub(object):
-    """TODO split into executor and runtime services?
-    """
+    """Missing associated documentation comment in .proto file."""
 
     def __init__(self, channel):
         """Constructor.
@@ -44,6 +43,11 @@ class ExecutorStub(object):
                 '/executor.Executor/Introspect',
                 request_serializer=executor_dot_v1_dot_executor__pb2.IntrospectRequest.SerializeToString,
                 response_deserializer=executor_dot_v1_dot_executor__pb2.IntrospectResponse.FromString,
+                _registered_method=True)
+        self.Events = channel.unary_stream(
+                '/executor.Executor/Events',
+                request_serializer=executor_dot_v1_dot_executor__pb2.EventsRequest.SerializeToString,
+                response_deserializer=executor_dot_v1_dot_executor__pb2.Event.FromString,
                 _registered_method=True)
         self.Open = channel.unary_unary(
                 '/executor.Executor/Open',
@@ -75,18 +79,18 @@ class ExecutorStub(object):
                 request_serializer=executor_dot_v1_dot_executor__pb2.CloseRequest.SerializeToString,
                 response_deserializer=executor_dot_v1_dot_executor__pb2.CloseResponse.FromString,
                 _registered_method=True)
-        self.Events = channel.unary_stream(
-                '/executor.Executor/Events',
-                request_serializer=executor_dot_v1_dot_executor__pb2.EventsRequest.SerializeToString,
-                response_deserializer=executor_dot_v1_dot_executor__pb2.Event.FromString,
-                _registered_method=True)
 
 
 class ExecutorServicer(object):
-    """TODO split into executor and runtime services?
-    """
+    """Missing associated documentation comment in .proto file."""
 
     def Introspect(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Events(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -128,12 +132,6 @@ class ExecutorServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def Events(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
 
 def add_ExecutorServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -141,6 +139,11 @@ def add_ExecutorServicer_to_server(servicer, server):
                     servicer.Introspect,
                     request_deserializer=executor_dot_v1_dot_executor__pb2.IntrospectRequest.FromString,
                     response_serializer=executor_dot_v1_dot_executor__pb2.IntrospectResponse.SerializeToString,
+            ),
+            'Events': grpc.unary_stream_rpc_method_handler(
+                    servicer.Events,
+                    request_deserializer=executor_dot_v1_dot_executor__pb2.EventsRequest.FromString,
+                    response_serializer=executor_dot_v1_dot_executor__pb2.Event.SerializeToString,
             ),
             'Open': grpc.unary_unary_rpc_method_handler(
                     servicer.Open,
@@ -172,11 +175,6 @@ def add_ExecutorServicer_to_server(servicer, server):
                     request_deserializer=executor_dot_v1_dot_executor__pb2.CloseRequest.FromString,
                     response_serializer=executor_dot_v1_dot_executor__pb2.CloseResponse.SerializeToString,
             ),
-            'Events': grpc.unary_stream_rpc_method_handler(
-                    servicer.Events,
-                    request_deserializer=executor_dot_v1_dot_executor__pb2.EventsRequest.FromString,
-                    response_serializer=executor_dot_v1_dot_executor__pb2.Event.SerializeToString,
-            ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
             'executor.Executor', rpc_method_handlers)
@@ -185,8 +183,7 @@ def add_ExecutorServicer_to_server(servicer, server):
 
  # This class is part of an EXPERIMENTAL API.
 class Executor(object):
-    """TODO split into executor and runtime services?
-    """
+    """Missing associated documentation comment in .proto file."""
 
     @staticmethod
     def Introspect(request,
@@ -205,6 +202,33 @@ class Executor(object):
             '/executor.Executor/Introspect',
             executor_dot_v1_dot_executor__pb2.IntrospectRequest.SerializeToString,
             executor_dot_v1_dot_executor__pb2.IntrospectResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Events(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            '/executor.Executor/Events',
+            executor_dot_v1_dot_executor__pb2.EventsRequest.SerializeToString,
+            executor_dot_v1_dot_executor__pb2.Event.FromString,
             options,
             channel_credentials,
             insecure,
@@ -367,33 +391,6 @@ class Executor(object):
             '/executor.Executor/Close',
             executor_dot_v1_dot_executor__pb2.CloseRequest.SerializeToString,
             executor_dot_v1_dot_executor__pb2.CloseResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def Events(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_stream(
-            request,
-            target,
-            '/executor.Executor/Events',
-            executor_dot_v1_dot_executor__pb2.EventsRequest.SerializeToString,
-            executor_dot_v1_dot_executor__pb2.Event.FromString,
             options,
             channel_credentials,
             insecure,

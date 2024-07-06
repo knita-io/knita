@@ -19,7 +19,7 @@ type Predicate func(event *runtimev1.Event) bool
 type Handler func(event *runtimev1.Event)
 
 type Broker struct {
-	log           *zap.SugaredLogger
+	syslog        *zap.SugaredLogger
 	mu            sync.RWMutex
 	subscriptions map[*subscription]struct{}
 }
@@ -29,9 +29,9 @@ type subscription struct {
 	opts    *Opts
 }
 
-func NewBroker(log *zap.SugaredLogger) *Broker {
+func NewBroker(syslog *zap.SugaredLogger) *Broker {
 	return &Broker{
-		log:           log.Named("event_broker"),
+		syslog:        syslog.Named("event_broker"),
 		subscriptions: map[*subscription]struct{}{},
 	}
 }
@@ -55,7 +55,7 @@ func (b *Broker) Publish(event *runtimev1.Event) {
 			delivered++
 		}
 	}
-	b.log.Debugw("Published event",
+	b.syslog.Debugw("Published event",
 		"type", fmt.Sprintf("%T", event.Payload),
 		"sequence", event.Sequence,
 		"delivered", delivered,
@@ -74,12 +74,12 @@ func (b *Broker) Subscribe(handler Handler, opts ...Opt) func() {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	b.subscriptions[sub] = struct{}{}
-	b.log.Debugw("Registered subscriber")
+	b.syslog.Debugw("Registered subscriber")
 	return func() {
 		b.mu.Lock()
 		defer b.mu.Unlock()
 		delete(b.subscriptions, sub)
-		b.log.Debugw("Unregistered subscriber")
+		b.syslog.Debugw("Unregistered subscriber")
 	}
 }
 

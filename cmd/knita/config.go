@@ -17,13 +17,12 @@ func init() {
 }
 
 type config struct {
-	Broker        localBrokerConfig   `mapstructure:"broker"`
-	LocalExecutor localExecutorConfig `mapstructure:"executor"`
+	Executors executorsConfig `mapstructure:"executors"`
 }
 
-type localBrokerConfig struct {
-	Executors []*executorConfig     `mapstructure:"executors"`
-	Upstream  *upstreamBrokerConfig `mapstructure:"upstream"`
+type executorsConfig struct {
+	Local  localExecutorConfig    `mapstructure:"local"`
+	Remote []remoteExecutorConfig `mapstructure:"remote"`
 }
 
 type localExecutorConfig struct {
@@ -34,14 +33,9 @@ type localExecutorConfig struct {
 	Labels []string `mapstructure:"labels"`
 }
 
-type executorConfig struct {
-	Name     string `mapstructure:"name"`
-	Address  string `mapstructure:"address"`
+type remoteExecutorConfig struct {
 	Disabled bool   `mapstructure:"disabled"`
-}
-
-type upstreamBrokerConfig struct {
-	Address string `mapstructure:"address"`
+	Address  string `mapstructure:"address"`
 }
 
 func fillDefaultValues(config *config) *config {

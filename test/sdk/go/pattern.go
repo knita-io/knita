@@ -11,16 +11,16 @@ import (
 )
 
 func main() {
-	client := knita.MustNewClient()
+	kClient := knita.MustNewClient()
 
 	runtimesFactories := []func() *knita.Runtime{
 		func() *knita.Runtime {
-			return client.MustRuntime(
+			return kClient.MustRuntime(
 				runtime.WithType(runtime.TypeHost),
 				runtime.WithTag("name", "host-test"))
 		},
 		func() *knita.Runtime {
-			return client.MustRuntime(
+			return kClient.MustRuntime(
 				runtime.WithType(runtime.TypeDocker),
 				runtime.WithImage("ubuntu:latest"),
 				runtime.WithPullStrategy(runtime.PullStrategyNotExists),

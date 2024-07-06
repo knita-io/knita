@@ -2,14 +2,14 @@
 import io
 import knita
 
-cc = knita.Client()
+kclient = knita.Client()
 
 opts = [{"type": "host", "tags": {"name": "host-test"}},
         {"type": "docker", "docker_image": "ubuntu:latest", "docker_pull_strategy": "not-exists",
          "tags": {"name": "docker-test"}}]
 
 for opts in opts:
-    with cc.runtime(**opts) as runtime:
+    with kclient.runtime(**opts) as runtime:
         # Verify sysinfo is reported
         if runtime.sys_info() is None:
             raise Exception("sysinfo not set")

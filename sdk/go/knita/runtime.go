@@ -59,11 +59,7 @@ func (c *Runtime) MustImport(src string, dest string) {
 
 // ImportWithContext is like Import, but it allows a context to be set.
 func (c *Runtime) ImportWithContext(ctx context.Context, src string, dest string) error {
-	_, err := c.client.Import(ctx, &directorv1.ImportRequest{
-		RuntimeId: c.runtimeID,
-		SrcPath:   src,
-		DestPath:  dest,
-	})
+	_, err := c.client.Import(ctx, &directorv1.ImportRequest{RuntimeId: c.runtimeID, SrcPath: src, DestPath: dest})
 	return err
 }
 
@@ -84,11 +80,7 @@ func (c *Runtime) MustExport(src string, dest string) {
 
 // ExportWithContext is like Export, but it allows a context to be set.
 func (c *Runtime) ExportWithContext(ctx context.Context, src string, dest string) error {
-	_, err := c.client.Export(ctx, &directorv1.ExportRequest{
-		RuntimeId: c.runtimeID,
-		SrcPath:   src,
-		DestPath:  dest,
-	})
+	_, err := c.client.Export(ctx, &directorv1.ExportRequest{RuntimeId: c.runtimeID, SrcPath: src, DestPath: dest})
 	return err
 }
 
@@ -164,8 +156,6 @@ func (c *Runtime) MustClose() {
 
 // CloseWithContext is like Close, but it allows a context to be set.
 func (c *Runtime) CloseWithContext(ctx context.Context) error {
-	_, err := c.client.Close(ctx, &executorv1.CloseRequest{
-		RuntimeId: c.runtimeID,
-	})
+	_, err := c.client.Close(ctx, &executorv1.CloseRequest{RuntimeId: c.runtimeID})
 	return err
 }

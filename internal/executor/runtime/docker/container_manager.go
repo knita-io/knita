@@ -57,13 +57,13 @@ type ExecConfig struct {
 
 type ContainerManager struct {
 	client *client.Client
-	log    *zap.SugaredLogger
+	syslog *zap.SugaredLogger
 }
 
-func NewContainerManager(log *zap.SugaredLogger, client *client.Client) *ContainerManager {
+func NewContainerManager(syslog *zap.SugaredLogger, client *client.Client) *ContainerManager {
 	return &ContainerManager{
 		client: client,
-		log:    log.Named("container_manager"),
+		syslog: syslog.Named("container_manager"),
 	}
 }
 
@@ -334,7 +334,7 @@ func (r *ContainerManager) pipeContainerLogAsync(from io.Reader, stdout io.Write
 		defer close(doneC)
 		err := r.pipeContainerLog(from, stdout, stderr)
 		if err != nil {
-			r.log.Warnf("Ignoring error piping container logs; Logs may be incomplete: %s", err)
+			r.syslog.Warnf("Ignoring error piping container logs; Logs may be incomplete: %s", err)
 		}
 	}()
 	return doneC
