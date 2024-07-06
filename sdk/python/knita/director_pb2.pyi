@@ -51,10 +51,6 @@ class ExportResponse(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...
 
-class EventsRequest(_message.Message):
-    __slots__ = ()
-    def __init__(self) -> None: ...
-
 class ExecRequest(_message.Message):
     __slots__ = ("runtime_id", "opts")
     RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
@@ -64,28 +60,20 @@ class ExecRequest(_message.Message):
     def __init__(self, runtime_id: _Optional[str] = ..., opts: _Optional[_Union[_executor_pb2.ExecOpts, _Mapping]] = ...) -> None: ...
 
 class ExecEvent(_message.Message):
-    __slots__ = ("exec_start", "exec_end", "stdout", "stderr")
+    __slots__ = ("exec_start", "stdout", "stderr", "exec_end")
     EXEC_START_FIELD_NUMBER: _ClassVar[int]
-    EXEC_END_FIELD_NUMBER: _ClassVar[int]
     STDOUT_FIELD_NUMBER: _ClassVar[int]
     STDERR_FIELD_NUMBER: _ClassVar[int]
+    EXEC_END_FIELD_NUMBER: _ClassVar[int]
     exec_start: ExecStartEvent
-    exec_end: ExecEndEvent
     stdout: ExecStdoutEvent
     stderr: ExecStderrEvent
-    def __init__(self, exec_start: _Optional[_Union[ExecStartEvent, _Mapping]] = ..., exec_end: _Optional[_Union[ExecEndEvent, _Mapping]] = ..., stdout: _Optional[_Union[ExecStdoutEvent, _Mapping]] = ..., stderr: _Optional[_Union[ExecStderrEvent, _Mapping]] = ...) -> None: ...
+    exec_end: ExecEndEvent
+    def __init__(self, exec_start: _Optional[_Union[ExecStartEvent, _Mapping]] = ..., stdout: _Optional[_Union[ExecStdoutEvent, _Mapping]] = ..., stderr: _Optional[_Union[ExecStderrEvent, _Mapping]] = ..., exec_end: _Optional[_Union[ExecEndEvent, _Mapping]] = ...) -> None: ...
 
 class ExecStartEvent(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...
-
-class ExecEndEvent(_message.Message):
-    __slots__ = ("error", "exit_code")
-    ERROR_FIELD_NUMBER: _ClassVar[int]
-    EXIT_CODE_FIELD_NUMBER: _ClassVar[int]
-    error: str
-    exit_code: int
-    def __init__(self, error: _Optional[str] = ..., exit_code: _Optional[int] = ...) -> None: ...
 
 class ExecStdoutEvent(_message.Message):
     __slots__ = ("data",)
@@ -98,3 +86,11 @@ class ExecStderrEvent(_message.Message):
     DATA_FIELD_NUMBER: _ClassVar[int]
     data: bytes
     def __init__(self, data: _Optional[bytes] = ...) -> None: ...
+
+class ExecEndEvent(_message.Message):
+    __slots__ = ("error", "exit_code")
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    EXIT_CODE_FIELD_NUMBER: _ClassVar[int]
+    error: str
+    exit_code: int
+    def __init__(self, error: _Optional[str] = ..., exit_code: _Optional[int] = ...) -> None: ...

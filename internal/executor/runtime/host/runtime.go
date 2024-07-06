@@ -23,7 +23,7 @@ type Runtime struct {
 	log       *runtime.Log
 }
 
-func NewRuntime(syslog *zap.SugaredLogger, buildID string, runtimeID string, stream event.Stream) (*Runtime, error) {
+func NewRuntime(syslog *zap.SugaredLogger, stream event.Stream, buildID string, runtimeID string) (*Runtime, error) {
 	baseDir, err := os.MkdirTemp("", "knita-host-*")
 	if err != nil {
 		return nil, fmt.Errorf("error creating runtime base dir: %w", err)

@@ -10,13 +10,13 @@ import (
 	executorv1 "github.com/knita-io/knita/api/executor/v1"
 )
 
-type receiveState int
+type ReceiveState int
 
 const (
-	receiveStateAwaitingHeaders receiveState = iota
-	receiveStateAwaitingBody
-	receiveStateAwaitingTrailer
-	receiveStateDone
+	ReceiveStateAwaitingHeaders ReceiveState = iota
+	ReceiveStateAwaitingBody
+	ReceiveStateAwaitingTrailer
+	ReceiveStateDone
 )
 
 type RecvCallback func(header *executorv1.FileTransferHeader)
@@ -45,7 +45,7 @@ type Receiver struct {
 	syslog *zap.SugaredLogger
 	opts   *RecvOpts
 	fs     WriteFS
-	state  receiveState
+	state  ReceiveState
 	fh     File
 	header *executorv1.FileTransferHeader
 }
@@ -58,6 +58,10 @@ func NewReceiver(syslog *zap.SugaredLogger, fs WriteFS, opts ...RecvOpt) *Receiv
 	return &Receiver{syslog: syslog.Named("file_receiver"), fs: fs, opts: o}
 }
 
+func (i *Receiver) State() ReceiveState {
+	return i.state
+}
+
 func (i *Receiver) Next(req *executorv1.FileTransfer) (err error) {
 	defer func() {
 		if err != nil {
@@ -65,11 +69,11 @@ func (i *Receiver) Next(req *executorv1.FileTransfer) (err error) {
 				i.fh.Close()
 				i.fh = nil
 			}
-			i.state = receiveStateDone
+			i.state = ReceiveStateDone
 		}
 	}()
 	switch i.state {
-	case receiveStateAwaitingHeaders:
+	case ReceiveStateAwaitingHeaders:
 		if req.Header == nil {
 			return fmt.Errorf("error header expected")
 		}
@@ -80,7 +84,7 @@ func (i *Receiver) Next(req *executorv1.FileTransfer) (err error) {
 			if err != nil {
 				return fmt.Errorf("error making directory: %w", err)
 			}
-			i.state = receiveStateAwaitingTrailer
+			i.state = ReceiveStateAwaitingTrailer
 			if req.Trailer != nil {
 				return i.Next(req)
 			}
@@ -95,14 +99,14 @@ func (i *Receiver) Next(req *executorv1.FileTransfer) (err error) {
 				return fmt.Errorf("error creating file: %w", err)
 			}
 			i.fh = file
-			i.state = receiveStateAwaitingBody
+			i.state = ReceiveStateAwaitingBody
 			if req.Body != nil {
 				return i.Next(req)
 			}
 		}
-	case receiveStateAwaitingBody:
+	case ReceiveStateAwaitingBody:
 		if req.Body == nil {
-			i.state = receiveStateAwaitingTrailer
+			i.state = ReceiveStateAwaitingTrailer
 			if req.Trailer != nil {
 				return i.Next(req)
 			}
@@ -119,22 +123,22 @@ func (i *Receiver) Next(req *executorv1.FileTransfer) (err error) {
 				return fmt.Errorf("error writing data: %w", err)
 			}
 			if req.Trailer != nil {
-				i.state = receiveStateAwaitingTrailer
+				i.state = ReceiveStateAwaitingTrailer
 				if req.Trailer != nil {
 					return i.Next(req)
 				}
 			}
 		}
-	case receiveStateAwaitingTrailer:
+	case ReceiveStateAwaitingTrailer:
 		if req.Trailer == nil {
 			return fmt.Errorf("error trailer expected")
 		}
 		if req.Trailer.Md5 != nil {
 			i.syslog.Warn("MD5 set but verification not implemented")
 		}
-		i.state = receiveStateDone
+		i.state = ReceiveStateDone
 		return i.Next(req)
-	case receiveStateDone:
+	case ReceiveStateDone:
 		if i.fh != nil {
 			err = i.fh.Close()
 			if err != nil {

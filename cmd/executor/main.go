@@ -10,7 +10,6 @@ import (
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	executorv1 "github.com/knita-io/knita/api/executor/v1"
-	"github.com/knita-io/knita/internal/event"
 	"github.com/knita-io/knita/internal/executor"
 	"github.com/knita-io/knita/internal/server"
 	"github.com/knita-io/knita/internal/version"
@@ -42,8 +41,7 @@ var rootCmd = &cobra.Command{
 		}
 		defer listener.Close()
 
-		eventBroker := event.NewBroker(syslog)
-		executor := executor.NewServer(syslog, executor.Config{Name: config.Name, Labels: config.Labels}, eventBroker)
+		executor := executor.NewServer(syslog, executor.Config{Name: config.Name, Labels: config.Labels})
 		defer executor.Stop()
 
 		srv := grpc.NewServer(

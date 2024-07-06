@@ -10,22 +10,19 @@ import (
 
 	directorv1 "github.com/knita-io/knita/api/director/v1"
 	executorv1 "github.com/knita-io/knita/api/executor/v1"
-	"github.com/knita-io/knita/internal/event"
 )
 
 type Server struct {
 	syslog   *zap.SugaredLogger
-	stream   event.Stream
 	build    *Build
 	mu       sync.RWMutex
 	runtimes map[string]*Runtime
 	directorv1.UnimplementedDirectorServer
 }
 
-func NewServer(syslog *zap.SugaredLogger, stream event.Stream, build *Build) *Server {
+func NewServer(syslog *zap.SugaredLogger, build *Build) *Server {
 	return &Server{
 		syslog:   syslog,
-		stream:   stream,
 		build:    build,
 		runtimes: map[string]*Runtime{},
 	}
@@ -63,7 +60,7 @@ func (s *Server) Exec(req *directorv1.ExecRequest, stream directorv1.Director_Ex
 		closed bool
 		execID = uuid.New().String()
 	)
-	done := s.stream.Subscribe(func(event *executorv1.Event) {
+	done := s.build.Log().Stream().Subscribe(func(event *executorv1.Event) {
 		if closed {
 			return
 		}
@@ -172,8 +169,8 @@ func (s *Server) Close(ctx context.Context, req *executorv1.CloseRequest) (*exec
 // getRuntime returns the runtime with the specified ID.
 func (s *Server) getRuntime(runtimeID string) (*Runtime, error) {
 	s.mu.RLock()
+	defer s.mu.RUnlock()
 	runtime, ok := s.runtimes[runtimeID]
-	s.mu.RUnlock()
 	if !ok {
 		return nil, fmt.Errorf("error runtime not found: %s", runtimeID)
 	}

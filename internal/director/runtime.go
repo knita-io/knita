@@ -159,11 +159,7 @@ func (c *Runtime) Exec(ctx context.Context, execID string, opts *executorv1.Exec
 		return ok && closed.ExecEnd.RuntimeId == c.runtimeID && closed.ExecEnd.ExecId == execID
 	}))
 	defer done()
-	res, err := c.client.Exec(ctx, &executorv1.ExecRequest{
-		RuntimeId: c.runtimeID,
-		ExecId:    execID,
-		Opts:      opts,
-	})
+	res, err := c.client.Exec(ctx, &executorv1.ExecRequest{RuntimeId: c.runtimeID, ExecId: execID, Opts: opts})
 	if err != nil {
 		return nil, fmt.Errorf("error in exec: %w", err)
 	}
@@ -225,9 +221,7 @@ func (c *Runtime) Close(ctx context.Context) error {
 	} else {
 		close(doneC)
 	}
-	_, err := c.client.Close(ctx, &executorv1.CloseRequest{
-		RuntimeId: c.runtimeID,
-	})
+	_, err := c.client.Close(ctx, &executorv1.CloseRequest{RuntimeId: c.runtimeID})
 	if err != nil {
 		return fmt.Errorf("error closing runtime: %w", err)
 	}
@@ -248,7 +242,7 @@ func (c *Runtime) forwardEvents(stream executorv1.Executor_EventsClient) {
 			if !errors.Is(err, context.Canceled) {
 				c.syslog.Infow("Event stream closed")
 			} else {
-				c.syslog.Errorw("Event stream closed", "error", err)
+				c.syslog.Errorw("Event stream closed with error", "error", err)
 			}
 			return
 		} else {

@@ -20,7 +20,6 @@ type Config struct {
 }
 
 type ExecutorConfig struct {
-	Name       string
 	Connection *brokerv1.RuntimeConnectionInfo
 }
 
@@ -106,12 +105,12 @@ func (b *Server) canBid(intro *executorv1.IntrospectResponse, tender *brokerv1.R
 func (b *Server) init() {
 	b.syslog.Infof("Initializing executors...")
 	for _, execConfig := range b.config.Executors {
-		err := b.initExecutor(execConfig)
+		state, err := b.initExecutor(execConfig)
 		if err != nil {
 			b.syslog.Warnf("Ignoring error initializing executor %q; Executor will be "+
-				"unavailable to run builds: %v", execConfig.Name, err)
+				"unavailable to run builds: %v", b.connInfoToString(execConfig.Connection), err)
 		} else {
-			b.syslog.Infow("Initialized executor", "name", execConfig.Name)
+			b.syslog.Infow("Initialized executor", "name", state.introspection.ExecutorInfo.Name)
 		}
 	}
 }
@@ -120,26 +119,27 @@ func (b *Server) init() {
 // It dials the executor using the connection information, performs an introspection,
 // and stores the executor state in the Server's executorsByID map.
 // It returns an error if there is an issue dialing the executor or introspecting the executor.
-func (b *Server) initExecutor(execConfig *ExecutorConfig) error {
+func (b *Server) initExecutor(execConfig *ExecutorConfig) (*executorState, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	client, done, err := b.dialExecutor(ctx, execConfig.Connection)
 	if err != nil {
-		return fmt.Errorf("error dialing executor: %w", err)
+		return nil, fmt.Errorf("error dialing executor: %w", err)
 	}
 	introspect, err := client.Introspect(ctx, &executorv1.IntrospectRequest{})
 	if err != nil {
-		return fmt.Errorf("error introspecting executor: %w", err)
+		return nil, fmt.Errorf("error introspecting executor: %w", err)
 	}
 	id := uuid.New().String()
-	b.executorsByID[id] = &executorState{
+	state := &executorState{
 		id:            id,
 		config:        execConfig,
 		client:        client,
 		done:          done,
 		introspection: introspect,
 	}
-	return nil
+	b.executorsByID[id] = state
+	return state, nil
 }
 
 // dialExecutor dials the executor based on the provided connection information.
@@ -165,6 +165,18 @@ func (b *Server) dialExecutor(ctx context.Context, connInfo *brokerv1.RuntimeCon
 		return executorv1.NewExecutorClient(conn), func() { conn.Close() }, nil
 	default:
 		return nil, nil, fmt.Errorf("error unsupported connection type: %T", t)
+	}
+}
+
+// connInfoToString returns a human-readable string representation of the connection info.
+func (b *Server) connInfoToString(connInfo *brokerv1.RuntimeConnectionInfo) string {
+	switch t := connInfo.Transport.(type) {
+	case *brokerv1.RuntimeConnectionInfo_Unix:
+		return t.Unix.SocketPath
+	case *brokerv1.RuntimeConnectionInfo_Tcp:
+		return t.Tcp.Address
+	default:
+		return "unknown"
 	}
 }
 

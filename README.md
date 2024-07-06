@@ -1,10 +1,12 @@
 <div align="center">
-  <a href="https://knita.io">
-    <img src="https://github.com/knita-io/knita/raw/main/docs/images/knita-logo2.png" width="300" height="auto" alt="Knita Logo"/>
- </a>
 
-### `Knit-ter` - `/ˈnɪ.tər/`
-# Build Code. Code Builds.
+# Knita
+## The Distributed Build Engine
+
+</div>
+
+<div align="center">
+  <img src="https://github.com/knita-io/knita/raw/main/docs/images/knita-build-demo.gif" alt="Knita Build Demo"/>
 </div>
 
 ## Overview
@@ -23,38 +25,35 @@ Knita overhauls the traditional software build process by combining build and co
 
 Anything you can code, Knita can execute as part of the build process.
 
-## Getting Started
+## Documentation
+
+
+### Getting Started
 
 Download the latest Knita CLI from the [release page](https://github.com/knita-io/knita/releases) and make sure it's in your path.
 
 To define your first pattern, see the getting started guide for your preferred language:
-* [Golang](docs/guides/go/getting-started.md)
-* [Python](docs/guides/python/getting-started.md)
+* [Golang](docs/guides/sdk/go/getting-started.md)
+* [Python](docs/guides/sdk/python/getting-started.md)
 
 _Don't see your language? Open a GitHub issue to request it._
 
-Once your pattern is defined it can be executed using the `knita build` command:
-```bash
-knita build <pattern command>
-```
+### Config Reference
 
-<div align="center">
-  <img src="https://github.com/knita-io/knita/raw/main/docs/images/knita-build-demo.gif" alt="Knita Build Demo"/>
-</div>
+* [Knita CLI](docs/guides/cli/config.md)
+* [Knita Executor](docs/guides/executor/config.md)
 
 ## How It Works
 
-Knita is internally architected around four key components:
+Knita has three main components:
 
-* **Director**: Positioned at the core of Knita, the Director is programmed using the Knita SDK and is responsible for managing the build lifecycle by coordinating interactions among all other components. 
-* **Broker**: Acting as a matchmaker, the Broker assists the Director by identifying suitable Executors to run your builds.
-* **Executor**: Executors are responsible for the actual build execution. Comparable to runners or agents in traditional CI systems.
-* **Observer**: While optional, Observers offer the ability to extend Knita with build analytics by capturing build telemetry, including logs and event data.
+* **Director**: Orchestrates the build lifecycle, and is programmed using the Knita SDK.
+* **Executor**: Executes builds, similar to runners or agents in CI systems.
+* **Broker**: Connects the Director to Executors.
 
-The Knita Command Line Interface (CLI) embeds a Director, Broker, and Executor, enabling builds to execute entirely on your local machine. For greater scalability, the CLI can optionally be configured to communicate with external Brokers and Executors for massively distributed and parallel builds.
+The Knita CLI includes a Director, Broker, and Executor, so you can run builds entirely on your local machine. For more scalability, it can connect to external Brokers and Executors for distributed builds.
 
-Builds are defined using the Knita SDK in your preferred programming language. The code for a set of builds is known as a pattern. A pattern operates as a fully-fledged executable that runs in its own process and talks back to the Knita CLI.
-
+Builds are defined using the Knita SDK in your preferred programming language. The code for builds is called a pattern, which runs as an executable process and interacts with the Knita CLI.
 <div align="center">
   <img src="https://github.com/knita-io/knita/raw/main/docs/images/knita-architecture.png" width="700" height="auto" alt="Knita Architecture"/>
 </div>
@@ -152,6 +151,7 @@ func buildBinaries(client *knita.Client) {
 ```
 
 ### Contributing
+
 
 Thank you for considering contributing to Knita! All kinds of contributions are welcome, whether you're fixing bugs, adding new features, improving documentation, or helping others.
 

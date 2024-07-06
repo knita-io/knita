@@ -20,13 +20,13 @@ const _ = grpc.SupportPackageIsVersion7
 
 const (
 	Executor_Introspect_FullMethodName = "/executor.Executor/Introspect"
+	Executor_Events_FullMethodName     = "/executor.Executor/Events"
 	Executor_Open_FullMethodName       = "/executor.Executor/Open"
 	Executor_Heartbeat_FullMethodName  = "/executor.Executor/Heartbeat"
 	Executor_Exec_FullMethodName       = "/executor.Executor/Exec"
 	Executor_Import_FullMethodName     = "/executor.Executor/Import"
 	Executor_Export_FullMethodName     = "/executor.Executor/Export"
 	Executor_Close_FullMethodName      = "/executor.Executor/Close"
-	Executor_Events_FullMethodName     = "/executor.Executor/Events"
 )
 
 // ExecutorClient is the client API for Executor service.
@@ -34,13 +34,13 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ExecutorClient interface {
 	Introspect(ctx context.Context, in *IntrospectRequest, opts ...grpc.CallOption) (*IntrospectResponse, error)
+	Events(ctx context.Context, in *EventsRequest, opts ...grpc.CallOption) (Executor_EventsClient, error)
 	Open(ctx context.Context, in *OpenRequest, opts ...grpc.CallOption) (*OpenResponse, error)
 	Heartbeat(ctx context.Context, in *HeartbeatRequest, opts ...grpc.CallOption) (*HeartbeatResponse, error)
 	Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (*ExecResponse, error)
 	Import(ctx context.Context, opts ...grpc.CallOption) (Executor_ImportClient, error)
 	Export(ctx context.Context, in *ExportRequest, opts ...grpc.CallOption) (Executor_ExportClient, error)
 	Close(ctx context.Context, in *CloseRequest, opts ...grpc.CallOption) (*CloseResponse, error)
-	Events(ctx context.Context, in *EventsRequest, opts ...grpc.CallOption) (Executor_EventsClient, error)
 }
 
 type executorClient struct {
@@ -58,6 +58,38 @@ func (c *executorClient) Introspect(ctx context.Context, in *IntrospectRequest, 
 		return nil, err
 	}
 	return out, nil
+}
+
+func (c *executorClient) Events(ctx context.Context, in *EventsRequest, opts ...grpc.CallOption) (Executor_EventsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Executor_ServiceDesc.Streams[0], Executor_Events_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &executorEventsClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Executor_EventsClient interface {
+	Recv() (*Event, error)
+	grpc.ClientStream
+}
+
+type executorEventsClient struct {
+	grpc.ClientStream
+}
+
+func (x *executorEventsClient) Recv() (*Event, error) {
+	m := new(Event)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func (c *executorClient) Open(ctx context.Context, in *OpenRequest, opts ...grpc.CallOption) (*OpenResponse, error) {
@@ -88,7 +120,7 @@ func (c *executorClient) Exec(ctx context.Context, in *ExecRequest, opts ...grpc
 }
 
 func (c *executorClient) Import(ctx context.Context, opts ...grpc.CallOption) (Executor_ImportClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Executor_ServiceDesc.Streams[0], Executor_Import_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &Executor_ServiceDesc.Streams[1], Executor_Import_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +154,7 @@ func (x *executorImportClient) CloseAndRecv() (*ImportResponse, error) {
 }
 
 func (c *executorClient) Export(ctx context.Context, in *ExportRequest, opts ...grpc.CallOption) (Executor_ExportClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Executor_ServiceDesc.Streams[1], Executor_Export_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &Executor_ServiceDesc.Streams[2], Executor_Export_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -162,50 +194,18 @@ func (c *executorClient) Close(ctx context.Context, in *CloseRequest, opts ...gr
 	return out, nil
 }
 
-func (c *executorClient) Events(ctx context.Context, in *EventsRequest, opts ...grpc.CallOption) (Executor_EventsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Executor_ServiceDesc.Streams[2], Executor_Events_FullMethodName, opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &executorEventsClient{stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-type Executor_EventsClient interface {
-	Recv() (*Event, error)
-	grpc.ClientStream
-}
-
-type executorEventsClient struct {
-	grpc.ClientStream
-}
-
-func (x *executorEventsClient) Recv() (*Event, error) {
-	m := new(Event)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
 // ExecutorServer is the server API for Executor service.
 // All implementations must embed UnimplementedExecutorServer
 // for forward compatibility
 type ExecutorServer interface {
 	Introspect(context.Context, *IntrospectRequest) (*IntrospectResponse, error)
+	Events(*EventsRequest, Executor_EventsServer) error
 	Open(context.Context, *OpenRequest) (*OpenResponse, error)
 	Heartbeat(context.Context, *HeartbeatRequest) (*HeartbeatResponse, error)
 	Exec(context.Context, *ExecRequest) (*ExecResponse, error)
 	Import(Executor_ImportServer) error
 	Export(*ExportRequest, Executor_ExportServer) error
 	Close(context.Context, *CloseRequest) (*CloseResponse, error)
-	Events(*EventsRequest, Executor_EventsServer) error
 	mustEmbedUnimplementedExecutorServer()
 }
 
@@ -215,6 +215,9 @@ type UnimplementedExecutorServer struct {
 
 func (UnimplementedExecutorServer) Introspect(context.Context, *IntrospectRequest) (*IntrospectResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Introspect not implemented")
+}
+func (UnimplementedExecutorServer) Events(*EventsRequest, Executor_EventsServer) error {
+	return status.Errorf(codes.Unimplemented, "method Events not implemented")
 }
 func (UnimplementedExecutorServer) Open(context.Context, *OpenRequest) (*OpenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Open not implemented")
@@ -233,9 +236,6 @@ func (UnimplementedExecutorServer) Export(*ExportRequest, Executor_ExportServer)
 }
 func (UnimplementedExecutorServer) Close(context.Context, *CloseRequest) (*CloseResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Close not implemented")
-}
-func (UnimplementedExecutorServer) Events(*EventsRequest, Executor_EventsServer) error {
-	return status.Errorf(codes.Unimplemented, "method Events not implemented")
 }
 func (UnimplementedExecutorServer) mustEmbedUnimplementedExecutorServer() {}
 
@@ -266,6 +266,27 @@ func _Executor_Introspect_Handler(srv interface{}, ctx context.Context, dec func
 		return srv.(ExecutorServer).Introspect(ctx, req.(*IntrospectRequest))
 	}
 	return interceptor(ctx, in, info, handler)
+}
+
+func _Executor_Events_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(EventsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(ExecutorServer).Events(m, &executorEventsServer{stream})
+}
+
+type Executor_EventsServer interface {
+	Send(*Event) error
+	grpc.ServerStream
+}
+
+type executorEventsServer struct {
+	grpc.ServerStream
+}
+
+func (x *executorEventsServer) Send(m *Event) error {
+	return x.ServerStream.SendMsg(m)
 }
 
 func _Executor_Open_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -387,27 +408,6 @@ func _Executor_Close_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Executor_Events_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(EventsRequest)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(ExecutorServer).Events(m, &executorEventsServer{stream})
-}
-
-type Executor_EventsServer interface {
-	Send(*Event) error
-	grpc.ServerStream
-}
-
-type executorEventsServer struct {
-	grpc.ServerStream
-}
-
-func (x *executorEventsServer) Send(m *Event) error {
-	return x.ServerStream.SendMsg(m)
-}
-
 // Executor_ServiceDesc is the grpc.ServiceDesc for Executor service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -438,6 +438,11 @@ var Executor_ServiceDesc = grpc.ServiceDesc{
 	},
 	Streams: []grpc.StreamDesc{
 		{
+			StreamName:    "Events",
+			Handler:       _Executor_Events_Handler,
+			ServerStreams: true,
+		},
+		{
 			StreamName:    "Import",
 			Handler:       _Executor_Import_Handler,
 			ClientStreams: true,
@@ -445,11 +450,6 @@ var Executor_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "Export",
 			Handler:       _Executor_Export_Handler,
-			ServerStreams: true,
-		},
-		{
-			StreamName:    "Events",
-			Handler:       _Executor_Events_Handler,
 			ServerStreams: true,
 		},
 	},
