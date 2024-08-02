@@ -8,6 +8,7 @@ import (
 	"github.com/knita-io/knita/sdk/go/knita"
 	"github.com/knita-io/knita/sdk/go/knita/runtime"
 	"github.com/knita-io/knita/sdk/go/knita/runtime/exec"
+	import_ "github.com/knita-io/knita/sdk/go/knita/runtime/import"
 )
 
 func main() {
@@ -57,7 +58,7 @@ func main() {
 				log.Fatalf("error reading input file: %v", err)
 			}
 			expectedContents := string(buf)
-			rt.MustImport(expectedFilePath, "")
+			rt.MustImport(expectedFilePath)
 			rt.MustExec(
 				exec.WithTag("name", "import-test"),
 				exec.WithCommand("/bin/bash", "-c", `
@@ -68,10 +69,32 @@ func main() {
 			`))
 
 			// Verify zero-byte files can be imported
-			rt.MustImport("input/zero-bytes.txt", "")
+			rt.MustImport("input/zero-bytes.txt")
 			rt.MustExec(
 				exec.WithTag("name", "zero-byte-import-test"),
 				exec.WithCommand("/bin/bash", "-c", `stat input/zero-bytes.txt`))
+
+			// Verify import excludes work
+			rt.MustImport("input/exclude", import_.WithExcludes(
+				"input/exclude/exclude*",
+				"input/exclude/include1/exclude**",
+				"input/exclude/include1/include2/exclude2.txt"))
+			rt.MustExec(
+				exec.WithTag("name", "exclude-import-test"),
+				exec.WithCommand("/bin/bash", "-c", `set -x
+				if [ -d input/exclude/exclude1 ]; then exit 1; fi
+				if [ ! -d input/exclude/include1 ]; then exit 1; fi
+				if [ -f input/exclude/exclude.txt ]; then exit 1; fi
+				if [ ! -f input/exclude/include.txt ]; then exit 1; fi
+				
+				if [ -d input/exclude/include1/exclude2 ]; then exit 1; fi
+				if [ ! -d input/exclude/include1/include2 ]; then exit 1; fi
+				if [ -f input/exclude/include1/exclude1.txt ]; then exit 1; fi
+				if [ ! -f input/exclude/include1/include1.txt ]; then exit 1; fi
+				
+				if [ -f input/exclude/include1/include2/exclude2.txt ]; then exit 1; fi
+				if [ ! -f input/exclude/include1/include2/include2.txt ]; then exit 1; fi
+				`))
 
 			// Verify the remote work directory is reported correctly
 			rt.MustExec(
@@ -91,7 +114,7 @@ func main() {
 				exec.WithCommand("/bin/bash", "-c", `
 				mkdir output && echo -n '`+expectedContents+`' > `+expectedFilePath+`
 			`))
-			rt.MustExport(expectedFilePath, "")
+			rt.MustExport(expectedFilePath)
 			buf, err = os.ReadFile(expectedFilePath)
 			if err != nil {
 				log.Fatalf("error reading output file: %v", err)

@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/knita-io/knita/sdk/go/knita/runtime/export"
 	"io"
 	"path/filepath"
 
 	directorv1 "github.com/knita-io/knita/api/director/v1"
 	executorv1 "github.com/knita-io/knita/api/executor/v1"
 	"github.com/knita-io/knita/sdk/go/knita/runtime/exec"
+	import_ "github.com/knita-io/knita/sdk/go/knita/runtime/import"
 )
 
 // Runtime represents a local handle to a remote runtime hosted by an executor.
@@ -43,44 +45,52 @@ func (c *Runtime) WorkDirectory(path string) string {
 }
 
 // Import files from the local work directory into the runtime's remote work directory.
-// src and dest must be relative paths. src may be a glob (doublestar syntax supported).
-// If dest is empty, all files identified by src will be copied to their original location in dest.
-func (c *Runtime) Import(src string, dest string) error {
-	return c.ImportWithContext(context.Background(), src, dest)
+// src must be a relative path, and may be a glob (doublestar syntax supported).
+// By default, all files identified by src will be copied to their original location on the remote. Use the import_.WithDest  option to override this.
+func (c *Runtime) Import(src string, opts ...import_.Opt) error {
+	return c.ImportWithContext(context.Background(), src, opts...)
 }
 
 // MustImport is like Import, but it calls the configured FatalFunc if an error occurs.
-func (c *Runtime) MustImport(src string, dest string) {
-	err := c.Import(src, dest)
+func (c *Runtime) MustImport(src string, opts ...import_.Opt) {
+	err := c.Import(src, opts...)
 	if err != nil {
 		c.fatalFunc(fmt.Errorf("error importing: %w", err))
 	}
 }
 
 // ImportWithContext is like Import, but it allows a context to be set.
-func (c *Runtime) ImportWithContext(ctx context.Context, src string, dest string) error {
-	_, err := c.client.Import(ctx, &directorv1.ImportRequest{RuntimeId: c.runtimeID, SrcPath: src, DestPath: dest})
+func (c *Runtime) ImportWithContext(ctx context.Context, src string, opts ...import_.Opt) error {
+	o := &directorv1.ImportOpts{}
+	for _, opt := range opts {
+		opt.Apply(o)
+	}
+	_, err := c.client.Import(ctx, &directorv1.ImportRequest{RuntimeId: c.runtimeID, SrcPath: src, Opts: o})
 	return err
 }
 
 // Export files from the runtime's remote work directory into the local work directory.
-// src and dest must be relative paths. src may be a glob (doublestar syntax supported).
-// If dest is empty, all files identified by src will be copied to their original location in dest.
-func (c *Runtime) Export(src string, dest string) error {
-	return c.ExportWithContext(context.Background(), src, dest)
+// src must be a relative path, and may be a glob (doublestar syntax supported).
+// By default, all files identified by src will be copied to their original location locally. Use the export.WithDest option to override this.
+func (c *Runtime) Export(src string, opts ...export.Opt) error {
+	return c.ExportWithContext(context.Background(), src, opts...)
 }
 
 // MustExport is like Export, but it calls the configured FatalFunc if an error occurs.
-func (c *Runtime) MustExport(src string, dest string) {
-	err := c.Export(src, dest)
+func (c *Runtime) MustExport(src string, opts ...export.Opt) {
+	err := c.Export(src, opts...)
 	if err != nil {
 		c.fatalFunc(fmt.Errorf("error exporting: %w", err))
 	}
 }
 
 // ExportWithContext is like Export, but it allows a context to be set.
-func (c *Runtime) ExportWithContext(ctx context.Context, src string, dest string) error {
-	_, err := c.client.Export(ctx, &directorv1.ExportRequest{RuntimeId: c.runtimeID, SrcPath: src, DestPath: dest})
+func (c *Runtime) ExportWithContext(ctx context.Context, src string, opts ...export.Opt) error {
+	o := &directorv1.ExportOpts{}
+	for _, opt := range opts {
+		opt.Apply(o)
+	}
+	_, err := c.client.Export(ctx, &directorv1.ExportRequest{RuntimeId: c.runtimeID, SrcPath: src, Opts: o})
 	return err
 }
 

@@ -33,14 +33,14 @@ class Client:
     def runtime(self,
                 type: runtime.RuntimeType,
                 tags: dict[str, str] = None,
-                labels: [str] = None,
+                runs_on: [str] = None,
                 docker_image: str = None,
                 docker_pull_strategy: runtime.DockerPullStrategy = None,
                 docker_basic_auth: runtime.DockerBasicAuth = None,
                 docker_aws_ecr_auth: runtime.DockerAWSECRAuth = None):
         """Opens a new remote runtime configured based on options."""
 
-        opts = executor_pb2.Opts(tags=tags, labels=labels)
+        opts = executor_pb2.Opts(tags=tags, labels=runs_on)
         if type == runtime.RuntimeType.host:
             opts.type = executor_pb2.RuntimeType.RUNTIME_HOST
         elif type == runtime.RuntimeType.docker:

@@ -37,10 +37,11 @@ func TestSend(t *testing.T) {
 	}
 
 	var table = []struct {
-		fs   fs.FS
-		src  string
-		dest string
-		out  []outFile
+		fs       fs.FS
+		src      string
+		dest     string
+		excludes []string
+		out      []outFile
 	}{
 		{
 			fs:   testFS,
@@ -417,15 +418,80 @@ func TestSend(t *testing.T) {
 				},
 			},
 		},
+		///////////////////////////////////
+		// Excludes
+		///////////////////////////////////
+		{
+			fs: fstest.MapFS{
+				"a/a.txt":      &fstest.MapFile{Data: []byte("a")},
+				"b/b.txt":      &fstest.MapFile{Data: []byte("b")},
+				"aa/aa.txt":    &fstest.MapFile{Data: []byte("aa")},
+				"bb/bb.txt":    &fstest.MapFile{Data: []byte("bb")},
+				"cc/cc.txt":    &fstest.MapFile{Data: []byte("cc")},
+				"cc/dd/dd.txt": &fstest.MapFile{Data: []byte("dd")},
+				"ee/ee.txt":    &fstest.MapFile{Data: []byte("cc")},
+				"ee/ee/ee.txt": &fstest.MapFile{Data: []byte("dd")},
+			},
+			src:  ".",
+			dest: "",
+			excludes: []string{
+				"a/a.txt", // exact file
+				"ee/ee",   // exact dir
+				"bb*",     // single-star glob
+				"cc/*/**", // doublestar glob
+			},
+			out: []outFile{
+				{
+					dir:  true,
+					path: "a",
+					dest: "a",
+				},
+				{
+					dir:  true,
+					path: "b",
+					dest: "b",
+				},
+				{
+					dir:  false,
+					path: "b/b.txt",
+					dest: "b/b.txt",
+				},
+				{
+					dir:  true,
+					path: "aa",
+					dest: "aa",
+				},
+				{
+					dir:  false,
+					path: "aa/aa.txt",
+					dest: "aa/aa.txt",
+				},
+				{
+					dir:  true,
+					path: "cc",
+					dest: "cc",
+				},
+				{
+					dir:  true,
+					path: "ee",
+					dest: "ee",
+				},
+				{
+					dir:  false,
+					path: "ee/ee.txt",
+					dest: "ee/ee.txt",
+				},
+			},
+		},
 	}
 
 	logger, _ := zap.NewDevelopment()
 	log := logger.Sugar()
 	for i, scenario := range table {
 		log.Infof("Testing scenario %d: src: %s, dest: %s", i, scenario.src, scenario.dest)
-		sender := NewSender(log, scenario.fs, "test")
 		trans := &testSendTransport{}
-		_, err := sender.Send(trans, scenario.src, scenario.dest)
+		sender := NewSender(log, scenario.fs, trans, "test", "test", WithDest(scenario.dest), WithExcludes(scenario.excludes))
+		_, err := sender.Send(scenario.src)
 		require.NoError(t, err)
 		require.Equal(t, len(scenario.out), len(trans.sends))
 		sort.Slice(scenario.out, func(i, j int) bool {

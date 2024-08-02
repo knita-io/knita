@@ -38,6 +38,25 @@ for opts in opts:
         runtime.exec(name="/bin/bash", args=["-c", f"stat input/zero-bytes.txt"],
                      tags={"name": "zero-byte-import-test"})
 
+        # Verify import excludes work
+        runtime.import_(src='input/exclude', excludes=['input/exclude/exclude*',
+                                                       'input/exclude/include1/exclude**',
+                                                       'input/exclude/include1/include2/exclude2.txt'])
+        runtime.exec(name="/bin/bash", args=["-c", '''set -x
+        if [ -d input/exclude/exclude1 ]; then exit 1; fi
+        if [ ! -d input/exclude/include1 ]; then exit 1; fi
+        if [ -f input/exclude/exclude.txt ]; then exit 1; fi
+        if [ ! -f input/exclude/include.txt ]; then exit 1; fi
+        
+        if [ -d input/exclude/include1/exclude2 ]; then exit 1; fi
+        if [ ! -d input/exclude/include1/include2 ]; then exit 1; fi
+        if [ -f input/exclude/include1/exclude1.txt ]; then exit 1; fi
+        if [ ! -f input/exclude/include1/include1.txt ]; then exit 1; fi
+        
+        if [ -f input/exclude/include1/include2/exclude2.txt ]; then exit 1; fi
+        if [ ! -f input/exclude/include1/include2/include2.txt ]; then exit 1; fi'''],
+                     tags={"name": "exclude-import-test"})
+
         # Verify the remote work directory is reported correctly
         runtime.exec(name="/bin/bash", args=["-c", f"contents=\"$(cat {runtime.work_directory(expected_file_path)})\"\n"
                                                    f"if [[ \"$contents\" != \"{expected_contents}\" ]]; then\n"
@@ -68,4 +87,3 @@ for opts in opts:
                 raise Exception(f"mismatched stdout output: {stdout.getvalue()}")
             if stderr.getvalue() != expected_output:
                 raise Exception(f"mismatched stderr output: {stderr.getvalue()}")
-

@@ -28,7 +28,12 @@ message OpenResponse {
 message ImportRequest {
   string runtime_id = 1;
   string src_path = 2;
-  string dest_path = 3;
+  ImportOpts opts = 3;
+}
+
+message ImportOpts {
+  string dest_path = 1;
+  repeated string excludes = 2;
 }
 
 message ImportResponse {}
@@ -36,7 +41,12 @@ message ImportResponse {}
 message ExportRequest {
   string runtime_id = 1;
   string src_path = 2;
-  string dest_path = 3;
+  ExportOpts opts = 3;
+}
+
+message ExportOpts {
+  string dest_path = 1;
+  repeated string excludes = 2;
 }
 
 message ExportResponse {}
