@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package director;
+package director.knita.io;
 
 option go_package = "github.com/knita-io/knita/api/director/v1";
 
@@ -11,18 +11,18 @@ service Director {
   rpc Exec(ExecRequest) returns (stream ExecEvent);
   rpc Import(ImportRequest) returns (ImportResponse);
   rpc Export(ExportRequest) returns (ExportResponse);
-  rpc Close(executor.CloseRequest) returns (executor.CloseResponse);
+  rpc Close(CloseRequest) returns (CloseResponse);
 }
 
 message OpenRequest {
   string build_id = 1;
-  executor.Opts opts = 2;
+  executor.knita.io.Opts opts = 2;
 }
 
 message OpenResponse {
   string runtime_id = 1;
   string work_directory = 2;
-  executor.SystemInfo sys_info = 3;
+  executor.knita.io.SystemInfo sys_info = 3;
 }
 
 message ImportRequest {
@@ -53,7 +53,7 @@ message ExportResponse {}
 
 message ExecRequest {
   string runtime_id = 1;
-  executor.ExecOpts opts = 2;
+  executor.knita.io.ExecOpts opts = 2;
 }
 
 message ExecEvent {
@@ -79,3 +79,9 @@ message ExecEndEvent {
   string error = 1;
   int32 exit_code = 2;
 }
+
+message CloseRequest {
+  string runtime_id = 1;
+}
+
+message CloseResponse {}

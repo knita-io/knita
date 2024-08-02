@@ -5,7 +5,10 @@ import (
 	"io"
 	"strings"
 
-	"github.com/knita-io/knita/api/executor/v1"
+	"google.golang.org/protobuf/proto"
+
+	builtinv1 "github.com/knita-io/knita/api/events/builtin/v1"
+	eventsv1 "github.com/knita-io/knita/api/events/v1"
 	"github.com/knita-io/knita/internal/event"
 )
 
@@ -20,11 +23,11 @@ type BuildLog struct {
 	dependents []closer
 	stream     event.Stream
 	sequencer  *event.Sequencer
-	source     *v1.LogEventSource
+	source     *builtinv1.LogEventSource
 	buildID    string
 }
 
-func NewBuildLog(stream event.Stream, buildID string, source *v1.LogEventSource) *BuildLog {
+func NewBuildLog(stream event.Stream, buildID string, source *builtinv1.LogEventSource) *BuildLog {
 	return &BuildLog{
 		name:      "",
 		source:    source,
@@ -38,17 +41,21 @@ func (l *BuildLog) Stream() event.Stream {
 	return l.stream
 }
 
-func (l *BuildLog) Publish(event *v1.Event) {
-	event.BuildId = l.buildID
-	event.GroupName = l.name
-	l.sequencer.Publish(event)
+func (l *BuildLog) MustPublish(payload proto.Message) {
+	l.sequencer.MustPublish(&event.Event{
+		Meta: &eventsv1.Meta{
+			BuildId:       l.buildID,
+			CorrelationId: l.name,
+		},
+		Payload: payload,
+	})
 }
 
-func (l *BuildLog) Republish(event *v1.Event) {
-	if event.BuildId != l.buildID {
+func (l *BuildLog) MustRepublish(event *event.Event) {
+	if event.Meta == nil || event.Meta.BuildId != l.buildID {
 		panic("build id mismatch")
 	}
-	l.sequencer.Publish(event)
+	l.sequencer.MustPublish(event)
 }
 
 func (l *BuildLog) Named(name string) *BuildLog {
@@ -60,7 +67,7 @@ func (l *BuildLog) Named(name string) *BuildLog {
 	return log
 }
 
-func (l *BuildLog) Source(source *v1.LogEventSource) *BuildLog {
+func (l *BuildLog) Source(source *builtinv1.LogEventSource) *BuildLog {
 	log := l.clone()
 	log.source = source
 	return log
@@ -76,8 +83,8 @@ func (l *BuildLog) Stdout() io.WriteCloser {
 				return
 			}
 			if n > 0 {
-				event := v1.NewStdoutEvent(buf[:n], l.source)
-				l.Publish(event)
+				event := builtinv1.NewStdoutEvent(buf[:n], l.source)
+				l.MustPublish(event)
 			}
 		}
 	}()
@@ -95,8 +102,8 @@ func (l *BuildLog) Stderr() io.WriteCloser {
 				return
 			}
 			if n > 0 {
-				event := v1.NewStderrEvent(buf[:n], l.source)
-				l.Publish(event)
+				event := builtinv1.NewStderrEvent(buf[:n], l.source)
+				l.MustPublish(event)
 			}
 		}
 	}()
@@ -109,8 +116,8 @@ func (l *BuildLog) Printf(format string, args ...interface{}) {
 	if !strings.HasSuffix(str, "\n") {
 		str += "\n"
 	}
-	event := v1.NewStdoutEvent([]byte(str), l.source)
-	l.Publish(event)
+	event := builtinv1.NewStdoutEvent([]byte(str), l.source)
+	l.MustPublish(event)
 }
 
 func (l *BuildLog) Close() error {

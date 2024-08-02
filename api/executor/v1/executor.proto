@@ -1,14 +1,15 @@
 syntax = "proto3";
 
-package executor;
+package executor.knita.io;
 
 option go_package = "github.com/knita-io/knita/api/executor/v1";
 
+import "events/v1/event.proto";
 import "google/protobuf/duration.proto";
 
 service Executor {
   rpc Introspect(IntrospectRequest) returns (IntrospectResponse);
-  rpc Events(EventsRequest) returns (stream Event);
+  rpc Events(EventsRequest) returns (stream events.knita.io.Event);
   rpc Open(OpenRequest) returns (OpenResponse);
   rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
   rpc Exec(ExecRequest) returns (ExecResponse);
@@ -33,6 +34,12 @@ message IntrospectResponse{
   SystemInfo sys_info = 1;
   ExecutorInfo executor_info = 3;
   repeated string labels = 2;
+}
+
+message EventsRequest {
+  string build_id = 1;
+  string runtime_id = 2;
+  string barrier_id = 3;
 }
 
 message OpenRequest {
@@ -62,8 +69,8 @@ enum RuntimeType {
 
 message Opts {
   RuntimeType type = 1;
-  repeated string labels = 4;
-  map<string, string> tags = 5;
+  repeated string labels = 4;   // TODO becomes "label selector". Runner labels become k/v pairs, with the same semantics as event labels.
+  map<string, string> tags = 5; // TODO moves up to Event
   oneof opts {
     HostOpts host = 2;
     DockerOpts docker = 3;
@@ -109,7 +116,8 @@ message AWSECRAuth  {
 message ExecRequest {
   string runtime_id = 1;
   string exec_id = 2;
-  ExecOpts opts = 3;
+  string barrier_id = 3;
+  ExecOpts opts = 4;
 }
 
 message ExecOpts {
@@ -165,139 +173,9 @@ message ExportOpts {
 
 message CloseRequest {
   string runtime_id = 1;
+  string barrier_id = 2;
 }
 
 message CloseResponse {}
 
-message EventsRequest {
-  string runtime_id = 1;
-}
 
-message Event {
-  string build_id = 1;
-  string group_name = 2;
-  uint64 sequence = 3;
-  oneof payload {
-    RuntimeTenderStartEvent runtime_tender_start = 4;
-    RuntimeTenderEndEvent runtime_tender_end = 5;
-    RuntimeSettlementStartEvent runtime_settlement_start = 6;
-    RuntimeSettlementEndEvent runtime_settlement_end = 7;
-    RuntimeOpenStartEvent runtime_open_start = 8;
-    RuntimeOpenEndEvent runtime_open_end = 9;
-    ExecStartEvent exec_start = 10;
-    ExecEndEvent exec_end = 11;
-    ImportStartEvent import_start = 12;
-    ImportEndEvent import_end = 13;
-    ExportStartEvent export_start = 14;
-    ExportEndEvent export_end = 15;
-    StdoutEvent stdout = 16;
-    StderrEvent stderr = 17;
-    RuntimeCloseStartEvent runtime_close_start = 18;
-    RuntimeCloseEndEvent runtime_close_end = 19;
-  }
-}
-
-message RuntimeTenderStartEvent {
-  string build_id = 1;
-  string tender_id = 2;
-  Opts opts = 3;
-}
-
-message RuntimeTenderEndEvent {
-  string tender_id = 1;
-  // TODO contracts (need events to be in their own package to avoid circular dependency on broker)
-}
-
-message RuntimeSettlementStartEvent {
-  string tender_id = 1;
-  string contract_id = 2;
-  string runtime_id = 3;
-}
-
-message RuntimeSettlementEndEvent {
-  string tender_id = 1;
-  string contract_id = 2;
-  string runtime_id = 3;
-}
-
-message RuntimeOpenStartEvent {
-  string runtime_id = 1;
-  Opts opts = 2;
-}
-
-message RuntimeOpenEndEvent {
-  string runtime_id = 1;
-}
-
-message RuntimeCloseStartEvent {
-  string runtime_id = 1;
-}
-
-message RuntimeCloseEndEvent {
-  string runtime_id = 1;
-}
-
-message StdoutEvent {
-  bytes data = 1;
-  LogEventSource source = 2;
-}
-
-message StderrEvent {
-  bytes data = 1;
-  LogEventSource source = 2;
-}
-
-message LogEventSource {
-  oneof source {
-    LogSourceRuntime runtime = 2;
-    LogSourceExec exec = 3;
-    LogSourceDirector director = 4;
-  }
-}
-
-message LogSourceRuntime {
-  string runtime_id = 1;
-}
-
-message LogSourceExec {
-  string runtime_id = 1;
-  string exec_id = 2;
-  // System is true if a knita component wrote the log.
-  bool system = 3;
-}
-
-message LogSourceDirector {}
-
-message ExecStartEvent {
-  string runtime_id = 1;
-  string exec_id = 2;
-  ExecOpts opts = 3;
-  map<string, string> tags = 4;
-}
-
-message ImportStartEvent {
-  string runtime_id = 1;
-  string import_id = 2;
-}
-
-message ImportEndEvent {
-  string runtime_id = 1;
-  string import_id = 2;
-}
-
-message ExportStartEvent {
-  string runtime_id = 1;
-  string export_id = 2;
-}
-
-message ExportEndEvent {
-  string runtime_id = 1;
-  string export_id = 2;
-}
-
-message ExecEndEvent {
-  string runtime_id = 1;
-  string exec_id = 2;
-  string error = 3; // TODO structured error?
-  int32 exit_code = 4;
-}

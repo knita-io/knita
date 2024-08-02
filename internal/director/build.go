@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc"
 
 	brokerv1 "github.com/knita-io/knita/api/broker/v1"
+	builtinv1 "github.com/knita-io/knita/api/events/builtin/v1"
 	executorv1 "github.com/knita-io/knita/api/executor/v1"
 	"github.com/knita-io/knita/internal/file"
 )
@@ -49,24 +50,24 @@ func (c *Build) Runtime(ctx context.Context, opts *executorv1.Opts) (*Runtime, e
 	log.Infow("Requesting runtime from broker...", "opts", opts)
 	tenderID := uuid.New().String()
 	tender := &brokerv1.RuntimeTender{BuildId: c.buildID, TenderId: tenderID, Opts: opts}
-	c.log.Publish(executorv1.NewRuntimeTenderStartEvent(c.buildID, tenderID, opts))
+	c.log.MustPublish(builtinv1.NewRuntimeTenderStartEvent(c.buildID, tenderID, opts))
 	runtimeRes, err := c.broker.Tender(ctx, tender)
 	if err != nil {
 		return nil, fmt.Errorf("error brokering runtime: %w", err)
 	}
-	c.log.Publish(executorv1.NewRuntimeTenderEndEvent(tenderID))
+	c.log.MustPublish(builtinv1.NewRuntimeTenderEndEvent(tenderID))
 	if len(runtimeRes.Contracts) == 0 {
 		return nil, fmt.Errorf("error no runtime contracts received; unable to locate suitable executor to host runtime")
 	}
 	contract := runtimeRes.Contracts[0]
 	log.Infow("Selected runtime contract", "contract_id", contract.ContractId)
 	rid := contract.RuntimeId
-	c.log.Publish(executorv1.NewRuntimeSettlementStartEvent(tenderID, contract.ContractId, rid))
+	c.log.MustPublish(builtinv1.NewRuntimeSettlementStartEvent(tenderID, contract.ContractId, rid))
 	settlementRes, err := c.broker.Settle(ctx, contract)
 	if err != nil {
 		return nil, fmt.Errorf("error settling contract: %w", err)
 	}
-	c.log.Publish(executorv1.NewRuntimeSettlementEndEvent(tenderID, contract.ContractId, rid))
+	c.log.MustPublish(builtinv1.NewRuntimeSettlementEndEvent(tenderID, contract.ContractId, rid))
 	log.Infow("Settled runtime contract", "contract_id", contract.ContractId)
 	report := c.makeSelectionReport(tender, runtimeRes.Contracts, contract, settlementRes)
 	c.log.Printf(report)

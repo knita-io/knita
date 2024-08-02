@@ -8,7 +8,6 @@ package v1
 
 import (
 	context "context"
-	v1 "github.com/knita-io/knita/api/executor/v1"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -20,11 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Director_Open_FullMethodName   = "/director.Director/Open"
-	Director_Exec_FullMethodName   = "/director.Director/Exec"
-	Director_Import_FullMethodName = "/director.Director/Import"
-	Director_Export_FullMethodName = "/director.Director/Export"
-	Director_Close_FullMethodName  = "/director.Director/Close"
+	Director_Open_FullMethodName   = "/director.knita.io.Director/Open"
+	Director_Exec_FullMethodName   = "/director.knita.io.Director/Exec"
+	Director_Import_FullMethodName = "/director.knita.io.Director/Import"
+	Director_Export_FullMethodName = "/director.knita.io.Director/Export"
+	Director_Close_FullMethodName  = "/director.knita.io.Director/Close"
 )
 
 // DirectorClient is the client API for Director service.
@@ -35,7 +34,7 @@ type DirectorClient interface {
 	Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (Director_ExecClient, error)
 	Import(ctx context.Context, in *ImportRequest, opts ...grpc.CallOption) (*ImportResponse, error)
 	Export(ctx context.Context, in *ExportRequest, opts ...grpc.CallOption) (*ExportResponse, error)
-	Close(ctx context.Context, in *v1.CloseRequest, opts ...grpc.CallOption) (*v1.CloseResponse, error)
+	Close(ctx context.Context, in *CloseRequest, opts ...grpc.CallOption) (*CloseResponse, error)
 }
 
 type directorClient struct {
@@ -105,8 +104,8 @@ func (c *directorClient) Export(ctx context.Context, in *ExportRequest, opts ...
 	return out, nil
 }
 
-func (c *directorClient) Close(ctx context.Context, in *v1.CloseRequest, opts ...grpc.CallOption) (*v1.CloseResponse, error) {
-	out := new(v1.CloseResponse)
+func (c *directorClient) Close(ctx context.Context, in *CloseRequest, opts ...grpc.CallOption) (*CloseResponse, error) {
+	out := new(CloseResponse)
 	err := c.cc.Invoke(ctx, Director_Close_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -122,7 +121,7 @@ type DirectorServer interface {
 	Exec(*ExecRequest, Director_ExecServer) error
 	Import(context.Context, *ImportRequest) (*ImportResponse, error)
 	Export(context.Context, *ExportRequest) (*ExportResponse, error)
-	Close(context.Context, *v1.CloseRequest) (*v1.CloseResponse, error)
+	Close(context.Context, *CloseRequest) (*CloseResponse, error)
 	mustEmbedUnimplementedDirectorServer()
 }
 
@@ -142,7 +141,7 @@ func (UnimplementedDirectorServer) Import(context.Context, *ImportRequest) (*Imp
 func (UnimplementedDirectorServer) Export(context.Context, *ExportRequest) (*ExportResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Export not implemented")
 }
-func (UnimplementedDirectorServer) Close(context.Context, *v1.CloseRequest) (*v1.CloseResponse, error) {
+func (UnimplementedDirectorServer) Close(context.Context, *CloseRequest) (*CloseResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Close not implemented")
 }
 func (UnimplementedDirectorServer) mustEmbedUnimplementedDirectorServer() {}
@@ -234,7 +233,7 @@ func _Director_Export_Handler(srv interface{}, ctx context.Context, dec func(int
 }
 
 func _Director_Close_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(v1.CloseRequest)
+	in := new(CloseRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -246,7 +245,7 @@ func _Director_Close_Handler(srv interface{}, ctx context.Context, dec func(inte
 		FullMethod: Director_Close_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DirectorServer).Close(ctx, req.(*v1.CloseRequest))
+		return srv.(DirectorServer).Close(ctx, req.(*CloseRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -255,7 +254,7 @@ func _Director_Close_Handler(srv interface{}, ctx context.Context, dec func(inte
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Director_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "director.Director",
+	ServiceName: "director.knita.io.Director",
 	HandlerType: (*DirectorServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

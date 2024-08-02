@@ -1,7 +1,7 @@
 package runtime
 
 import (
-	executorv1 "github.com/knita-io/knita/api/executor/v1"
+	executorv1 "github.com/knita-io/knita/api/events/builtin/v1"
 	"github.com/knita-io/knita/internal/event"
 	"github.com/knita-io/knita/internal/log"
 )

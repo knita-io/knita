@@ -111,3 +111,13 @@ class ExecEndEvent(_message.Message):
     error: str
     exit_code: int
     def __init__(self, error: _Optional[str] = ..., exit_code: _Optional[int] = ...) -> None: ...
+
+class CloseRequest(_message.Message):
+    __slots__ = ("runtime_id",)
+    RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
+    runtime_id: str
+    def __init__(self, runtime_id: _Optional[str] = ...) -> None: ...
+
+class CloseResponse(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...

@@ -9,11 +9,11 @@ import (
 	"path/filepath"
 	"time"
 
-	directorv1 "github.com/knita-io/knita/api/director/v1"
-
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
+	directorv1 "github.com/knita-io/knita/api/director/v1"
+	builtinv1 "github.com/knita-io/knita/api/events/builtin/v1"
 	executorv1 "github.com/knita-io/knita/api/executor/v1"
 	"github.com/knita-io/knita/internal/event"
 	"github.com/knita-io/knita/internal/file"
@@ -84,8 +84,8 @@ func (c *Runtime) Import(ctx context.Context, src string, opts *directorv1.Impor
 	}
 	c.syslog.Infow("Import stream opened", "src", src)
 	importID := uuid.New().String()
-	c.log.Publish(executorv1.NewImportStartEvent(c.runtimeID, importID))
-	defer c.log.Publish(executorv1.NewImportEndEvent(c.runtimeID, importID))
+	c.log.MustPublish(builtinv1.NewImportStartEvent(c.runtimeID, importID))
+	defer c.log.MustPublish(builtinv1.NewImportEndEvent(c.runtimeID, importID))
 	sendCallback := func(header *executorv1.FileTransferHeader) {
 		if header.IsDir {
 			c.log.Printf("Imported directory src=%s, dest=%s, mode=%s", header.SrcPath, header.DestPath, os.FileMode(header.Mode))
@@ -129,17 +129,19 @@ func (c *Runtime) Import(ctx context.Context, src string, opts *directorv1.Impor
 // Export files and directories from the remote runtime to the local filesystem.
 // Events associated with the export will be published to the configured event stream.
 func (c *Runtime) Export(ctx context.Context, src string, opts *directorv1.ExportOpts) error {
-	exportReq := &executorv1.ExportRequest{
+	req := &executorv1.ExportRequest{
 		RuntimeId: c.runtimeID,
 		ExportId:  uuid.New().String(),
 		SrcPath:   src,
 		Opts:      &executorv1.ExportOpts{},
 	}
 	if opts != nil {
-		exportReq.Opts.DestPath = opts.DestPath
-		exportReq.Opts.Excludes = opts.Excludes
+		req.Opts.DestPath = opts.DestPath
+		req.Opts.Excludes = opts.Excludes
 	}
-	stream, err := c.client.Export(ctx, exportReq)
+	c.log.MustPublish(builtinv1.NewExportStartEvent(c.runtimeID, req.ExportId))
+	defer c.log.MustPublish(builtinv1.NewExportEndEvent(c.runtimeID, req.ExportId))
+	stream, err := c.client.Export(ctx, req)
 	if err != nil {
 		return fmt.Errorf("error opening export stream: %w", err)
 	}
@@ -169,85 +171,85 @@ func (c *Runtime) Export(ctx context.Context, src string, opts *directorv1.Expor
 
 // Exec executes a command inside the runtime.
 // Events associated with the exec will be published to the configured event stream.
-func (c *Runtime) Exec(ctx context.Context, execID string, opts *executorv1.ExecOpts) (*executorv1.ExecResponse, error) {
-	doneC := make(chan struct{})
-	done := c.log.Stream().Subscribe(func(event *executorv1.Event) {
-		close(doneC)
-	}, event.WithPredicate(func(event *executorv1.Event) bool {
-		closed, ok := event.Payload.(*executorv1.Event_ExecEnd)
-		return ok && closed.ExecEnd.RuntimeId == c.runtimeID && closed.ExecEnd.ExecId == execID
-	}))
-	defer done()
-	res, err := c.client.Exec(ctx, &executorv1.ExecRequest{RuntimeId: c.runtimeID, ExecId: execID, Opts: opts})
+func (c *Runtime) Exec(ctx context.Context, execID string, opts *executorv1.ExecOpts) (res *executorv1.ExecResponse, err error) {
+	barrier, cancel := event.NewBarrier(c.log.Stream())
+	defer cancel()
+	defer func() {
+		errMsg := ""
+		if err != nil {
+			errMsg = err.Error()
+		}
+		exitCode := int32(-1)
+		if res != nil {
+			exitCode = res.ExitCode
+		}
+		c.log.MustPublish(builtinv1.NewExecEndEvent(c.runtimeID, execID, errMsg, exitCode))
+	}()
+	c.log.MustPublish(builtinv1.NewExecStartEvent(c.runtimeID, execID, opts))
+	res, err = c.client.Exec(ctx, &executorv1.ExecRequest{RuntimeId: c.runtimeID, ExecId: execID, BarrierId: barrier.ID(), Opts: opts})
 	if err != nil {
-		return nil, fmt.Errorf("error in exec: %w", err)
+		err = fmt.Errorf("error in exec: %w", err)
+		return nil, err
 	}
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	case <-doneC:
+	c.syslog.Debugf("Waiting for exec sync point...")
+	if err = barrier.Wait(ctx); err != nil {
+		err = fmt.Errorf("error waiting for sync point: %w", err)
+		return nil, err
 	}
 	return res, nil
 }
 
 // Start the runtime. A runtime must be started prior to use.
 func (c *Runtime) Start(ctx context.Context) error {
+	barrier, cancel := event.NewBarrier(c.log.Stream())
+	defer cancel()
 	backgroundCtx, cancel := context.WithCancel(context.Background())
-	stream, err := c.client.Events(backgroundCtx, &executorv1.EventsRequest{RuntimeId: c.runtimeID})
+	stream, err := c.client.Events(backgroundCtx, &executorv1.EventsRequest{BuildId: c.buildID, RuntimeId: c.runtimeID, BarrierId: barrier.ID()})
 	if err != nil {
 		cancel()
 		return fmt.Errorf("error opening event stream: %w", err)
-	}
-	initial, err := stream.Recv()
-	if err != nil {
-		cancel()
-		return fmt.Errorf("error waiting for initial event: %w", err)
-	}
-	if initial.Sequence != 0 {
-		cancel()
-		return fmt.Errorf("error unexpected initial event")
 	}
 	c.syslog.Info("Started streaming runtime events")
 	c.ctx = backgroundCtx
 	c.cancel = cancel
 	go c.forwardEvents(stream)
+	c.syslog.Debugf("Waiting for events sync point...")
+	if err := barrier.Wait(ctx); err != nil {
+		cancel()
+		return fmt.Errorf("error waiting for sync point: %w", err)
+	}
 	c.syslog.Infow("Opening remote runtime...")
+	c.log.MustPublish(builtinv1.NewRuntimeOpenStartEvent(c.runtimeID, c.opts))
 	openRes, err := c.client.Open(ctx, &executorv1.OpenRequest{BuildId: c.buildID, RuntimeId: c.runtimeID, Opts: c.opts})
 	if err != nil {
 		c.cancel = nil
 		cancel()
+		c.log.MustPublish(builtinv1.NewRuntimeOpenEndEvent(c.runtimeID))
+		c.log.MustPublish(builtinv1.NewRuntimeCloseStartEvent(c.runtimeID))
+		c.log.MustPublish(builtinv1.NewRuntimeCloseEndEvent(c.runtimeID))
 		return fmt.Errorf("error opening remote runtime: %w", err)
 	}
 	go c.keepalive()
 	c.syslog.Infow("Opened runtime")
 	c.remoteWorkDirectory = openRes.WorkDirectory
 	c.remoteSysInfo = openRes.SysInfo
+	c.log.MustPublish(builtinv1.NewRuntimeOpenEndEvent(c.runtimeID))
 	return nil
 }
 
 // Close the runtime. The runtime cannot be reused after a call to close.
 func (c *Runtime) Close(ctx context.Context) error {
-	doneC := make(chan struct{})
-	if c.cancel != nil {
-		done := c.log.Stream().Subscribe(func(event *executorv1.Event) {
-			c.cancel()
-			close(doneC)
-		}, event.WithPredicate(func(event *executorv1.Event) bool {
-			closed, ok := event.Payload.(*executorv1.Event_RuntimeCloseEnd)
-			return ok && closed.RuntimeCloseEnd.RuntimeId == c.runtimeID
-		}))
-		defer done()
-	} else {
-		close(doneC)
-	}
-	_, err := c.client.Close(ctx, &executorv1.CloseRequest{RuntimeId: c.runtimeID})
+	barrier, cancel := event.NewBarrier(c.log.Stream())
+	defer cancel()
+	c.log.MustPublish(builtinv1.NewRuntimeCloseStartEvent(c.runtimeID))
+	defer c.log.MustPublish(builtinv1.NewRuntimeCloseEndEvent(c.runtimeID))
+	_, err := c.client.Close(ctx, &executorv1.CloseRequest{RuntimeId: c.runtimeID, BarrierId: barrier.ID()})
 	if err != nil {
 		return fmt.Errorf("error closing runtime: %w", err)
 	}
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-doneC:
+	c.syslog.Debugf("Waiting for close sync point...")
+	if err := barrier.Wait(ctx); err != nil {
+		return fmt.Errorf("error waiting for sync point: %w", err)
 	}
 	return nil
 }
@@ -256,7 +258,7 @@ func (c *Runtime) Close(ctx context.Context) error {
 // Cancelling c.ctx will exit the forwarding loop.
 func (c *Runtime) forwardEvents(stream executorv1.Executor_EventsClient) {
 	for {
-		evt, err := stream.Recv()
+		msg, err := stream.Recv()
 		if err != nil {
 			if !errors.Is(err, context.Canceled) {
 				c.syslog.Infow("Event stream closed")
@@ -265,8 +267,13 @@ func (c *Runtime) forwardEvents(stream executorv1.Executor_EventsClient) {
 			}
 			return
 		} else {
-			c.syslog.Debugw("Event received", "type", fmt.Sprintf("%T", evt.Payload), "sequence", evt.Sequence)
-			c.log.Republish(evt)
+			event, err := event.Unmarshal(msg)
+			if err != nil {
+				c.syslog.Errorf("Ignoring error unmarshalling event: %v", err)
+			} else {
+				c.syslog.Debugw("Event received", "type", fmt.Sprintf("%T", event.Payload), "sequence", event.Meta.Sequence)
+				c.log.MustRepublish(event)
+			}
 		}
 	}
 }

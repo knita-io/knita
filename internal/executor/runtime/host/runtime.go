@@ -10,7 +10,6 @@ import (
 	"go.uber.org/zap"
 
 	executorv1 "github.com/knita-io/knita/api/executor/v1"
-	"github.com/knita-io/knita/internal/event"
 	"github.com/knita-io/knita/internal/executor/runtime"
 	"github.com/knita-io/knita/internal/file"
 )
@@ -23,7 +22,7 @@ type Runtime struct {
 	log       *runtime.Log
 }
 
-func NewRuntime(syslog *zap.SugaredLogger, stream event.Stream, buildID string, runtimeID string) (*Runtime, error) {
+func NewRuntime(syslog *zap.SugaredLogger, log *runtime.Log, runtimeID string) (*Runtime, error) {
 	baseDir, err := os.MkdirTemp("", "knita-host-*")
 	if err != nil {
 		return nil, fmt.Errorf("error creating runtime base dir: %w", err)
@@ -33,7 +32,7 @@ func NewRuntime(syslog *zap.SugaredLogger, stream event.Stream, buildID string, 
 		runtimeID: runtimeID,
 		baseDir:   baseDir,
 		WriteFS:   file.WriteDirFS(baseDir),
-		log:       runtime.NewLog(stream, buildID, runtimeID),
+		log:       log,
 	}, nil
 }
 

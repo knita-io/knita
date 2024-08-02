@@ -9,7 +9,8 @@ import (
 	"go.uber.org/zap"
 
 	directorv1 "github.com/knita-io/knita/api/director/v1"
-	executorv1 "github.com/knita-io/knita/api/executor/v1"
+	builtinv1 "github.com/knita-io/knita/api/events/builtin/v1"
+	"github.com/knita-io/knita/internal/event"
 )
 
 type Server struct {
@@ -60,41 +61,35 @@ func (s *Server) Exec(req *directorv1.ExecRequest, stream directorv1.Director_Ex
 		closed bool
 		execID = uuid.New().String()
 	)
-	done := s.build.Log().Stream().Subscribe(func(event *executorv1.Event) {
+	done := s.build.Log().Stream().Subscribe(func(event *event.Event) {
 		if closed {
 			return
 		}
 		execEvent := &directorv1.ExecEvent{}
 		switch p := event.Payload.(type) {
-		case *executorv1.Event_ExecStart:
-			if p.ExecStart.RuntimeId != runtime.ID() || p.ExecStart.ExecId != execID {
+		case *builtinv1.ExecStartEvent:
+			if p.RuntimeId != runtime.ID() || p.ExecId != execID {
 				return
 			}
 			execEvent.Payload = &directorv1.ExecEvent_ExecStart{ExecStart: &directorv1.ExecStartEvent{}}
-		case *executorv1.Event_Stdout:
-			src, ok := p.Stdout.Source.Source.(*executorv1.LogEventSource_Exec)
+		case *builtinv1.StdoutEvent:
+			src, ok := p.Source.Source.(*builtinv1.LogEventSource_Exec)
 			if !ok || src.Exec.RuntimeId != runtime.ID() || src.Exec.ExecId != execID || src.Exec.System {
 				return
 			}
-			execEvent.Payload = &directorv1.ExecEvent_Stdout{Stdout: &directorv1.ExecStdoutEvent{
-				Data: p.Stdout.Data,
-			}}
-		case *executorv1.Event_Stderr:
-			src, ok := p.Stderr.Source.Source.(*executorv1.LogEventSource_Exec)
+			execEvent.Payload = &directorv1.ExecEvent_Stdout{Stdout: &directorv1.ExecStdoutEvent{Data: p.Data}}
+		case *builtinv1.StderrEvent:
+			src, ok := p.Source.Source.(*builtinv1.LogEventSource_Exec)
 			if !ok || src.Exec.RuntimeId != runtime.ID() || src.Exec.ExecId != execID || src.Exec.System {
 				return
 			}
-			execEvent.Payload = &directorv1.ExecEvent_Stderr{Stderr: &directorv1.ExecStderrEvent{
-				Data: p.Stderr.Data,
-			}}
-		case *executorv1.Event_ExecEnd:
-			if p.ExecEnd.RuntimeId != runtime.ID() || p.ExecEnd.ExecId != execID {
+			execEvent.Payload = &directorv1.ExecEvent_Stderr{Stderr: &directorv1.ExecStderrEvent{Data: p.Data}}
+		case *builtinv1.ExecEndEvent:
+			if p.RuntimeId != runtime.ID() || p.ExecId != execID {
 				return
 			}
-			execEvent.Payload = &directorv1.ExecEvent_ExecEnd{ExecEnd: &directorv1.ExecEndEvent{
-				Error:    p.ExecEnd.Error,
-				ExitCode: p.ExecEnd.ExitCode,
-			}}
+			execEvent.Payload = &directorv1.ExecEvent_ExecEnd{
+				ExecEnd: &directorv1.ExecEndEvent{Error: p.Error, ExitCode: p.ExitCode}}
 		default:
 			return
 		}
@@ -146,7 +141,7 @@ func (s *Server) Export(ctx context.Context, req *directorv1.ExportRequest) (*di
 }
 
 // Close the runtime. The runtime cannot be reused after a call to close.
-func (s *Server) Close(ctx context.Context, req *executorv1.CloseRequest) (*executorv1.CloseResponse, error) {
+func (s *Server) Close(ctx context.Context, req *directorv1.CloseRequest) (*directorv1.CloseResponse, error) {
 	if err := validateCloseRequest(req); err != nil {
 		return nil, err
 	}
@@ -163,7 +158,7 @@ func (s *Server) Close(ctx context.Context, req *executorv1.CloseRequest) (*exec
 	if err != nil {
 		return nil, err
 	}
-	return &executorv1.CloseResponse{}, nil
+	return &directorv1.CloseResponse{}, nil
 }
 
 // getRuntime returns the runtime with the specified ID.
@@ -242,7 +237,7 @@ func validateExportRequest(req *directorv1.ExportRequest) error {
 }
 
 // validateCloseRequest validates a CloseRequest.
-func validateCloseRequest(req *executorv1.CloseRequest) error {
+func validateCloseRequest(req *directorv1.CloseRequest) error {
 	if req == nil {
 		return fmt.Errorf("nil request")
 	}

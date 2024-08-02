@@ -107,7 +107,9 @@ func protobuf(input *JobProtobufInput) (*JobProtobufOutput, error) {
 			broker/v1/broker.proto \
 			executor/v1/executor.proto \
 			director/v1/director.proto \
-			observer/v1/observer.proto`))
+			observer/v1/observer.proto \
+			events/v1/event.proto \
+			events/builtin/v1/builtin.proto`))
 	container.MustExport("api/**/*.pb.go")
 
 	return &JobProtobufOutput{}, nil

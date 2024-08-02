@@ -11,7 +11,7 @@ import (
 	"github.com/chelnak/ysmrr/pkg/tput"
 	"golang.org/x/term"
 
-	executorv1 "github.com/knita-io/knita/api/executor/v1"
+	builtinv1 "github.com/knita-io/knita/api/events/builtin/v1"
 	"github.com/knita-io/knita/internal/event"
 )
 
@@ -133,71 +133,71 @@ func (ui *Manager) mainLoop() {
 	}
 }
 
-func (ui *Manager) onEventCallback(event *executorv1.Event) {
+func (ui *Manager) onEventCallback(event *event.Event) {
 	ui.mu.Lock()
 	defer ui.mu.Unlock()
 
 	switch p := event.Payload.(type) {
-	case *executorv1.Event_RuntimeTenderStart:
-		ui.AddChildElement(NewRuntimeElement(ui, p.RuntimeTenderStart.TenderId, p.RuntimeTenderStart.Opts))
-		withElement(ui, p.RuntimeTenderStart.TenderId, func(ele *RuntimeElement) {
+	case *builtinv1.RuntimeTenderStartEvent:
+		ui.AddChildElement(NewRuntimeElement(ui, p.TenderId, p.Opts))
+		withElement(ui, p.TenderId, func(ele *RuntimeElement) {
 			ele.StartTendering()
 		})
-	case *executorv1.Event_RuntimeSettlementEnd:
-		ui.runtimeIDToTenderID[p.RuntimeSettlementEnd.RuntimeId] = p.RuntimeSettlementEnd.TenderId
-		withElement(ui, p.RuntimeSettlementEnd.TenderId, func(ele *RuntimeElement) {
+	case *builtinv1.RuntimeSettlementEndEvent:
+		ui.runtimeIDToTenderID[p.RuntimeId] = p.TenderId
+		withElement(ui, p.TenderId, func(ele *RuntimeElement) {
 			ele.EndTendering()
 			ele.StartOpening()
 		})
-	case *executorv1.Event_RuntimeOpenEnd:
-		withElement(ui, ui.runtimeIDToTenderID[p.RuntimeOpenEnd.RuntimeId], func(ele *RuntimeElement) {
+	case *builtinv1.RuntimeOpenEndEvent:
+		withElement(ui, ui.runtimeIDToTenderID[p.RuntimeId], func(ele *RuntimeElement) {
 			ele.EndOpening()
 		})
-	case *executorv1.Event_RuntimeCloseEnd:
-		withElement(ui, ui.runtimeIDToTenderID[p.RuntimeCloseEnd.RuntimeId], func(ele *RuntimeElement) {
+	case *builtinv1.RuntimeCloseEndEvent:
+		withElement(ui, ui.runtimeIDToTenderID[p.RuntimeId], func(ele *RuntimeElement) {
 			ele.Complete("") // TODO would be nice to get the error from a failed runtime
-			delete(ui.runtimeIDToTenderID, p.RuntimeCloseEnd.RuntimeId)
+			delete(ui.runtimeIDToTenderID, p.RuntimeId)
 		})
-	case *executorv1.Event_ExecStart:
-		withElement(ui, ui.runtimeIDToTenderID[p.ExecStart.RuntimeId], func(ele *RuntimeElement) {
+	case *builtinv1.ExecStartEvent:
+		withElement(ui, ui.runtimeIDToTenderID[p.RuntimeId], func(ele *RuntimeElement) {
 			ele.StartExec()
-			ele.AddChildElement(NewExecElement(ui, p.ExecStart.ExecId, p.ExecStart.Opts))
+			ele.AddChildElement(NewExecElement(ui, p.ExecId, p.Opts))
 		})
-	case *executorv1.Event_ExecEnd:
-		withElement(ui, ui.runtimeIDToTenderID[p.ExecEnd.RuntimeId], func(ele *RuntimeElement) {
+	case *builtinv1.ExecEndEvent:
+		withElement(ui, ui.runtimeIDToTenderID[p.RuntimeId], func(ele *RuntimeElement) {
 			ele.EndExec()
 		})
-		withElement(ui, p.ExecEnd.ExecId, func(ele *ExecElement) {
-			ele.Complete(p.ExecEnd.ExitCode, p.ExecEnd.Error)
+		withElement(ui, p.ExecId, func(ele *ExecElement) {
+			ele.Complete(p.ExitCode, p.Error)
 		})
-	case *executorv1.Event_ImportStart:
-		withElement(ui, ui.runtimeIDToTenderID[p.ImportStart.RuntimeId], func(ele *RuntimeElement) {
+	case *builtinv1.ImportStartEvent:
+		withElement(ui, ui.runtimeIDToTenderID[p.RuntimeId], func(ele *RuntimeElement) {
 			ele.StartImport()
 		})
-	case *executorv1.Event_ImportEnd:
-		withElement(ui, ui.runtimeIDToTenderID[p.ImportEnd.RuntimeId], func(ele *RuntimeElement) {
+	case *builtinv1.ImportEndEvent:
+		withElement(ui, ui.runtimeIDToTenderID[p.RuntimeId], func(ele *RuntimeElement) {
 			ele.EndImport()
 		})
-	case *executorv1.Event_ExportStart:
-		withElement(ui, ui.runtimeIDToTenderID[p.ExportStart.RuntimeId], func(ele *RuntimeElement) {
+	case *builtinv1.ExportStartEvent:
+		withElement(ui, ui.runtimeIDToTenderID[p.RuntimeId], func(ele *RuntimeElement) {
 			ele.StartExport()
 		})
-	case *executorv1.Event_ExportEnd:
-		withElement(ui, ui.runtimeIDToTenderID[p.ExportEnd.RuntimeId], func(ele *RuntimeElement) {
+	case *builtinv1.ExportEndEvent:
+		withElement(ui, ui.runtimeIDToTenderID[p.RuntimeId], func(ele *RuntimeElement) {
 			ele.EndExport()
 		})
-	case *executorv1.Event_Stdout:
-		switch s := p.Stdout.Source.Source.(type) {
-		case *executorv1.LogEventSource_Exec:
+	case *builtinv1.StdoutEvent:
+		switch s := p.Source.Source.(type) {
+		case *builtinv1.LogEventSource_Exec:
 			withElement(ui, s.Exec.ExecId, func(ele *ExecElement) {
-				ele.SetMessage(string(p.Stdout.Data))
+				ele.SetMessage(string(p.Data))
 			})
 		}
-	case *executorv1.Event_Stderr:
-		switch s := p.Stderr.Source.Source.(type) {
-		case *executorv1.LogEventSource_Exec:
+	case *builtinv1.StderrEvent:
+		switch s := p.Source.Source.(type) {
+		case *builtinv1.LogEventSource_Exec:
 			withElement(ui, s.Exec.ExecId, func(ele *ExecElement) {
-				ele.SetMessage(string(p.Stderr.Data))
+				ele.SetMessage(string(p.Data))
 			})
 		}
 	}

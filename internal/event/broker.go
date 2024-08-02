@@ -5,18 +5,16 @@ import (
 	"sync"
 
 	"go.uber.org/zap"
-
-	runtimev1 "github.com/knita-io/knita/api/executor/v1"
 )
 
 type Stream interface {
-	Publish(event *runtimev1.Event)
+	MustPublish(event *Event)
 	Subscribe(handler Handler, opts ...Opt) func()
 }
 
-type Predicate func(event *runtimev1.Event) bool
+type Predicate func(event *Event) bool
 
-type Handler func(event *runtimev1.Event)
+type Handler func(event *Event)
 
 type Broker struct {
 	syslog        *zap.SugaredLogger
@@ -36,11 +34,18 @@ func NewBroker(syslog *zap.SugaredLogger) *Broker {
 	}
 }
 
-func (b *Broker) Publish(event *runtimev1.Event) {
+func (b *Broker) MustPublish(event *Event) {
 	b.mu.RLock()
-	defer b.mu.RUnlock()
+	subscriptions := make(map[*subscription]struct{})
+	for k, v := range b.subscriptions {
+		subscriptions[k] = v
+	}
+	b.mu.RUnlock()
 	delivered := 0
 	filtered := 0
+	if event.Payload == nil {
+		b.syslog.Panicf("event payload is nil: %v", event)
+	}
 	for sub := range b.subscriptions {
 		send := true
 		for _, pred := range sub.opts.Predicates {
@@ -57,7 +62,7 @@ func (b *Broker) Publish(event *runtimev1.Event) {
 	}
 	b.syslog.Debugw("Published event",
 		"type", fmt.Sprintf("%T", event.Payload),
-		"sequence", event.Sequence,
+		"sequence", event.Meta.Sequence,
 		"delivered", delivered,
 		"filtered", filtered)
 }
@@ -78,8 +83,10 @@ func (b *Broker) Subscribe(handler Handler, opts ...Opt) func() {
 	return func() {
 		b.mu.Lock()
 		defer b.mu.Unlock()
-		delete(b.subscriptions, sub)
-		b.syslog.Debugw("Unregistered subscriber")
+		if _, ok := b.subscriptions[sub]; ok {
+			delete(b.subscriptions, sub)
+			b.syslog.Debugw("Unregistered subscriber")
+		}
 	}
 }
 

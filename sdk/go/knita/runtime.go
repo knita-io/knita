@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/knita-io/knita/sdk/go/knita/runtime/export"
 	"io"
 	"path/filepath"
 
 	directorv1 "github.com/knita-io/knita/api/director/v1"
 	executorv1 "github.com/knita-io/knita/api/executor/v1"
 	"github.com/knita-io/knita/sdk/go/knita/runtime/exec"
+	"github.com/knita-io/knita/sdk/go/knita/runtime/export"
 	import_ "github.com/knita-io/knita/sdk/go/knita/runtime/import"
 )
 
@@ -166,6 +166,6 @@ func (c *Runtime) MustClose() {
 
 // CloseWithContext is like Close, but it allows a context to be set.
 func (c *Runtime) CloseWithContext(ctx context.Context) error {
-	_, err := c.client.Close(ctx, &executorv1.CloseRequest{RuntimeId: c.runtimeID})
+	_, err := c.client.Close(ctx, &directorv1.CloseRequest{RuntimeId: c.runtimeID})
 	return err
 }

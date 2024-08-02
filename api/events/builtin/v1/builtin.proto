@@ -1,0 +1,116 @@
+syntax = "proto3";
+
+package builtin.events.knita.io;
+
+option go_package = "github.com/knita-io/knita/api/events/builtin/v1";
+
+import "executor/v1/executor.proto";
+
+message RuntimeTenderStartEvent {
+  string build_id = 1;
+  string tender_id = 2;
+  executor.knita.io.Opts opts = 3;
+}
+
+message RuntimeTenderEndEvent {
+  string tender_id = 1;
+  // TODO contracts (need events to be in their own package to avoid circular dependency on broker)
+}
+
+message RuntimeSettlementStartEvent {
+  string tender_id = 1;
+  string contract_id = 2;
+  string runtime_id = 3;
+}
+
+message RuntimeSettlementEndEvent {
+  string tender_id = 1;
+  string contract_id = 2;
+  string runtime_id = 3;
+}
+
+message RuntimeOpenStartEvent {
+  string runtime_id = 1;
+  executor.knita.io.Opts opts = 2;
+}
+
+message RuntimeOpenEndEvent {
+  string runtime_id = 1;
+}
+
+message RuntimeCloseStartEvent {
+  string runtime_id = 1;
+}
+
+message RuntimeCloseEndEvent {
+  string runtime_id = 1;
+}
+
+message StdoutEvent {
+  bytes data = 1;
+  LogEventSource source = 2;
+}
+
+message StderrEvent {
+  bytes data = 1;
+  LogEventSource source = 2;
+}
+
+message LogEventSource {
+  oneof source {
+    LogSourceRuntime runtime = 2;
+    LogSourceExec exec = 3;
+    LogSourceDirector director = 4;
+  }
+}
+
+message LogSourceRuntime {
+  string runtime_id = 1;
+}
+
+message LogSourceExec {
+  string runtime_id = 1;
+  string exec_id = 2;
+  // System is true if a knita component wrote the log.
+  bool system = 3;
+}
+
+message LogSourceDirector {}
+
+message ExecStartEvent {
+  string runtime_id = 1;
+  string exec_id = 2;
+  executor.knita.io.ExecOpts opts = 3;
+  map<string, string> tags = 4;
+}
+
+message ImportStartEvent {
+  string runtime_id = 1;
+  string import_id = 2;
+}
+
+message ImportEndEvent {
+  string runtime_id = 1;
+  string import_id = 2;
+}
+
+message ExportStartEvent {
+  string runtime_id = 1;
+  string export_id = 2;
+}
+
+message ExportEndEvent {
+  string runtime_id = 1;
+  string export_id = 2;
+}
+
+message ExecEndEvent {
+  string runtime_id = 1;
+  string exec_id = 2;
+  string error = 3; // TODO structured error?
+  int32 exit_code = 4;
+}
+
+message SyncPointReachedEvent {
+  string barrier_id = 1;
+}

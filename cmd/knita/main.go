@@ -2,9 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
-	"github.com/knita-io/knita/internal/broker/fixed"
-	"github.com/knita-io/knita/internal/server"
 	"io"
 	"log"
 	"net"
@@ -13,6 +10,12 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
+
+	builtinv1 "github.com/knita-io/knita/api/events/builtin/v1"
+	"github.com/knita-io/knita/internal/broker/fixed"
+	"github.com/knita-io/knita/internal/server"
 
 	"github.com/google/uuid"
 	"github.com/mattn/go-isatty"
@@ -195,12 +198,12 @@ var buildCMD = &cobra.Command{
 			defer uiManager.Stop()
 		}
 
-		buildLog.Stream().Subscribe(func(event *executorv1.Event) {
+		buildLog.Stream().Subscribe(func(event *event.Event) {
 			switch p := event.Payload.(type) {
-			case *executorv1.Event_Stdout:
-				buildOut.Write([]byte(fmt.Sprintf("%s", string(p.Stdout.Data))))
-			case *executorv1.Event_Stderr:
-				buildOut.Write([]byte(fmt.Sprintf("%s", string(p.Stderr.Data))))
+			case *builtinv1.StdoutEvent:
+				buildOut.Write([]byte(fmt.Sprintf("%s", string(p.Data))))
+			case *builtinv1.StderrEvent:
+				buildOut.Write([]byte(fmt.Sprintf("%s", string(p.Data))))
 			}
 		})
 

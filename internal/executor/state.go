@@ -1,24 +1,27 @@
 package executor
 
 import (
-	"github.com/knita-io/knita/internal/event"
-	"github.com/knita-io/knita/internal/executor/runtime"
-	"go.uber.org/zap"
 	"sync"
 	"time"
+
+	"go.uber.org/zap"
+
+	"github.com/knita-io/knita/internal/event"
+	"github.com/knita-io/knita/internal/executor/runtime"
 )
 
 type runtimeState struct {
 	runtime.Runtime
 	mu       sync.RWMutex
 	open     bool
-	stream   event.Stream
+	log      *runtime.Log
 	deadline time.Time
 }
 
-func newRuntimeState(syslog *zap.SugaredLogger) *runtimeState {
+func newRuntimeState(syslog *zap.SugaredLogger, buildID string, runtimeID string) *runtimeState {
+	stream := event.NewBroker(syslog)
 	return &runtimeState{
-		stream: event.NewBroker(syslog),
+		log: runtime.NewLog(stream, buildID, runtimeID),
 	}
 }
 

@@ -19,8 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	RuntimeBroker_Tender_FullMethodName = "/broker.RuntimeBroker/Tender"
-	RuntimeBroker_Settle_FullMethodName = "/broker.RuntimeBroker/Settle"
+	RuntimeBroker_Tender_FullMethodName = "/broker.knita.io.RuntimeBroker/Tender"
+	RuntimeBroker_Settle_FullMethodName = "/broker.knita.io.RuntimeBroker/Settle"
 )
 
 // RuntimeBrokerClient is the client API for RuntimeBroker service.
@@ -129,7 +129,7 @@ func _RuntimeBroker_Settle_Handler(srv interface{}, ctx context.Context, dec fun
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var RuntimeBroker_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "broker.RuntimeBroker",
+	ServiceName: "broker.knita.io.RuntimeBroker",
 	HandlerType: (*RuntimeBrokerServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

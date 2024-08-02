@@ -3,6 +3,7 @@
 import grpc
 import warnings
 
+from events.v1 import event_pb2 as events_dot_v1_dot_event__pb2
 from . import executor_pb2 as executor_dot_v1_dot_executor__pb2
 
 GRPC_GENERATED_VERSION = '1.63.0'
@@ -40,42 +41,42 @@ class ExecutorStub(object):
             channel: A grpc.Channel.
         """
         self.Introspect = channel.unary_unary(
-                '/executor.Executor/Introspect',
+                '/executor.knita.io.Executor/Introspect',
                 request_serializer=executor_dot_v1_dot_executor__pb2.IntrospectRequest.SerializeToString,
                 response_deserializer=executor_dot_v1_dot_executor__pb2.IntrospectResponse.FromString,
                 _registered_method=True)
         self.Events = channel.unary_stream(
-                '/executor.Executor/Events',
+                '/executor.knita.io.Executor/Events',
                 request_serializer=executor_dot_v1_dot_executor__pb2.EventsRequest.SerializeToString,
-                response_deserializer=executor_dot_v1_dot_executor__pb2.Event.FromString,
+                response_deserializer=events_dot_v1_dot_event__pb2.Event.FromString,
                 _registered_method=True)
         self.Open = channel.unary_unary(
-                '/executor.Executor/Open',
+                '/executor.knita.io.Executor/Open',
                 request_serializer=executor_dot_v1_dot_executor__pb2.OpenRequest.SerializeToString,
                 response_deserializer=executor_dot_v1_dot_executor__pb2.OpenResponse.FromString,
                 _registered_method=True)
         self.Heartbeat = channel.unary_unary(
-                '/executor.Executor/Heartbeat',
+                '/executor.knita.io.Executor/Heartbeat',
                 request_serializer=executor_dot_v1_dot_executor__pb2.HeartbeatRequest.SerializeToString,
                 response_deserializer=executor_dot_v1_dot_executor__pb2.HeartbeatResponse.FromString,
                 _registered_method=True)
         self.Exec = channel.unary_unary(
-                '/executor.Executor/Exec',
+                '/executor.knita.io.Executor/Exec',
                 request_serializer=executor_dot_v1_dot_executor__pb2.ExecRequest.SerializeToString,
                 response_deserializer=executor_dot_v1_dot_executor__pb2.ExecResponse.FromString,
                 _registered_method=True)
         self.Import = channel.stream_unary(
-                '/executor.Executor/Import',
+                '/executor.knita.io.Executor/Import',
                 request_serializer=executor_dot_v1_dot_executor__pb2.FileTransfer.SerializeToString,
                 response_deserializer=executor_dot_v1_dot_executor__pb2.ImportResponse.FromString,
                 _registered_method=True)
         self.Export = channel.unary_stream(
-                '/executor.Executor/Export',
+                '/executor.knita.io.Executor/Export',
                 request_serializer=executor_dot_v1_dot_executor__pb2.ExportRequest.SerializeToString,
                 response_deserializer=executor_dot_v1_dot_executor__pb2.FileTransfer.FromString,
                 _registered_method=True)
         self.Close = channel.unary_unary(
-                '/executor.Executor/Close',
+                '/executor.knita.io.Executor/Close',
                 request_serializer=executor_dot_v1_dot_executor__pb2.CloseRequest.SerializeToString,
                 response_deserializer=executor_dot_v1_dot_executor__pb2.CloseResponse.FromString,
                 _registered_method=True)
@@ -143,7 +144,7 @@ def add_ExecutorServicer_to_server(servicer, server):
             'Events': grpc.unary_stream_rpc_method_handler(
                     servicer.Events,
                     request_deserializer=executor_dot_v1_dot_executor__pb2.EventsRequest.FromString,
-                    response_serializer=executor_dot_v1_dot_executor__pb2.Event.SerializeToString,
+                    response_serializer=events_dot_v1_dot_event__pb2.Event.SerializeToString,
             ),
             'Open': grpc.unary_unary_rpc_method_handler(
                     servicer.Open,
@@ -177,7 +178,7 @@ def add_ExecutorServicer_to_server(servicer, server):
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'executor.Executor', rpc_method_handlers)
+            'executor.knita.io.Executor', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
 
 
@@ -199,7 +200,7 @@ class Executor(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/executor.Executor/Introspect',
+            '/executor.knita.io.Executor/Introspect',
             executor_dot_v1_dot_executor__pb2.IntrospectRequest.SerializeToString,
             executor_dot_v1_dot_executor__pb2.IntrospectResponse.FromString,
             options,
@@ -226,9 +227,9 @@ class Executor(object):
         return grpc.experimental.unary_stream(
             request,
             target,
-            '/executor.Executor/Events',
+            '/executor.knita.io.Executor/Events',
             executor_dot_v1_dot_executor__pb2.EventsRequest.SerializeToString,
-            executor_dot_v1_dot_executor__pb2.Event.FromString,
+            events_dot_v1_dot_event__pb2.Event.FromString,
             options,
             channel_credentials,
             insecure,
@@ -253,7 +254,7 @@ class Executor(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/executor.Executor/Open',
+            '/executor.knita.io.Executor/Open',
             executor_dot_v1_dot_executor__pb2.OpenRequest.SerializeToString,
             executor_dot_v1_dot_executor__pb2.OpenResponse.FromString,
             options,
@@ -280,7 +281,7 @@ class Executor(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/executor.Executor/Heartbeat',
+            '/executor.knita.io.Executor/Heartbeat',
             executor_dot_v1_dot_executor__pb2.HeartbeatRequest.SerializeToString,
             executor_dot_v1_dot_executor__pb2.HeartbeatResponse.FromString,
             options,
@@ -307,7 +308,7 @@ class Executor(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/executor.Executor/Exec',
+            '/executor.knita.io.Executor/Exec',
             executor_dot_v1_dot_executor__pb2.ExecRequest.SerializeToString,
             executor_dot_v1_dot_executor__pb2.ExecResponse.FromString,
             options,
@@ -334,7 +335,7 @@ class Executor(object):
         return grpc.experimental.stream_unary(
             request_iterator,
             target,
-            '/executor.Executor/Import',
+            '/executor.knita.io.Executor/Import',
             executor_dot_v1_dot_executor__pb2.FileTransfer.SerializeToString,
             executor_dot_v1_dot_executor__pb2.ImportResponse.FromString,
             options,
@@ -361,7 +362,7 @@ class Executor(object):
         return grpc.experimental.unary_stream(
             request,
             target,
-            '/executor.Executor/Export',
+            '/executor.knita.io.Executor/Export',
             executor_dot_v1_dot_executor__pb2.ExportRequest.SerializeToString,
             executor_dot_v1_dot_executor__pb2.FileTransfer.FromString,
             options,
@@ -388,7 +389,7 @@ class Executor(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/executor.Executor/Close',
+            '/executor.knita.io.Executor/Close',
             executor_dot_v1_dot_executor__pb2.CloseRequest.SerializeToString,
             executor_dot_v1_dot_executor__pb2.CloseResponse.FromString,
             options,
