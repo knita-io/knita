@@ -5,8 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"time"
+
+	directorv1 "github.com/knita-io/knita/api/director/v1"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -74,22 +77,42 @@ func (c *Runtime) SysInfo() *executorv1.SystemInfo {
 
 // Import files and directories from the local filesystem to the remote runtime.
 // Events associated with the import will be published to the configured event stream.
-func (c *Runtime) Import(ctx context.Context, src string, dest string) error {
-	if filepath.IsAbs(src) {
-		return fmt.Errorf("error src dir must be relative")
-	}
-	if filepath.IsAbs(dest) {
-		return fmt.Errorf("error dest dir must be relative")
-	}
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+func (c *Runtime) Import(ctx context.Context, src string, opts *directorv1.ImportOpts) error {
 	stream, err := c.client.Import(ctx)
 	if err != nil {
 		return fmt.Errorf("error opening import stream: %w", err)
 	}
-	c.syslog.Infow("Import stream opened", "src", src, "dest", dest)
-	sender := file.NewSender(c.syslog, c.localWorkFS.ReadFS(), c.runtimeID)
-	_, err = sender.Send(stream, src, dest)
+	c.syslog.Infow("Import stream opened", "src", src)
+	importID := uuid.New().String()
+	c.log.Publish(executorv1.NewImportStartEvent(c.runtimeID, importID))
+	defer c.log.Publish(executorv1.NewImportEndEvent(c.runtimeID, importID))
+	sendCallback := func(header *executorv1.FileTransferHeader) {
+		if header.IsDir {
+			c.log.Printf("Imported directory src=%s, dest=%s, mode=%s", header.SrcPath, header.DestPath, os.FileMode(header.Mode))
+		} else {
+			c.log.Printf("Imported file src=%s, dest=%s, mode=%s, size=%d", header.SrcPath, header.DestPath, os.FileMode(header.Mode), header.Size)
+		}
+	}
+	skipCallback := func(path string, isDir bool, excludedBy string) {
+		if isDir {
+			c.log.Printf("Skipped directory import src=%s, excluded_by=%s", path, excludedBy)
+		} else {
+			c.log.Printf("Skipped file import src=%s, excluded_by=%s", path, excludedBy)
+		}
+	}
+	sendOpts := []file.SendOpt{
+		file.WithSendCallback(sendCallback),
+		file.WithSkipCallback(skipCallback)}
+	if opts != nil {
+		if len(opts.Excludes) > 0 {
+			sendOpts = append(sendOpts, file.WithExcludes(opts.Excludes))
+		}
+		if opts.DestPath != "" {
+			sendOpts = append(sendOpts, file.WithDest(opts.DestPath))
+		}
+	}
+	sender := file.NewSender(c.syslog, c.localWorkFS.ReadFS(), stream, c.runtimeID, importID, sendOpts...)
+	_, err = sender.Send(src)
 	if err != nil {
 		if errors.Is(err, io.EOF) {
 			_, err = stream.CloseAndRecv()
@@ -105,26 +128,22 @@ func (c *Runtime) Import(ctx context.Context, src string, dest string) error {
 
 // Export files and directories from the remote runtime to the local filesystem.
 // Events associated with the export will be published to the configured event stream.
-func (c *Runtime) Export(ctx context.Context, src string, dest string) error {
-	if filepath.IsAbs(src) {
-		return fmt.Errorf("error src dir must be relative")
-	}
-	if filepath.IsAbs(dest) {
-		return fmt.Errorf("error dest dir must be relative")
-	}
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+func (c *Runtime) Export(ctx context.Context, src string, opts *directorv1.ExportOpts) error {
 	exportReq := &executorv1.ExportRequest{
 		RuntimeId: c.runtimeID,
 		ExportId:  uuid.New().String(),
 		SrcPath:   src,
-		DestPath:  dest,
+		Opts:      &executorv1.ExportOpts{},
+	}
+	if opts != nil {
+		exportReq.Opts.DestPath = opts.DestPath
+		exportReq.Opts.Excludes = opts.Excludes
 	}
 	stream, err := c.client.Export(ctx, exportReq)
 	if err != nil {
 		return fmt.Errorf("error opening export stream: %w", err)
 	}
-	c.syslog.Infow("Export stream opened", "src", src, "dest", dest)
+	c.syslog.Infow("Export stream opened", "src", src)
 	receivers := make(map[string]*file.Receiver)
 	for {
 		msg, err := stream.Recv()

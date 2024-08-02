@@ -122,7 +122,7 @@ func (s *Server) Import(ctx context.Context, req *directorv1.ImportRequest) (*di
 	if err != nil {
 		return nil, err
 	}
-	err = runtime.Import(ctx, req.SrcPath, req.DestPath)
+	err = runtime.Import(ctx, req.SrcPath, req.Opts)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +138,7 @@ func (s *Server) Export(ctx context.Context, req *directorv1.ExportRequest) (*di
 	if err != nil {
 		return nil, err
 	}
-	err = runtime.Export(ctx, req.SrcPath, req.DestPath)
+	err = runtime.Export(ctx, req.SrcPath, req.Opts)
 	if err != nil {
 		return nil, err
 	}

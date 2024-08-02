@@ -191,20 +191,20 @@ class ExecResponse(_message.Message):
     def __init__(self, exit_code: _Optional[int] = ...) -> None: ...
 
 class FileTransfer(_message.Message):
-    __slots__ = ("runtime_id", "import_id", "file_id", "header", "body", "trailer")
+    __slots__ = ("runtime_id", "transfer_id", "file_id", "header", "body", "trailer")
     RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
-    IMPORT_ID_FIELD_NUMBER: _ClassVar[int]
+    TRANSFER_ID_FIELD_NUMBER: _ClassVar[int]
     FILE_ID_FIELD_NUMBER: _ClassVar[int]
     HEADER_FIELD_NUMBER: _ClassVar[int]
     BODY_FIELD_NUMBER: _ClassVar[int]
     TRAILER_FIELD_NUMBER: _ClassVar[int]
     runtime_id: str
-    import_id: str
+    transfer_id: str
     file_id: str
     header: FileTransferHeader
     body: FileTransferBody
     trailer: FileTransferTrailer
-    def __init__(self, runtime_id: _Optional[str] = ..., import_id: _Optional[str] = ..., file_id: _Optional[str] = ..., header: _Optional[_Union[FileTransferHeader, _Mapping]] = ..., body: _Optional[_Union[FileTransferBody, _Mapping]] = ..., trailer: _Optional[_Union[FileTransferTrailer, _Mapping]] = ...) -> None: ...
+    def __init__(self, runtime_id: _Optional[str] = ..., transfer_id: _Optional[str] = ..., file_id: _Optional[str] = ..., header: _Optional[_Union[FileTransferHeader, _Mapping]] = ..., body: _Optional[_Union[FileTransferBody, _Mapping]] = ..., trailer: _Optional[_Union[FileTransferTrailer, _Mapping]] = ...) -> None: ...
 
 class FileTransferHeader(_message.Message):
     __slots__ = ("is_dir", "src_path", "dest_path", "mode", "size")
@@ -239,16 +239,24 @@ class ImportResponse(_message.Message):
     def __init__(self) -> None: ...
 
 class ExportRequest(_message.Message):
-    __slots__ = ("runtime_id", "export_id", "src_path", "dest_path")
+    __slots__ = ("runtime_id", "export_id", "src_path", "opts")
     RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
     EXPORT_ID_FIELD_NUMBER: _ClassVar[int]
     SRC_PATH_FIELD_NUMBER: _ClassVar[int]
-    DEST_PATH_FIELD_NUMBER: _ClassVar[int]
+    OPTS_FIELD_NUMBER: _ClassVar[int]
     runtime_id: str
     export_id: str
     src_path: str
+    opts: ExportOpts
+    def __init__(self, runtime_id: _Optional[str] = ..., export_id: _Optional[str] = ..., src_path: _Optional[str] = ..., opts: _Optional[_Union[ExportOpts, _Mapping]] = ...) -> None: ...
+
+class ExportOpts(_message.Message):
+    __slots__ = ("dest_path", "excludes")
+    DEST_PATH_FIELD_NUMBER: _ClassVar[int]
+    EXCLUDES_FIELD_NUMBER: _ClassVar[int]
     dest_path: str
-    def __init__(self, runtime_id: _Optional[str] = ..., export_id: _Optional[str] = ..., src_path: _Optional[str] = ..., dest_path: _Optional[str] = ...) -> None: ...
+    excludes: _containers.RepeatedScalarFieldContainer[str]
+    def __init__(self, dest_path: _Optional[str] = ..., excludes: _Optional[_Iterable[str]] = ...) -> None: ...
 
 class CloseRequest(_message.Message):
     __slots__ = ("runtime_id",)

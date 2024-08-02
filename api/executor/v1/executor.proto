@@ -125,7 +125,7 @@ message ExecResponse{
 
 message FileTransfer {
   string runtime_id = 1;
-  string import_id = 2;
+  string transfer_id = 2;
   string file_id = 3;
   FileTransferHeader header = 4;
   FileTransferBody body = 5;
@@ -155,7 +155,12 @@ message ExportRequest {
   string runtime_id = 1;
   string export_id = 2;
   string src_path = 3;
-  string dest_path = 4;
+  ExportOpts opts = 4;
+}
+
+message ExportOpts {
+  string dest_path = 1;
+  repeated string excludes = 2;
 }
 
 message CloseRequest {

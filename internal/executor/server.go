@@ -4,18 +4,20 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/knita-io/knita/internal/executor/runtime/docker"
-	"github.com/knita-io/knita/internal/executor/runtime/host"
-	"github.com/knita-io/knita/internal/file"
-	"github.com/moby/moby/client"
-	"github.com/pbnjay/memory"
-	"go.uber.org/zap"
-	"google.golang.org/protobuf/types/known/durationpb"
 	"io"
 	"os"
 	stdruntime "runtime"
 	"sync"
 	"time"
+
+	"github.com/moby/moby/client"
+	"github.com/pbnjay/memory"
+	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/known/durationpb"
+
+	"github.com/knita-io/knita/internal/executor/runtime/docker"
+	"github.com/knita-io/knita/internal/executor/runtime/host"
+	"github.com/knita-io/knita/internal/file"
 
 	executorv1 "github.com/knita-io/knita/api/executor/v1"
 	"github.com/knita-io/knita/internal/event"
@@ -93,8 +95,6 @@ func (s *Server) Events(req *executorv1.EventsRequest, stream executorv1.Executo
 	}
 	return nil
 }
-
-// TODO if events drops out at the wrong time can we be left with a dangling runtime?
 
 func (s *Server) Open(ctx context.Context, req *executorv1.OpenRequest) (*executorv1.OpenResponse, error) {
 	if err := s.validateOpenRequest(req); err != nil {
@@ -174,25 +174,17 @@ func (s *Server) Import(stream executorv1.Executor_ImportServer) error {
 			if !runtime.IsOpen() {
 				return fmt.Errorf("runtime not found")
 			}
-			importID = req.ImportId
-			runtime.Log().Publish(executorv1.NewImportStartEvent(req.RuntimeId, req.ImportId))
-			defer runtime.Log().Publish(executorv1.NewImportEndEvent(req.RuntimeId, req.ImportId))
+			importID = req.TransferId
 		}
 		if runtime.ID() != req.RuntimeId {
 			return fmt.Errorf("invalid runtime id")
 		}
-		if importID != req.ImportId {
+		if importID != req.TransferId {
 			return fmt.Errorf("invalid import id")
 		}
 		receiver, ok := receivers[req.FileId]
 		if !ok {
-			receiver = file.NewReceiver(s.syslog, runtime, file.WithRecvCallback(func(header *executorv1.FileTransferHeader) {
-				if header.IsDir {
-					runtime.Log().Printf("Imported directory src=%s, dest=%s, mode=%s", header.SrcPath, header.DestPath, os.FileMode(header.Mode))
-				} else {
-					runtime.Log().Printf("Imported file src=%s, dest=%s, mode=%s, size=%d", header.SrcPath, header.DestPath, os.FileMode(header.Mode), header.Size)
-				}
-			}))
+			receiver = file.NewReceiver(s.syslog, runtime)
 			receivers[req.FileId] = receiver
 		}
 		err = receiver.Next(req)
@@ -218,14 +210,33 @@ func (s *Server) Export(req *executorv1.ExportRequest, stream executorv1.Executo
 	}
 	runtime.Log().Publish(executorv1.NewExportStartEvent(req.RuntimeId, req.ExportId))
 	defer runtime.Log().Publish(executorv1.NewExportEndEvent(req.RuntimeId, req.ExportId))
-	sender := file.NewSender(s.syslog, runtime.ReadFS(), runtime.ID(), file.WithSendCallback(func(header *executorv1.FileTransferHeader) {
+	sendCallback := func(header *executorv1.FileTransferHeader) {
 		if header.IsDir {
 			runtime.Log().Printf("Exported directory src=%s, dest=%s, mode=%s", header.SrcPath, header.DestPath, os.FileMode(header.Mode))
 		} else {
 			runtime.Log().Printf("Exported file src=%s, dest=%s, mode=%s, size=%d", header.SrcPath, header.DestPath, os.FileMode(header.Mode), header.Size)
 		}
-	}))
-	_, err = sender.Send(stream, req.SrcPath, req.DestPath)
+	}
+	skipCallback := func(path string, isDir bool, excludedBy string) {
+		if isDir {
+			runtime.Log().Printf("Skipped directory export src=%s, excluded_by=%s", path, excludedBy)
+		} else {
+			runtime.Log().Printf("Skipped file export src=%s, excluded_by=%s", path, excludedBy)
+		}
+	}
+	sendOpts := []file.SendOpt{
+		file.WithSendCallback(sendCallback),
+		file.WithSkipCallback(skipCallback)}
+	if req.Opts != nil {
+		if len(req.Opts.Excludes) > 0 {
+			sendOpts = append(sendOpts, file.WithExcludes(req.Opts.Excludes))
+		}
+		if req.Opts.DestPath != "" {
+			sendOpts = append(sendOpts, file.WithDest(req.Opts.DestPath))
+		}
+	}
+	sender := file.NewSender(s.syslog, runtime.ReadFS(), stream, runtime.ID(), req.ExportId, sendOpts...)
+	_, err = sender.Send(req.SrcPath)
 	return err
 }
 
@@ -524,8 +535,8 @@ func validateFileTransfer(req *executorv1.FileTransfer) error {
 	if req.RuntimeId == "" {
 		return fmt.Errorf("empty runtime_id")
 	}
-	if req.ImportId == "" {
-		return fmt.Errorf("empty import_id")
+	if req.TransferId == "" {
+		return fmt.Errorf("empty transfer_id")
 	}
 	if req.FileId == "" {
 		return fmt.Errorf("empty file_id")

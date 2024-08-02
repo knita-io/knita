@@ -67,7 +67,8 @@ class Runtime:
     __remote_sys_info: executor_pb2.SystemInfo
     __director_stub: director_pb2_grpc.DirectorStub
 
-    def __init__(self, runtime_id: str, remote_work_directory: str, remote_sys_info: executor_pb2.SystemInfo, director_stub: director_pb2_grpc.DirectorStub):
+    def __init__(self, runtime_id: str, remote_work_directory: str, remote_sys_info: executor_pb2.SystemInfo,
+                 director_stub: director_pb2_grpc.DirectorStub):
         self.__runtime_id = runtime_id
         self.__remote_work_directory = remote_work_directory
         self.__remote_sys_info = remote_sys_info
@@ -96,18 +97,20 @@ class Runtime:
         else:
             return os.path.join(self.__remote_work_directory, rel_path)
 
-    def import_(self, src: str, dest: str = ""):
-        """Import files from the local work directory into the runtime's remote work directory.
-        src and dest must be relative paths. src may be a glob (doublestar syntax supported).
-        If dest is empty, all files identified by src will be copied to their original location in dest."""
-        req = director_pb2.ImportRequest(runtime_id=self.__runtime_id, src_path=src, dest_path=dest)
+    def import_(self, src: str, dest: str = None, excludes: [str] = None):
+        """Import files from the local work directory into the runtime's remote work directory. src must be a
+        relative path, and may be a glob (doublestar syntax supported). By default, all files identified by src will
+        be copied to their original location on the remote. Use ImportOpts.dest to override this."""
+        req = director_pb2.ImportRequest(runtime_id=self.__runtime_id, src_path=src,
+                                         opts=director_pb2.ImportOpts(dest_path=dest, excludes=excludes))
         self.__director_stub.Import(req)
 
-    def export(self, src: str, dest: str = ""):
-        """Export files from the runtime's remote work directory into the local work directory.
-        src and dest must be relative paths. src may be a glob (doublestar syntax supported).
-        If dest is empty, all files identified by src will be copied to their original location in dest."""
-        req = director_pb2.ExportRequest(runtime_id=self.__runtime_id, src_path=src, dest_path=dest)
+    def export(self, src: str, dest: str = None, excludes: [str] = None):
+        """Export files from the runtime's remote work directory into the local work directory. src must be a
+        relative path, and may be a glob (doublestar syntax supported). By default, all files identified by src will
+        be copied to their original location locally. Use ExportOpts.dest to override this."""
+        req = director_pb2.ExportRequest(runtime_id=self.__runtime_id, src_path=src,
+                                         opts=director_pb2.ExportOpts(dest_path=dest, excludes=excludes))
         self.__director_stub.Export(req)
 
     def exec(self, name: str, args: [str] = None, env: [str] = None, tags: dict[str, str] = None, stdout=None,

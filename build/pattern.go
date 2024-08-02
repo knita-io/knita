@@ -16,7 +16,12 @@ import (
 	"github.com/knita-io/knita/sdk/go/knita"
 	"github.com/knita-io/knita/sdk/go/knita/runtime"
 	"github.com/knita-io/knita/sdk/go/knita/runtime/exec"
+	"github.com/knita-io/knita/sdk/go/knita/runtime/export"
+	import_ "github.com/knita-io/knita/sdk/go/knita/runtime/import"
 )
+
+// goPaths captures the file paths, relative to the git root, that are needed to compile the Go-based source.
+var goPaths = []string{"api", "cmd", "internal", "vendor", "go.mod", "go.sum"}
 
 func main() {
 	client := knita.MustNewClient()
@@ -48,7 +53,7 @@ func dockerImage(input *JobDockerImageInput) (*JobDockerImageOutput, error) {
 			"does not already exist in public registry\n", builderDockerImage)
 	}
 
-	host.MustImport("build/docker/*", "")
+	host.MustImport("build/docker/*")
 	host.MustExec(
 		exec.WithTag(knita.NameTag, "knita/build"),
 		exec.WithEnv("DOCKER_PASSWORD="+password),
@@ -72,7 +77,7 @@ func protobuf(input *JobProtobufInput) (*JobProtobufOutput, error) {
 		runtime.WithImage(input.Docker.KnitaBuildImage))
 	defer container.MustClose()
 
-	container.MustImport("api/**/*.proto", "")
+	container.MustImport("api/**/*.proto")
 
 	container.MustExec(
 		exec.WithTag(knita.NameTag, "python"),
@@ -88,7 +93,7 @@ func protobuf(input *JobProtobufInput) (*JobProtobufOutput, error) {
 
 			sed -i -e 's/from director.v1/from ./g' api/*/v1/*.py*
 			sed -i -e 's/from executor.v1/from ./g' api/*/v1/*.py*`))
-	container.MustExport("api/**/*.py*", "sdk/python/knita/")
+	container.MustExport("api/**/*.py*", export.WithDest("sdk/python/knita/"))
 
 	container.MustExec(
 		exec.WithTag(knita.NameTag, "go"),
@@ -103,7 +108,7 @@ func protobuf(input *JobProtobufInput) (*JobProtobufOutput, error) {
 			executor/v1/executor.proto \
 			director/v1/director.proto \
 			observer/v1/observer.proto`))
-	container.MustExport("api/**/*.pb.go", "")
+	container.MustExport("api/**/*.pb.go")
 
 	return &JobProtobufOutput{}, nil
 }
@@ -116,7 +121,10 @@ func unit(input *JobUnitTestInput) (*JobUnitTestOutput, error) {
 		runtime.WithImage(input.Docker.KnitaBuildImage))
 	defer container.MustClose()
 
-	container.MustImport(".", ".")
+	for _, path := range goPaths {
+		container.MustImport(path)
+	}
+
 	container.MustExec(
 		exec.WithTag(knita.NameTag, "go"),
 		exec.WithCommand("/bin/bash", "-c", "go test ./..."))
@@ -141,7 +149,10 @@ func build(input *JobBuildInput) (*JobBuildOutput, error) {
 		runtime.WithImage(input.Docker.KnitaBuildImage))
 	defer container.MustClose()
 
-	container.MustImport(".", ".")
+	for _, path := range goPaths {
+		container.MustImport(path)
+	}
+
 	wg := sync.WaitGroup{}
 	for _, target := range targets {
 		for _, arch := range target.arch {
@@ -163,8 +174,8 @@ func build(input *JobBuildInput) (*JobBuildOutput, error) {
 		}
 	}
 	wg.Wait()
-	container.MustExport("build/output/cli/*", "")
-	container.MustExport("build/output/executor/*", "")
+	container.MustExport("build/output/cli/*")
+	container.MustExport("build/output/executor/*")
 	return &JobBuildOutput{}, nil
 }
 
@@ -176,11 +187,12 @@ func testSDK(input *JobTestSDKInput) (*JobTestSDKOutput, error) {
 		runtime.WithType(runtime.TypeHost))
 	defer host.MustClose()
 
-	host.MustImport(fmt.Sprintf("build/output/cli/knita-%s-%s", host.SysInfo().Os, host.SysInfo().Arch), "knita")
-	host.MustImport("go.mod", "")
-	host.MustImport("api", "")
-	host.MustImport("test", "")
-	host.MustImport("sdk", "")
+	host.MustImport(fmt.Sprintf("build/output/cli/knita-%s-%s", host.SysInfo().Os, host.SysInfo().Arch), import_.WithDest("knita"))
+	host.MustImport("go.mod")
+	host.MustImport("go.sum")
+	host.MustImport("api")
+	host.MustImport("test")
+	host.MustImport("sdk")
 
 	host.MustExec(
 		exec.WithTag(knita.NameTag, "python"),
@@ -222,7 +234,7 @@ func publishSDK(input *JobPublishSDKInput) (*JobPublishSDKOutput, error) {
 		runtime.WithImage(input.Docker.KnitaBuildImage))
 	defer container.MustClose()
 
-	container.MustImport("sdk/python", "")
+	container.MustImport("sdk/python")
 	container.MustExec(
 		exec.WithTag(knita.NameTag, "python"),
 		exec.WithEnv("TWINE_PASSWORD="+os.Getenv("KNITA_BUILD_TWINE_PASSWORD")),

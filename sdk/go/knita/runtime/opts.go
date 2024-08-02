@@ -37,30 +37,17 @@ func WithType(t Type) Opt {
 	}
 }
 
-type withLabel struct {
-	label string
-}
-
-func (o *withLabel) Apply(opts *executorv1.Opts) {
-	opts.Labels = append(opts.Labels, o.label)
-}
-
-// WithLabel specifies that this runtime can only be opened on an executor that supports the specified label.
-func WithLabel(label string) Opt {
-	return &withLabel{label: label}
-}
-
-type withLabels struct {
+type withRunsOn struct {
 	labels []string
 }
 
-func (o *withLabels) Apply(opts *executorv1.Opts) {
+func (o *withRunsOn) Apply(opts *executorv1.Opts) {
 	opts.Labels = append(opts.Labels, o.labels...)
 }
 
-// WithLabels specifies that this runtime can only be opened on an executor that supports the specified labels.
-func WithLabels(labels ...string) Opt {
-	return &withLabels{labels: labels}
+// WithRunsOn specifies that this runtime can only be opened on an executor that supports the specified labels.
+func WithRunsOn(labels ...string) Opt {
+	return &withRunsOn{labels: labels}
 }
 
 type withTag struct {

@@ -18,12 +18,17 @@ const chunkSize = 512 * 1024
 
 type SendCallback func(header *executorv1.FileTransferHeader)
 
+type SkipCallback func(path string, isDir bool, excludedBy string)
+
 type SendOpt interface {
 	Apply(*SendOpts)
 }
 
 type SendOpts struct {
-	cb SendCallback
+	sendCallback SendCallback
+	skipCallback SkipCallback
+	excludes     []string
+	dest         string
 }
 
 type withSendCallback struct {
@@ -31,11 +36,47 @@ type withSendCallback struct {
 }
 
 func (o *withSendCallback) Apply(opts *SendOpts) {
-	opts.cb = o.cb
+	opts.sendCallback = o.cb
 }
 
 func WithSendCallback(cb SendCallback) SendOpt {
 	return &withSendCallback{cb: cb}
+}
+
+type withSkipCallback struct {
+	cb SkipCallback
+}
+
+func (o *withSkipCallback) Apply(opts *SendOpts) {
+	opts.skipCallback = o.cb
+}
+
+func WithSkipCallback(cb SkipCallback) SendOpt {
+	return &withSkipCallback{cb: cb}
+}
+
+type withExcludes struct {
+	excludes []string
+}
+
+func (o *withExcludes) Apply(opts *SendOpts) {
+	opts.excludes = append(opts.excludes, o.excludes...)
+}
+
+func WithExcludes(excludes []string) SendOpt {
+	return &withExcludes{excludes: excludes}
+}
+
+type withDest struct {
+	dest string
+}
+
+func (o *withDest) Apply(opts *SendOpts) {
+	opts.dest = o.dest
+}
+
+func WithDest(dest string) SendOpt {
+	return &withDest{dest: dest}
 }
 
 type SendTransport interface {
@@ -45,28 +86,42 @@ type SendTransport interface {
 type SendResult struct{}
 
 type Sender struct {
-	syslog    *zap.SugaredLogger
-	opts      *SendOpts
-	fs        fs.FS
-	runtimeID string
+	syslog     *zap.SugaredLogger
+	opts       *SendOpts
+	fs         fs.FS
+	transport  SendTransport
+	runtimeID  string
+	transferID string
 }
 
-func NewSender(syslog *zap.SugaredLogger, fs fs.FS, runtimeID string, opts ...SendOpt) *Sender {
+func NewSender(syslog *zap.SugaredLogger, fs fs.FS, transport SendTransport, runtimeID string, transferID string, opts ...SendOpt) *Sender {
 	o := &SendOpts{}
 	for _, opt := range opts {
 		opt.Apply(o)
 	}
-	return &Sender{syslog: syslog.Named("file_sender"), fs: fs, runtimeID: runtimeID, opts: o}
+	return &Sender{
+		syslog:     syslog.Named("file_sender"),
+		fs:         fs,
+		transport:  transport,
+		runtimeID:  runtimeID,
+		transferID: transferID,
+		opts:       o,
+	}
 }
 
-func (f *Sender) Send(stream SendTransport, src string, dest string) (*SendResult, error) {
+func (s *Sender) Send(src string) (*SendResult, error) {
+	dest := s.opts.dest
 	if filepath.IsAbs(src) {
-		return nil, fmt.Errorf("error src dir must be relative")
+		return nil, fmt.Errorf("error src must be relative")
 	}
 	if filepath.IsAbs(dest) {
-		return nil, fmt.Errorf("error dest dir must be relative")
+		return nil, fmt.Errorf("error dest must be relative")
 	}
-	importID := uuid.New().String()
+	for _, exclude := range s.opts.excludes {
+		if !doublestar.ValidatePattern(exclude) {
+			return nil, fmt.Errorf("error invalid exclude pattern: %s", exclude)
+		}
+	}
 
 	var isFile, isDir, isDirContents bool
 	isGlob, err := isGlob(src)
@@ -75,7 +130,7 @@ func (f *Sender) Send(stream SendTransport, src string, dest string) (*SendResul
 	}
 
 	if !isGlob {
-		info, err := fs.Stat(f.fs, strings.TrimSuffix(src, "/"))
+		info, err := fs.Stat(s.fs, strings.TrimSuffix(src, "/"))
 		if err != nil {
 			if os.IsNotExist(err) {
 				return nil, fmt.Errorf("error src %s does not exist", src)
@@ -103,13 +158,13 @@ func (f *Sender) Send(stream SendTransport, src string, dest string) (*SendResul
 		} else {
 			finalDest = dest
 		}
-		return &SendResult{}, f.sendFile(stream, importID, src, finalDest)
+		return &SendResult{}, s.filteredSend(false, src, finalDest)
 	}
 
 	// If src is a single directory then
 	//	Copy recursively to dest, where dir(src) is substituted for dest in the final dest paths
 	if isDir {
-		return &SendResult{}, fs.WalkDir(f.fs, src, func(path string, d fs.DirEntry, err error) error {
+		return &SendResult{}, fs.WalkDir(s.fs, src, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
@@ -121,18 +176,14 @@ func (f *Sender) Send(stream SendTransport, src string, dest string) (*SendResul
 			} else {
 				finalDest = filepath.Join(dest, strings.TrimPrefix(path, src))
 			}
-			if d.IsDir() {
-				return f.sendDirectory(stream, importID, path, finalDest)
-			} else {
-				return f.sendFile(stream, importID, path, finalDest)
-			}
+			return s.filteredSend(d.IsDir(), path, finalDest)
 		})
 	}
 
 	// If src is directory contents e.g. dir/ then
 	//  Recurse through everything in the directory and copy to dest/ (dest must be a folder).
 	if isDirContents {
-		return &SendResult{}, fs.WalkDir(f.fs, strings.TrimSuffix(src, "/"), func(path string, d fs.DirEntry, err error) error {
+		return &SendResult{}, fs.WalkDir(s.fs, strings.TrimSuffix(src, "/"), func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
@@ -150,18 +201,14 @@ func (f *Sender) Send(stream SendTransport, src string, dest string) (*SendResul
 			if finalDest == "." {
 				return nil
 			}
-			if d.IsDir() {
-				return f.sendDirectory(stream, importID, path, finalDest)
-			} else {
-				return f.sendFile(stream, importID, path, finalDest)
-			}
+			return s.filteredSend(d.IsDir(), path, finalDest)
 		})
 	}
 
 	// If src is a glob
 	//  Recurse through every matched file and directory and copy to dest/ (dest must be a folder).
 	if isGlob {
-		matches, err := doublestar.Glob(f.fs, src, doublestar.WithFailOnIOErrors())
+		matches, err := doublestar.Glob(s.fs, src, doublestar.WithFailOnIOErrors())
 		if err != nil {
 			return nil, fmt.Errorf("error expanding glob: %w", err)
 		}
@@ -170,7 +217,7 @@ func (f *Sender) Send(stream SendTransport, src string, dest string) (*SendResul
 		}
 		for _, match := range matches {
 			matchDir := filepath.Dir(match)
-			err = fs.WalkDir(f.fs, strings.TrimSuffix(match, "/"), func(path string, d fs.DirEntry, err error) error {
+			err = fs.WalkDir(s.fs, strings.TrimSuffix(match, "/"), func(path string, d fs.DirEntry, err error) error {
 				if err != nil {
 					return err
 				}
@@ -187,11 +234,7 @@ func (f *Sender) Send(stream SendTransport, src string, dest string) (*SendResul
 				if finalDest == "." {
 					return nil
 				}
-				if d.IsDir() {
-					return f.sendDirectory(stream, importID, path, finalDest)
-				} else {
-					return f.sendFile(stream, importID, path, finalDest)
-				}
+				return s.filteredSend(d.IsDir(), path, finalDest)
 			})
 			if err != nil {
 				return nil, err
@@ -203,8 +246,52 @@ func (f *Sender) Send(stream SendTransport, src string, dest string) (*SendResul
 	return nil, fmt.Errorf("error unable to parse src %q", src)
 }
 
-func (f *Sender) sendDirectory(stream SendTransport, importID string, src string, dest string) error {
-	fh, err := f.fs.Open(src)
+func (s *Sender) filteredSend(isDir bool, src string, dest string) error {
+	isExcluded, excludedBy := s.isExcluded(src)
+	if isExcluded {
+		if s.opts.skipCallback != nil {
+			s.opts.skipCallback(src, isDir, excludedBy)
+		}
+		if isDir {
+			s.syslog.Infow("Skipped directory", "path", src, "excluded_by", excludedBy)
+			return fs.SkipDir
+		}
+		s.syslog.Infow("Skipped file", "path", src, "excluded_by", excludedBy)
+		return nil
+	}
+	if isDir {
+		return s.sendDirectory(src, dest)
+	} else {
+		return s.sendFile(src, dest)
+	}
+}
+
+func (s *Sender) isExcluded(path string) (bool, string) {
+	for _, exclude := range s.opts.excludes {
+		isGlob, _ := isGlob(exclude)
+		if isGlob {
+			match, _ := doublestar.Match(exclude, path)
+			if match {
+				return true, exclude
+			}
+		} else if path == exclude {
+			return true, exclude
+		} else {
+			up := "../"
+			rel, err := filepath.Rel(exclude, path)
+			if err != nil {
+				return false, ""
+			}
+			if !strings.HasPrefix(rel, up) && rel != ".." {
+				return true, exclude
+			}
+		}
+	}
+	return false, ""
+}
+
+func (s *Sender) sendDirectory(src string, dest string) error {
+	fh, err := s.fs.Open(src)
 	if err != nil {
 		return fmt.Errorf("error opening file %s: %w", src, err)
 	}
@@ -215,9 +302,9 @@ func (f *Sender) sendDirectory(stream SendTransport, importID string, src string
 	}
 	fileID := uuid.New().String()
 	req := &executorv1.FileTransfer{
-		RuntimeId: f.runtimeID,
-		ImportId:  importID,
-		FileId:    fileID,
+		RuntimeId:  s.runtimeID,
+		TransferId: s.transferID,
+		FileId:     fileID,
 		Header: &executorv1.FileTransferHeader{
 			IsDir:    true,
 			SrcPath:  src,
@@ -226,19 +313,19 @@ func (f *Sender) sendDirectory(stream SendTransport, importID string, src string
 			Size:     0,
 		},
 	}
-	err = stream.Send(req)
+	err = s.transport.Send(req)
 	if err != nil {
 		return fmt.Errorf("error sending directory: %w", err)
 	}
-	f.syslog.Infow("Sent directory", "src", src, "dest", dest, "mode", info.Mode())
-	if f.opts.cb != nil {
-		f.opts.cb(req.Header)
+	s.syslog.Infow("Sent directory", "src", src, "dest", dest, "mode", info.Mode())
+	if s.opts.sendCallback != nil {
+		s.opts.sendCallback(req.Header)
 	}
 	return nil
 }
 
-func (f *Sender) sendFile(stream SendTransport, importID string, src string, dest string) error {
-	fh, err := f.fs.Open(src)
+func (s *Sender) sendFile(src string, dest string) error {
+	fh, err := s.fs.Open(src)
 	if err != nil {
 		return fmt.Errorf("error opening file %s: %w", src, err)
 	}
@@ -256,10 +343,10 @@ func (f *Sender) sendFile(stream SendTransport, importID string, src string, des
 		Size:     uint64(info.Size()),
 	}
 	if info.Size() == 0 {
-		req := &executorv1.FileTransfer{RuntimeId: f.runtimeID, ImportId: importID, FileId: fileID}
+		req := &executorv1.FileTransfer{RuntimeId: s.runtimeID, TransferId: s.transferID, FileId: fileID}
 		req.Header = header
 		req.Trailer = &executorv1.FileTransferTrailer{}
-		err = stream.Send(req)
+		err = s.transport.Send(req)
 		if err != nil {
 			return fmt.Errorf("error sending file: %w", err)
 		}
@@ -271,7 +358,7 @@ func (f *Sender) sendFile(stream SendTransport, importID string, src string, des
 			if err != nil {
 				return fmt.Errorf("error reading file: %w", err)
 			}
-			req := &executorv1.FileTransfer{RuntimeId: f.runtimeID, ImportId: importID, FileId: fileID}
+			req := &executorv1.FileTransfer{RuntimeId: s.runtimeID, TransferId: s.transferID, FileId: fileID}
 			if offset == 0 {
 				req.Header = header
 			}
@@ -283,17 +370,17 @@ func (f *Sender) sendFile(stream SendTransport, importID string, src string, des
 			if offset == info.Size() {
 				req.Trailer = &executorv1.FileTransferTrailer{Md5: nil} // TODO
 			}
-			err = stream.Send(req)
+			err = s.transport.Send(req)
 			if err != nil {
 				return fmt.Errorf("error sending file: %w", err)
 			}
 			parts++
-			f.syslog.Debugw("Sent file part", "src", src, "part_offset", partOffset, "part_size", n)
+			s.syslog.Debugw("Sent file part", "src", src, "part_offset", partOffset, "part_size", n)
 		}
 	}
-	f.syslog.Infow("Sent file", "src", src, "dest", dest, "mode", info.Mode(), "size", info.Size())
-	if f.opts.cb != nil {
-		f.opts.cb(header)
+	s.syslog.Infow("Sent file", "src", src, "dest", dest, "mode", info.Mode(), "size", info.Size())
+	if s.opts.sendCallback != nil {
+		s.opts.sendCallback(header)
 	}
 	return nil
 }

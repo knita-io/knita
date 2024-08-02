@@ -1,7 +1,8 @@
 from . import executor_pb2 as _executor_pb2
+from google.protobuf.internal import containers as _containers
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from typing import ClassVar as _ClassVar, Mapping as _Mapping, Optional as _Optional, Union as _Union
+from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Mapping, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -24,28 +25,44 @@ class OpenResponse(_message.Message):
     def __init__(self, runtime_id: _Optional[str] = ..., work_directory: _Optional[str] = ..., sys_info: _Optional[_Union[_executor_pb2.SystemInfo, _Mapping]] = ...) -> None: ...
 
 class ImportRequest(_message.Message):
-    __slots__ = ("runtime_id", "src_path", "dest_path")
+    __slots__ = ("runtime_id", "src_path", "opts")
     RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
     SRC_PATH_FIELD_NUMBER: _ClassVar[int]
-    DEST_PATH_FIELD_NUMBER: _ClassVar[int]
+    OPTS_FIELD_NUMBER: _ClassVar[int]
     runtime_id: str
     src_path: str
+    opts: ImportOpts
+    def __init__(self, runtime_id: _Optional[str] = ..., src_path: _Optional[str] = ..., opts: _Optional[_Union[ImportOpts, _Mapping]] = ...) -> None: ...
+
+class ImportOpts(_message.Message):
+    __slots__ = ("dest_path", "excludes")
+    DEST_PATH_FIELD_NUMBER: _ClassVar[int]
+    EXCLUDES_FIELD_NUMBER: _ClassVar[int]
     dest_path: str
-    def __init__(self, runtime_id: _Optional[str] = ..., src_path: _Optional[str] = ..., dest_path: _Optional[str] = ...) -> None: ...
+    excludes: _containers.RepeatedScalarFieldContainer[str]
+    def __init__(self, dest_path: _Optional[str] = ..., excludes: _Optional[_Iterable[str]] = ...) -> None: ...
 
 class ImportResponse(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...
 
 class ExportRequest(_message.Message):
-    __slots__ = ("runtime_id", "src_path", "dest_path")
+    __slots__ = ("runtime_id", "src_path", "opts")
     RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
     SRC_PATH_FIELD_NUMBER: _ClassVar[int]
-    DEST_PATH_FIELD_NUMBER: _ClassVar[int]
+    OPTS_FIELD_NUMBER: _ClassVar[int]
     runtime_id: str
     src_path: str
+    opts: ExportOpts
+    def __init__(self, runtime_id: _Optional[str] = ..., src_path: _Optional[str] = ..., opts: _Optional[_Union[ExportOpts, _Mapping]] = ...) -> None: ...
+
+class ExportOpts(_message.Message):
+    __slots__ = ("dest_path", "excludes")
+    DEST_PATH_FIELD_NUMBER: _ClassVar[int]
+    EXCLUDES_FIELD_NUMBER: _ClassVar[int]
     dest_path: str
-    def __init__(self, runtime_id: _Optional[str] = ..., src_path: _Optional[str] = ..., dest_path: _Optional[str] = ...) -> None: ...
+    excludes: _containers.RepeatedScalarFieldContainer[str]
+    def __init__(self, dest_path: _Optional[str] = ..., excludes: _Optional[_Iterable[str]] = ...) -> None: ...
 
 class ExportResponse(_message.Message):
     __slots__ = ()
