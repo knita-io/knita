@@ -15,6 +15,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/errdefs"
 	"github.com/hashicorp/go-multierror"
@@ -71,7 +72,7 @@ func NewContainerManager(syslog *zap.SugaredLogger, client *client.Client) *Cont
 func (r *ContainerManager) PullDockerImage(ctx context.Context, log *runtime.Log, opts *executorv1.DockerPullOpts) error {
 	fil := filters.NewArgs()
 	fil.Add("reference", opts.ImageUri)
-	list, err := r.client.ImageList(ctx, types.ImageListOptions{
+	list, err := r.client.ImageList(ctx, image.ListOptions{
 		All:     false,
 		Filters: fil,
 	})
@@ -99,7 +100,7 @@ func (r *ContainerManager) PullDockerImage(ctx context.Context, log *runtime.Log
 	log.Printf("Pulling image: %s", opts.ImageUri)
 
 	// If authentication has been provided then pass it into the image pull
-	imagePullOptions := types.ImagePullOptions{}
+	imagePullOptions := image.PullOptions{}
 	if opts.Auth != nil && opts.Auth.GetBasic() != nil {
 		log.Printf("Using Docker registry auth: Basic")
 		jsonBytes, err := protojson.Marshal(opts.Auth.GetBasic())
@@ -173,7 +174,7 @@ func (r *ContainerManager) PullDockerImage(ctx context.Context, log *runtime.Log
 func (r *ContainerManager) GetDockerImageOS(ctx context.Context, imageURI string) (runtime.OS, error) {
 	fil := filters.NewArgs()
 	fil.Add("reference", imageURI)
-	list, err := r.client.ImageList(ctx, types.ImageListOptions{
+	list, err := r.client.ImageList(ctx, image.ListOptions{
 		All:     false,
 		Filters: fil,
 	})
