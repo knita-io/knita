@@ -7,6 +7,7 @@
 package v1
 
 import (
+	v11 "github.com/knita-io/knita/api/broker/v1"
 	v1 "github.com/knita-io/knita/api/executor/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -21,6 +22,290 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type Error struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Message string `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+}
+
+func (x *Error) Reset() {
+	*x = Error{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[0]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Error) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Error) ProtoMessage() {}
+
+func (x *Error) ProtoReflect() protoreflect.Message {
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[0]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Error.ProtoReflect.Descriptor instead.
+func (*Error) Descriptor() ([]byte, []int) {
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *Error) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+type DirectorInfo struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Version string         `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
+	SysInfo *v1.SystemInfo `protobuf:"bytes,2,opt,name=sys_info,json=sysInfo,proto3" json:"sys_info,omitempty"`
+}
+
+func (x *DirectorInfo) Reset() {
+	*x = DirectorInfo{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *DirectorInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DirectorInfo) ProtoMessage() {}
+
+func (x *DirectorInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DirectorInfo.ProtoReflect.Descriptor instead.
+func (*DirectorInfo) Descriptor() ([]byte, []int) {
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *DirectorInfo) GetVersion() string {
+	if x != nil {
+		return x.Version
+	}
+	return ""
+}
+
+func (x *DirectorInfo) GetSysInfo() *v1.SystemInfo {
+	if x != nil {
+		return x.SysInfo
+	}
+	return nil
+}
+
+type BuildStartEvent struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	BuildId      string        `protobuf:"bytes,1,opt,name=build_id,json=buildId,proto3" json:"build_id,omitempty"`
+	DirectorInfo *DirectorInfo `protobuf:"bytes,2,opt,name=director_info,json=directorInfo,proto3" json:"director_info,omitempty"`
+}
+
+func (x *BuildStartEvent) Reset() {
+	*x = BuildStartEvent{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *BuildStartEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BuildStartEvent) ProtoMessage() {}
+
+func (x *BuildStartEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BuildStartEvent.ProtoReflect.Descriptor instead.
+func (*BuildStartEvent) Descriptor() ([]byte, []int) {
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *BuildStartEvent) GetBuildId() string {
+	if x != nil {
+		return x.BuildId
+	}
+	return ""
+}
+
+func (x *BuildStartEvent) GetDirectorInfo() *DirectorInfo {
+	if x != nil {
+		return x.DirectorInfo
+	}
+	return nil
+}
+
+type BuildResult struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *BuildResult) Reset() {
+	*x = BuildResult{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *BuildResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BuildResult) ProtoMessage() {}
+
+func (x *BuildResult) ProtoReflect() protoreflect.Message {
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BuildResult.ProtoReflect.Descriptor instead.
+func (*BuildResult) Descriptor() ([]byte, []int) {
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{3}
+}
+
+type BuildEndEvent struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	BuildId string `protobuf:"bytes,1,opt,name=build_id,json=buildId,proto3" json:"build_id,omitempty"`
+	// Types that are assignable to Status:
+	//
+	//	*BuildEndEvent_Error
+	//	*BuildEndEvent_Result
+	Status isBuildEndEvent_Status `protobuf_oneof:"status"`
+}
+
+func (x *BuildEndEvent) Reset() {
+	*x = BuildEndEvent{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *BuildEndEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BuildEndEvent) ProtoMessage() {}
+
+func (x *BuildEndEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BuildEndEvent.ProtoReflect.Descriptor instead.
+func (*BuildEndEvent) Descriptor() ([]byte, []int) {
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *BuildEndEvent) GetBuildId() string {
+	if x != nil {
+		return x.BuildId
+	}
+	return ""
+}
+
+func (m *BuildEndEvent) GetStatus() isBuildEndEvent_Status {
+	if m != nil {
+		return m.Status
+	}
+	return nil
+}
+
+func (x *BuildEndEvent) GetError() *Error {
+	if x, ok := x.GetStatus().(*BuildEndEvent_Error); ok {
+		return x.Error
+	}
+	return nil
+}
+
+func (x *BuildEndEvent) GetResult() *BuildResult {
+	if x, ok := x.GetStatus().(*BuildEndEvent_Result); ok {
+		return x.Result
+	}
+	return nil
+}
+
+type isBuildEndEvent_Status interface {
+	isBuildEndEvent_Status()
+}
+
+type BuildEndEvent_Error struct {
+	Error *Error `protobuf:"bytes,2,opt,name=error,proto3,oneof"`
+}
+
+type BuildEndEvent_Result struct {
+	Result *BuildResult `protobuf:"bytes,3,opt,name=result,proto3,oneof"`
+}
+
+func (*BuildEndEvent_Error) isBuildEndEvent_Status() {}
+
+func (*BuildEndEvent_Result) isBuildEndEvent_Status() {}
+
 type RuntimeTenderStartEvent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -34,7 +319,7 @@ type RuntimeTenderStartEvent struct {
 func (x *RuntimeTenderStartEvent) Reset() {
 	*x = RuntimeTenderStartEvent{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_events_builtin_v1_builtin_proto_msgTypes[0]
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -47,7 +332,7 @@ func (x *RuntimeTenderStartEvent) String() string {
 func (*RuntimeTenderStartEvent) ProtoMessage() {}
 
 func (x *RuntimeTenderStartEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_events_builtin_v1_builtin_proto_msgTypes[0]
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -60,7 +345,7 @@ func (x *RuntimeTenderStartEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RuntimeTenderStartEvent.ProtoReflect.Descriptor instead.
 func (*RuntimeTenderStartEvent) Descriptor() ([]byte, []int) {
-	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{0}
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *RuntimeTenderStartEvent) GetBuildId() string {
@@ -84,18 +369,70 @@ func (x *RuntimeTenderStartEvent) GetOpts() *v1.Opts {
 	return nil
 }
 
+type RuntimeTenderResult struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Contracts []*v11.RuntimeContract `protobuf:"bytes,1,rep,name=contracts,proto3" json:"contracts,omitempty"`
+}
+
+func (x *RuntimeTenderResult) Reset() {
+	*x = RuntimeTenderResult{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RuntimeTenderResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RuntimeTenderResult) ProtoMessage() {}
+
+func (x *RuntimeTenderResult) ProtoReflect() protoreflect.Message {
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[6]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RuntimeTenderResult.ProtoReflect.Descriptor instead.
+func (*RuntimeTenderResult) Descriptor() ([]byte, []int) {
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *RuntimeTenderResult) GetContracts() []*v11.RuntimeContract {
+	if x != nil {
+		return x.Contracts
+	}
+	return nil
+}
+
 type RuntimeTenderEndEvent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	TenderId string `protobuf:"bytes,1,opt,name=tender_id,json=tenderId,proto3" json:"tender_id,omitempty"` // TODO contracts (need events to be in their own package to avoid circular dependency on broker)
+	TenderId string `protobuf:"bytes,1,opt,name=tender_id,json=tenderId,proto3" json:"tender_id,omitempty"`
+	// Types that are assignable to Status:
+	//
+	//	*RuntimeTenderEndEvent_Error
+	//	*RuntimeTenderEndEvent_Result
+	Status isRuntimeTenderEndEvent_Status `protobuf_oneof:"status"`
 }
 
 func (x *RuntimeTenderEndEvent) Reset() {
 	*x = RuntimeTenderEndEvent{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_events_builtin_v1_builtin_proto_msgTypes[1]
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -108,7 +445,7 @@ func (x *RuntimeTenderEndEvent) String() string {
 func (*RuntimeTenderEndEvent) ProtoMessage() {}
 
 func (x *RuntimeTenderEndEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_events_builtin_v1_builtin_proto_msgTypes[1]
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -121,7 +458,7 @@ func (x *RuntimeTenderEndEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RuntimeTenderEndEvent.ProtoReflect.Descriptor instead.
 func (*RuntimeTenderEndEvent) Descriptor() ([]byte, []int) {
-	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{1}
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *RuntimeTenderEndEvent) GetTenderId() string {
@@ -130,6 +467,43 @@ func (x *RuntimeTenderEndEvent) GetTenderId() string {
 	}
 	return ""
 }
+
+func (m *RuntimeTenderEndEvent) GetStatus() isRuntimeTenderEndEvent_Status {
+	if m != nil {
+		return m.Status
+	}
+	return nil
+}
+
+func (x *RuntimeTenderEndEvent) GetError() *Error {
+	if x, ok := x.GetStatus().(*RuntimeTenderEndEvent_Error); ok {
+		return x.Error
+	}
+	return nil
+}
+
+func (x *RuntimeTenderEndEvent) GetResult() *RuntimeTenderResult {
+	if x, ok := x.GetStatus().(*RuntimeTenderEndEvent_Result); ok {
+		return x.Result
+	}
+	return nil
+}
+
+type isRuntimeTenderEndEvent_Status interface {
+	isRuntimeTenderEndEvent_Status()
+}
+
+type RuntimeTenderEndEvent_Error struct {
+	Error *Error `protobuf:"bytes,2,opt,name=error,proto3,oneof"`
+}
+
+type RuntimeTenderEndEvent_Result struct {
+	Result *RuntimeTenderResult `protobuf:"bytes,3,opt,name=result,proto3,oneof"`
+}
+
+func (*RuntimeTenderEndEvent_Error) isRuntimeTenderEndEvent_Status() {}
+
+func (*RuntimeTenderEndEvent_Result) isRuntimeTenderEndEvent_Status() {}
 
 type RuntimeSettlementStartEvent struct {
 	state         protoimpl.MessageState
@@ -144,7 +518,7 @@ type RuntimeSettlementStartEvent struct {
 func (x *RuntimeSettlementStartEvent) Reset() {
 	*x = RuntimeSettlementStartEvent{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_events_builtin_v1_builtin_proto_msgTypes[2]
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -157,7 +531,7 @@ func (x *RuntimeSettlementStartEvent) String() string {
 func (*RuntimeSettlementStartEvent) ProtoMessage() {}
 
 func (x *RuntimeSettlementStartEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_events_builtin_v1_builtin_proto_msgTypes[2]
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -170,7 +544,7 @@ func (x *RuntimeSettlementStartEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RuntimeSettlementStartEvent.ProtoReflect.Descriptor instead.
 func (*RuntimeSettlementStartEvent) Descriptor() ([]byte, []int) {
-	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{2}
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *RuntimeSettlementStartEvent) GetTenderId() string {
@@ -194,6 +568,44 @@ func (x *RuntimeSettlementStartEvent) GetRuntimeId() string {
 	return ""
 }
 
+type RuntimeSettlementResult struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *RuntimeSettlementResult) Reset() {
+	*x = RuntimeSettlementResult{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[9]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RuntimeSettlementResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RuntimeSettlementResult) ProtoMessage() {}
+
+func (x *RuntimeSettlementResult) ProtoReflect() protoreflect.Message {
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[9]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RuntimeSettlementResult.ProtoReflect.Descriptor instead.
+func (*RuntimeSettlementResult) Descriptor() ([]byte, []int) {
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{9}
+}
+
 type RuntimeSettlementEndEvent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -202,12 +614,17 @@ type RuntimeSettlementEndEvent struct {
 	TenderId   string `protobuf:"bytes,1,opt,name=tender_id,json=tenderId,proto3" json:"tender_id,omitempty"`
 	ContractId string `protobuf:"bytes,2,opt,name=contract_id,json=contractId,proto3" json:"contract_id,omitempty"`
 	RuntimeId  string `protobuf:"bytes,3,opt,name=runtime_id,json=runtimeId,proto3" json:"runtime_id,omitempty"`
+	// Types that are assignable to Status:
+	//
+	//	*RuntimeSettlementEndEvent_Error
+	//	*RuntimeSettlementEndEvent_Result
+	Status isRuntimeSettlementEndEvent_Status `protobuf_oneof:"status"`
 }
 
 func (x *RuntimeSettlementEndEvent) Reset() {
 	*x = RuntimeSettlementEndEvent{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_events_builtin_v1_builtin_proto_msgTypes[3]
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -220,7 +637,7 @@ func (x *RuntimeSettlementEndEvent) String() string {
 func (*RuntimeSettlementEndEvent) ProtoMessage() {}
 
 func (x *RuntimeSettlementEndEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_events_builtin_v1_builtin_proto_msgTypes[3]
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -233,7 +650,7 @@ func (x *RuntimeSettlementEndEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RuntimeSettlementEndEvent.ProtoReflect.Descriptor instead.
 func (*RuntimeSettlementEndEvent) Descriptor() ([]byte, []int) {
-	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{3}
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *RuntimeSettlementEndEvent) GetTenderId() string {
@@ -257,6 +674,43 @@ func (x *RuntimeSettlementEndEvent) GetRuntimeId() string {
 	return ""
 }
 
+func (m *RuntimeSettlementEndEvent) GetStatus() isRuntimeSettlementEndEvent_Status {
+	if m != nil {
+		return m.Status
+	}
+	return nil
+}
+
+func (x *RuntimeSettlementEndEvent) GetError() *Error {
+	if x, ok := x.GetStatus().(*RuntimeSettlementEndEvent_Error); ok {
+		return x.Error
+	}
+	return nil
+}
+
+func (x *RuntimeSettlementEndEvent) GetResult() *RuntimeSettlementResult {
+	if x, ok := x.GetStatus().(*RuntimeSettlementEndEvent_Result); ok {
+		return x.Result
+	}
+	return nil
+}
+
+type isRuntimeSettlementEndEvent_Status interface {
+	isRuntimeSettlementEndEvent_Status()
+}
+
+type RuntimeSettlementEndEvent_Error struct {
+	Error *Error `protobuf:"bytes,4,opt,name=error,proto3,oneof"`
+}
+
+type RuntimeSettlementEndEvent_Result struct {
+	Result *RuntimeSettlementResult `protobuf:"bytes,5,opt,name=result,proto3,oneof"`
+}
+
+func (*RuntimeSettlementEndEvent_Error) isRuntimeSettlementEndEvent_Status() {}
+
+func (*RuntimeSettlementEndEvent_Result) isRuntimeSettlementEndEvent_Status() {}
+
 type RuntimeOpenStartEvent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -269,7 +723,7 @@ type RuntimeOpenStartEvent struct {
 func (x *RuntimeOpenStartEvent) Reset() {
 	*x = RuntimeOpenStartEvent{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_events_builtin_v1_builtin_proto_msgTypes[4]
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -282,7 +736,7 @@ func (x *RuntimeOpenStartEvent) String() string {
 func (*RuntimeOpenStartEvent) ProtoMessage() {}
 
 func (x *RuntimeOpenStartEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_events_builtin_v1_builtin_proto_msgTypes[4]
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -295,7 +749,7 @@ func (x *RuntimeOpenStartEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RuntimeOpenStartEvent.ProtoReflect.Descriptor instead.
 func (*RuntimeOpenStartEvent) Descriptor() ([]byte, []int) {
-	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{4}
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *RuntimeOpenStartEvent) GetRuntimeId() string {
@@ -312,18 +766,61 @@ func (x *RuntimeOpenStartEvent) GetOpts() *v1.Opts {
 	return nil
 }
 
+type RuntimeOpenResult struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *RuntimeOpenResult) Reset() {
+	*x = RuntimeOpenResult{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[12]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RuntimeOpenResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RuntimeOpenResult) ProtoMessage() {}
+
+func (x *RuntimeOpenResult) ProtoReflect() protoreflect.Message {
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[12]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RuntimeOpenResult.ProtoReflect.Descriptor instead.
+func (*RuntimeOpenResult) Descriptor() ([]byte, []int) {
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{12}
+}
+
 type RuntimeOpenEndEvent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	RuntimeId string `protobuf:"bytes,1,opt,name=runtime_id,json=runtimeId,proto3" json:"runtime_id,omitempty"`
+	// Types that are assignable to Status:
+	//
+	//	*RuntimeOpenEndEvent_Error
+	//	*RuntimeOpenEndEvent_Result
+	Status isRuntimeOpenEndEvent_Status `protobuf_oneof:"status"`
 }
 
 func (x *RuntimeOpenEndEvent) Reset() {
 	*x = RuntimeOpenEndEvent{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_events_builtin_v1_builtin_proto_msgTypes[5]
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[13]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -336,7 +833,7 @@ func (x *RuntimeOpenEndEvent) String() string {
 func (*RuntimeOpenEndEvent) ProtoMessage() {}
 
 func (x *RuntimeOpenEndEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_events_builtin_v1_builtin_proto_msgTypes[5]
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[13]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -349,7 +846,7 @@ func (x *RuntimeOpenEndEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RuntimeOpenEndEvent.ProtoReflect.Descriptor instead.
 func (*RuntimeOpenEndEvent) Descriptor() ([]byte, []int) {
-	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{5}
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *RuntimeOpenEndEvent) GetRuntimeId() string {
@@ -358,6 +855,43 @@ func (x *RuntimeOpenEndEvent) GetRuntimeId() string {
 	}
 	return ""
 }
+
+func (m *RuntimeOpenEndEvent) GetStatus() isRuntimeOpenEndEvent_Status {
+	if m != nil {
+		return m.Status
+	}
+	return nil
+}
+
+func (x *RuntimeOpenEndEvent) GetError() *Error {
+	if x, ok := x.GetStatus().(*RuntimeOpenEndEvent_Error); ok {
+		return x.Error
+	}
+	return nil
+}
+
+func (x *RuntimeOpenEndEvent) GetResult() *RuntimeOpenResult {
+	if x, ok := x.GetStatus().(*RuntimeOpenEndEvent_Result); ok {
+		return x.Result
+	}
+	return nil
+}
+
+type isRuntimeOpenEndEvent_Status interface {
+	isRuntimeOpenEndEvent_Status()
+}
+
+type RuntimeOpenEndEvent_Error struct {
+	Error *Error `protobuf:"bytes,2,opt,name=error,proto3,oneof"`
+}
+
+type RuntimeOpenEndEvent_Result struct {
+	Result *RuntimeOpenResult `protobuf:"bytes,3,opt,name=result,proto3,oneof"`
+}
+
+func (*RuntimeOpenEndEvent_Error) isRuntimeOpenEndEvent_Status() {}
+
+func (*RuntimeOpenEndEvent_Result) isRuntimeOpenEndEvent_Status() {}
 
 type RuntimeCloseStartEvent struct {
 	state         protoimpl.MessageState
@@ -370,7 +904,7 @@ type RuntimeCloseStartEvent struct {
 func (x *RuntimeCloseStartEvent) Reset() {
 	*x = RuntimeCloseStartEvent{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_events_builtin_v1_builtin_proto_msgTypes[6]
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[14]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -383,7 +917,7 @@ func (x *RuntimeCloseStartEvent) String() string {
 func (*RuntimeCloseStartEvent) ProtoMessage() {}
 
 func (x *RuntimeCloseStartEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_events_builtin_v1_builtin_proto_msgTypes[6]
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[14]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -396,7 +930,7 @@ func (x *RuntimeCloseStartEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RuntimeCloseStartEvent.ProtoReflect.Descriptor instead.
 func (*RuntimeCloseStartEvent) Descriptor() ([]byte, []int) {
-	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{6}
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *RuntimeCloseStartEvent) GetRuntimeId() string {
@@ -406,18 +940,61 @@ func (x *RuntimeCloseStartEvent) GetRuntimeId() string {
 	return ""
 }
 
+type RuntimeCloseResult struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *RuntimeCloseResult) Reset() {
+	*x = RuntimeCloseResult{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[15]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RuntimeCloseResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RuntimeCloseResult) ProtoMessage() {}
+
+func (x *RuntimeCloseResult) ProtoReflect() protoreflect.Message {
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[15]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RuntimeCloseResult.ProtoReflect.Descriptor instead.
+func (*RuntimeCloseResult) Descriptor() ([]byte, []int) {
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{15}
+}
+
 type RuntimeCloseEndEvent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	RuntimeId string `protobuf:"bytes,1,opt,name=runtime_id,json=runtimeId,proto3" json:"runtime_id,omitempty"`
+	// Types that are assignable to Status:
+	//
+	//	*RuntimeCloseEndEvent_Error
+	//	*RuntimeCloseEndEvent_Result
+	Status isRuntimeCloseEndEvent_Status `protobuf_oneof:"status"`
 }
 
 func (x *RuntimeCloseEndEvent) Reset() {
 	*x = RuntimeCloseEndEvent{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_events_builtin_v1_builtin_proto_msgTypes[7]
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[16]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -430,7 +1007,7 @@ func (x *RuntimeCloseEndEvent) String() string {
 func (*RuntimeCloseEndEvent) ProtoMessage() {}
 
 func (x *RuntimeCloseEndEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_events_builtin_v1_builtin_proto_msgTypes[7]
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[16]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -443,7 +1020,7 @@ func (x *RuntimeCloseEndEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RuntimeCloseEndEvent.ProtoReflect.Descriptor instead.
 func (*RuntimeCloseEndEvent) Descriptor() ([]byte, []int) {
-	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{7}
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *RuntimeCloseEndEvent) GetRuntimeId() string {
@@ -452,6 +1029,43 @@ func (x *RuntimeCloseEndEvent) GetRuntimeId() string {
 	}
 	return ""
 }
+
+func (m *RuntimeCloseEndEvent) GetStatus() isRuntimeCloseEndEvent_Status {
+	if m != nil {
+		return m.Status
+	}
+	return nil
+}
+
+func (x *RuntimeCloseEndEvent) GetError() *Error {
+	if x, ok := x.GetStatus().(*RuntimeCloseEndEvent_Error); ok {
+		return x.Error
+	}
+	return nil
+}
+
+func (x *RuntimeCloseEndEvent) GetResult() *RuntimeCloseResult {
+	if x, ok := x.GetStatus().(*RuntimeCloseEndEvent_Result); ok {
+		return x.Result
+	}
+	return nil
+}
+
+type isRuntimeCloseEndEvent_Status interface {
+	isRuntimeCloseEndEvent_Status()
+}
+
+type RuntimeCloseEndEvent_Error struct {
+	Error *Error `protobuf:"bytes,2,opt,name=error,proto3,oneof"`
+}
+
+type RuntimeCloseEndEvent_Result struct {
+	Result *RuntimeCloseResult `protobuf:"bytes,3,opt,name=result,proto3,oneof"`
+}
+
+func (*RuntimeCloseEndEvent_Error) isRuntimeCloseEndEvent_Status() {}
+
+func (*RuntimeCloseEndEvent_Result) isRuntimeCloseEndEvent_Status() {}
 
 type StdoutEvent struct {
 	state         protoimpl.MessageState
@@ -465,7 +1079,7 @@ type StdoutEvent struct {
 func (x *StdoutEvent) Reset() {
 	*x = StdoutEvent{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_events_builtin_v1_builtin_proto_msgTypes[8]
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[17]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -478,7 +1092,7 @@ func (x *StdoutEvent) String() string {
 func (*StdoutEvent) ProtoMessage() {}
 
 func (x *StdoutEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_events_builtin_v1_builtin_proto_msgTypes[8]
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[17]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -491,7 +1105,7 @@ func (x *StdoutEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StdoutEvent.ProtoReflect.Descriptor instead.
 func (*StdoutEvent) Descriptor() ([]byte, []int) {
-	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{8}
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *StdoutEvent) GetData() []byte {
@@ -520,7 +1134,7 @@ type StderrEvent struct {
 func (x *StderrEvent) Reset() {
 	*x = StderrEvent{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_events_builtin_v1_builtin_proto_msgTypes[9]
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[18]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -533,7 +1147,7 @@ func (x *StderrEvent) String() string {
 func (*StderrEvent) ProtoMessage() {}
 
 func (x *StderrEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_events_builtin_v1_builtin_proto_msgTypes[9]
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[18]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -546,7 +1160,7 @@ func (x *StderrEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StderrEvent.ProtoReflect.Descriptor instead.
 func (*StderrEvent) Descriptor() ([]byte, []int) {
-	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{9}
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *StderrEvent) GetData() []byte {
@@ -579,7 +1193,7 @@ type LogEventSource struct {
 func (x *LogEventSource) Reset() {
 	*x = LogEventSource{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_events_builtin_v1_builtin_proto_msgTypes[10]
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[19]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -592,7 +1206,7 @@ func (x *LogEventSource) String() string {
 func (*LogEventSource) ProtoMessage() {}
 
 func (x *LogEventSource) ProtoReflect() protoreflect.Message {
-	mi := &file_events_builtin_v1_builtin_proto_msgTypes[10]
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[19]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -605,7 +1219,7 @@ func (x *LogEventSource) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LogEventSource.ProtoReflect.Descriptor instead.
 func (*LogEventSource) Descriptor() ([]byte, []int) {
-	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{10}
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{19}
 }
 
 func (m *LogEventSource) GetSource() isLogEventSource_Source {
@@ -669,7 +1283,7 @@ type LogSourceRuntime struct {
 func (x *LogSourceRuntime) Reset() {
 	*x = LogSourceRuntime{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_events_builtin_v1_builtin_proto_msgTypes[11]
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[20]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -682,7 +1296,7 @@ func (x *LogSourceRuntime) String() string {
 func (*LogSourceRuntime) ProtoMessage() {}
 
 func (x *LogSourceRuntime) ProtoReflect() protoreflect.Message {
-	mi := &file_events_builtin_v1_builtin_proto_msgTypes[11]
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[20]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -695,7 +1309,7 @@ func (x *LogSourceRuntime) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LogSourceRuntime.ProtoReflect.Descriptor instead.
 func (*LogSourceRuntime) Descriptor() ([]byte, []int) {
-	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{11}
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *LogSourceRuntime) GetRuntimeId() string {
@@ -719,7 +1333,7 @@ type LogSourceExec struct {
 func (x *LogSourceExec) Reset() {
 	*x = LogSourceExec{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_events_builtin_v1_builtin_proto_msgTypes[12]
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[21]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -732,7 +1346,7 @@ func (x *LogSourceExec) String() string {
 func (*LogSourceExec) ProtoMessage() {}
 
 func (x *LogSourceExec) ProtoReflect() protoreflect.Message {
-	mi := &file_events_builtin_v1_builtin_proto_msgTypes[12]
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[21]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -745,7 +1359,7 @@ func (x *LogSourceExec) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LogSourceExec.ProtoReflect.Descriptor instead.
 func (*LogSourceExec) Descriptor() ([]byte, []int) {
-	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{12}
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *LogSourceExec) GetRuntimeId() string {
@@ -778,7 +1392,7 @@ type LogSourceDirector struct {
 func (x *LogSourceDirector) Reset() {
 	*x = LogSourceDirector{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_events_builtin_v1_builtin_proto_msgTypes[13]
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[22]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -791,7 +1405,7 @@ func (x *LogSourceDirector) String() string {
 func (*LogSourceDirector) ProtoMessage() {}
 
 func (x *LogSourceDirector) ProtoReflect() protoreflect.Message {
-	mi := &file_events_builtin_v1_builtin_proto_msgTypes[13]
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[22]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -804,7 +1418,7 @@ func (x *LogSourceDirector) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LogSourceDirector.ProtoReflect.Descriptor instead.
 func (*LogSourceDirector) Descriptor() ([]byte, []int) {
-	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{13}
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{22}
 }
 
 type ExecStartEvent struct {
@@ -821,7 +1435,7 @@ type ExecStartEvent struct {
 func (x *ExecStartEvent) Reset() {
 	*x = ExecStartEvent{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_events_builtin_v1_builtin_proto_msgTypes[14]
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[23]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -834,7 +1448,7 @@ func (x *ExecStartEvent) String() string {
 func (*ExecStartEvent) ProtoMessage() {}
 
 func (x *ExecStartEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_events_builtin_v1_builtin_proto_msgTypes[14]
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[23]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -847,7 +1461,7 @@ func (x *ExecStartEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecStartEvent.ProtoReflect.Descriptor instead.
 func (*ExecStartEvent) Descriptor() ([]byte, []int) {
-	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{14}
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *ExecStartEvent) GetRuntimeId() string {
@@ -878,32 +1492,31 @@ func (x *ExecStartEvent) GetTags() map[string]string {
 	return nil
 }
 
-type ImportStartEvent struct {
+type ExecResult struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	RuntimeId string `protobuf:"bytes,1,opt,name=runtime_id,json=runtimeId,proto3" json:"runtime_id,omitempty"`
-	ImportId  string `protobuf:"bytes,2,opt,name=import_id,json=importId,proto3" json:"import_id,omitempty"`
+	ExitCode int32 `protobuf:"varint,4,opt,name=exit_code,json=exitCode,proto3" json:"exit_code,omitempty"`
 }
 
-func (x *ImportStartEvent) Reset() {
-	*x = ImportStartEvent{}
+func (x *ExecResult) Reset() {
+	*x = ExecResult{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_events_builtin_v1_builtin_proto_msgTypes[15]
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[24]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *ImportStartEvent) String() string {
+func (x *ExecResult) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ImportStartEvent) ProtoMessage() {}
+func (*ExecResult) ProtoMessage() {}
 
-func (x *ImportStartEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_events_builtin_v1_builtin_proto_msgTypes[15]
+func (x *ExecResult) ProtoReflect() protoreflect.Message {
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[24]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -914,188 +1527,16 @@ func (x *ImportStartEvent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ImportStartEvent.ProtoReflect.Descriptor instead.
-func (*ImportStartEvent) Descriptor() ([]byte, []int) {
-	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{15}
+// Deprecated: Use ExecResult.ProtoReflect.Descriptor instead.
+func (*ExecResult) Descriptor() ([]byte, []int) {
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{24}
 }
 
-func (x *ImportStartEvent) GetRuntimeId() string {
+func (x *ExecResult) GetExitCode() int32 {
 	if x != nil {
-		return x.RuntimeId
+		return x.ExitCode
 	}
-	return ""
-}
-
-func (x *ImportStartEvent) GetImportId() string {
-	if x != nil {
-		return x.ImportId
-	}
-	return ""
-}
-
-type ImportEndEvent struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	RuntimeId string `protobuf:"bytes,1,opt,name=runtime_id,json=runtimeId,proto3" json:"runtime_id,omitempty"`
-	ImportId  string `protobuf:"bytes,2,opt,name=import_id,json=importId,proto3" json:"import_id,omitempty"`
-}
-
-func (x *ImportEndEvent) Reset() {
-	*x = ImportEndEvent{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_events_builtin_v1_builtin_proto_msgTypes[16]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *ImportEndEvent) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ImportEndEvent) ProtoMessage() {}
-
-func (x *ImportEndEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_events_builtin_v1_builtin_proto_msgTypes[16]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ImportEndEvent.ProtoReflect.Descriptor instead.
-func (*ImportEndEvent) Descriptor() ([]byte, []int) {
-	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{16}
-}
-
-func (x *ImportEndEvent) GetRuntimeId() string {
-	if x != nil {
-		return x.RuntimeId
-	}
-	return ""
-}
-
-func (x *ImportEndEvent) GetImportId() string {
-	if x != nil {
-		return x.ImportId
-	}
-	return ""
-}
-
-type ExportStartEvent struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	RuntimeId string `protobuf:"bytes,1,opt,name=runtime_id,json=runtimeId,proto3" json:"runtime_id,omitempty"`
-	ExportId  string `protobuf:"bytes,2,opt,name=export_id,json=exportId,proto3" json:"export_id,omitempty"`
-}
-
-func (x *ExportStartEvent) Reset() {
-	*x = ExportStartEvent{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_events_builtin_v1_builtin_proto_msgTypes[17]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *ExportStartEvent) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ExportStartEvent) ProtoMessage() {}
-
-func (x *ExportStartEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_events_builtin_v1_builtin_proto_msgTypes[17]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ExportStartEvent.ProtoReflect.Descriptor instead.
-func (*ExportStartEvent) Descriptor() ([]byte, []int) {
-	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{17}
-}
-
-func (x *ExportStartEvent) GetRuntimeId() string {
-	if x != nil {
-		return x.RuntimeId
-	}
-	return ""
-}
-
-func (x *ExportStartEvent) GetExportId() string {
-	if x != nil {
-		return x.ExportId
-	}
-	return ""
-}
-
-type ExportEndEvent struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	RuntimeId string `protobuf:"bytes,1,opt,name=runtime_id,json=runtimeId,proto3" json:"runtime_id,omitempty"`
-	ExportId  string `protobuf:"bytes,2,opt,name=export_id,json=exportId,proto3" json:"export_id,omitempty"`
-}
-
-func (x *ExportEndEvent) Reset() {
-	*x = ExportEndEvent{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_events_builtin_v1_builtin_proto_msgTypes[18]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *ExportEndEvent) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ExportEndEvent) ProtoMessage() {}
-
-func (x *ExportEndEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_events_builtin_v1_builtin_proto_msgTypes[18]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ExportEndEvent.ProtoReflect.Descriptor instead.
-func (*ExportEndEvent) Descriptor() ([]byte, []int) {
-	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{18}
-}
-
-func (x *ExportEndEvent) GetRuntimeId() string {
-	if x != nil {
-		return x.RuntimeId
-	}
-	return ""
-}
-
-func (x *ExportEndEvent) GetExportId() string {
-	if x != nil {
-		return x.ExportId
-	}
-	return ""
+	return 0
 }
 
 type ExecEndEvent struct {
@@ -1105,14 +1546,17 @@ type ExecEndEvent struct {
 
 	RuntimeId string `protobuf:"bytes,1,opt,name=runtime_id,json=runtimeId,proto3" json:"runtime_id,omitempty"`
 	ExecId    string `protobuf:"bytes,2,opt,name=exec_id,json=execId,proto3" json:"exec_id,omitempty"`
-	Error     string `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"` // TODO structured error?
-	ExitCode  int32  `protobuf:"varint,4,opt,name=exit_code,json=exitCode,proto3" json:"exit_code,omitempty"`
+	// Types that are assignable to Status:
+	//
+	//	*ExecEndEvent_Error
+	//	*ExecEndEvent_Result
+	Status isExecEndEvent_Status `protobuf_oneof:"status"`
 }
 
 func (x *ExecEndEvent) Reset() {
 	*x = ExecEndEvent{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_events_builtin_v1_builtin_proto_msgTypes[19]
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[25]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1125,7 +1569,7 @@ func (x *ExecEndEvent) String() string {
 func (*ExecEndEvent) ProtoMessage() {}
 
 func (x *ExecEndEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_events_builtin_v1_builtin_proto_msgTypes[19]
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[25]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1138,7 +1582,7 @@ func (x *ExecEndEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecEndEvent.ProtoReflect.Descriptor instead.
 func (*ExecEndEvent) Descriptor() ([]byte, []int) {
-	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{19}
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *ExecEndEvent) GetRuntimeId() string {
@@ -1155,19 +1599,422 @@ func (x *ExecEndEvent) GetExecId() string {
 	return ""
 }
 
-func (x *ExecEndEvent) GetError() string {
-	if x != nil {
+func (m *ExecEndEvent) GetStatus() isExecEndEvent_Status {
+	if m != nil {
+		return m.Status
+	}
+	return nil
+}
+
+func (x *ExecEndEvent) GetError() *Error {
+	if x, ok := x.GetStatus().(*ExecEndEvent_Error); ok {
 		return x.Error
+	}
+	return nil
+}
+
+func (x *ExecEndEvent) GetResult() *ExecResult {
+	if x, ok := x.GetStatus().(*ExecEndEvent_Result); ok {
+		return x.Result
+	}
+	return nil
+}
+
+type isExecEndEvent_Status interface {
+	isExecEndEvent_Status()
+}
+
+type ExecEndEvent_Error struct {
+	Error *Error `protobuf:"bytes,3,opt,name=error,proto3,oneof"`
+}
+
+type ExecEndEvent_Result struct {
+	Result *ExecResult `protobuf:"bytes,4,opt,name=result,proto3,oneof"`
+}
+
+func (*ExecEndEvent_Error) isExecEndEvent_Status() {}
+
+func (*ExecEndEvent_Result) isExecEndEvent_Status() {}
+
+type ImportStartEvent struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	RuntimeId string `protobuf:"bytes,1,opt,name=runtime_id,json=runtimeId,proto3" json:"runtime_id,omitempty"`
+	ImportId  string `protobuf:"bytes,2,opt,name=import_id,json=importId,proto3" json:"import_id,omitempty"`
+}
+
+func (x *ImportStartEvent) Reset() {
+	*x = ImportStartEvent{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[26]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ImportStartEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImportStartEvent) ProtoMessage() {}
+
+func (x *ImportStartEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[26]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImportStartEvent.ProtoReflect.Descriptor instead.
+func (*ImportStartEvent) Descriptor() ([]byte, []int) {
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *ImportStartEvent) GetRuntimeId() string {
+	if x != nil {
+		return x.RuntimeId
 	}
 	return ""
 }
 
-func (x *ExecEndEvent) GetExitCode() int32 {
+func (x *ImportStartEvent) GetImportId() string {
 	if x != nil {
-		return x.ExitCode
+		return x.ImportId
 	}
-	return 0
+	return ""
 }
+
+type ImportResult struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *ImportResult) Reset() {
+	*x = ImportResult{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[27]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ImportResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImportResult) ProtoMessage() {}
+
+func (x *ImportResult) ProtoReflect() protoreflect.Message {
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[27]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImportResult.ProtoReflect.Descriptor instead.
+func (*ImportResult) Descriptor() ([]byte, []int) {
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{27}
+}
+
+type ImportEndEvent struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	RuntimeId string `protobuf:"bytes,1,opt,name=runtime_id,json=runtimeId,proto3" json:"runtime_id,omitempty"`
+	ImportId  string `protobuf:"bytes,2,opt,name=import_id,json=importId,proto3" json:"import_id,omitempty"`
+	// Types that are assignable to Status:
+	//
+	//	*ImportEndEvent_Error
+	//	*ImportEndEvent_Result
+	Status isImportEndEvent_Status `protobuf_oneof:"status"`
+}
+
+func (x *ImportEndEvent) Reset() {
+	*x = ImportEndEvent{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[28]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ImportEndEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImportEndEvent) ProtoMessage() {}
+
+func (x *ImportEndEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[28]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImportEndEvent.ProtoReflect.Descriptor instead.
+func (*ImportEndEvent) Descriptor() ([]byte, []int) {
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *ImportEndEvent) GetRuntimeId() string {
+	if x != nil {
+		return x.RuntimeId
+	}
+	return ""
+}
+
+func (x *ImportEndEvent) GetImportId() string {
+	if x != nil {
+		return x.ImportId
+	}
+	return ""
+}
+
+func (m *ImportEndEvent) GetStatus() isImportEndEvent_Status {
+	if m != nil {
+		return m.Status
+	}
+	return nil
+}
+
+func (x *ImportEndEvent) GetError() *Error {
+	if x, ok := x.GetStatus().(*ImportEndEvent_Error); ok {
+		return x.Error
+	}
+	return nil
+}
+
+func (x *ImportEndEvent) GetResult() *ImportResult {
+	if x, ok := x.GetStatus().(*ImportEndEvent_Result); ok {
+		return x.Result
+	}
+	return nil
+}
+
+type isImportEndEvent_Status interface {
+	isImportEndEvent_Status()
+}
+
+type ImportEndEvent_Error struct {
+	Error *Error `protobuf:"bytes,3,opt,name=error,proto3,oneof"`
+}
+
+type ImportEndEvent_Result struct {
+	Result *ImportResult `protobuf:"bytes,4,opt,name=result,proto3,oneof"`
+}
+
+func (*ImportEndEvent_Error) isImportEndEvent_Status() {}
+
+func (*ImportEndEvent_Result) isImportEndEvent_Status() {}
+
+type ExportStartEvent struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	RuntimeId string `protobuf:"bytes,1,opt,name=runtime_id,json=runtimeId,proto3" json:"runtime_id,omitempty"`
+	ExportId  string `protobuf:"bytes,2,opt,name=export_id,json=exportId,proto3" json:"export_id,omitempty"`
+}
+
+func (x *ExportStartEvent) Reset() {
+	*x = ExportStartEvent{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[29]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ExportStartEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExportStartEvent) ProtoMessage() {}
+
+func (x *ExportStartEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[29]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExportStartEvent.ProtoReflect.Descriptor instead.
+func (*ExportStartEvent) Descriptor() ([]byte, []int) {
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *ExportStartEvent) GetRuntimeId() string {
+	if x != nil {
+		return x.RuntimeId
+	}
+	return ""
+}
+
+func (x *ExportStartEvent) GetExportId() string {
+	if x != nil {
+		return x.ExportId
+	}
+	return ""
+}
+
+type ExportResult struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *ExportResult) Reset() {
+	*x = ExportResult{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[30]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ExportResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExportResult) ProtoMessage() {}
+
+func (x *ExportResult) ProtoReflect() protoreflect.Message {
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[30]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExportResult.ProtoReflect.Descriptor instead.
+func (*ExportResult) Descriptor() ([]byte, []int) {
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{30}
+}
+
+type ExportEndEvent struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	RuntimeId string `protobuf:"bytes,1,opt,name=runtime_id,json=runtimeId,proto3" json:"runtime_id,omitempty"`
+	ExportId  string `protobuf:"bytes,2,opt,name=export_id,json=exportId,proto3" json:"export_id,omitempty"`
+	// Types that are assignable to Status:
+	//
+	//	*ExportEndEvent_Error
+	//	*ExportEndEvent_Result
+	Status isExportEndEvent_Status `protobuf_oneof:"status"`
+}
+
+func (x *ExportEndEvent) Reset() {
+	*x = ExportEndEvent{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[31]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ExportEndEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExportEndEvent) ProtoMessage() {}
+
+func (x *ExportEndEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[31]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExportEndEvent.ProtoReflect.Descriptor instead.
+func (*ExportEndEvent) Descriptor() ([]byte, []int) {
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *ExportEndEvent) GetRuntimeId() string {
+	if x != nil {
+		return x.RuntimeId
+	}
+	return ""
+}
+
+func (x *ExportEndEvent) GetExportId() string {
+	if x != nil {
+		return x.ExportId
+	}
+	return ""
+}
+
+func (m *ExportEndEvent) GetStatus() isExportEndEvent_Status {
+	if m != nil {
+		return m.Status
+	}
+	return nil
+}
+
+func (x *ExportEndEvent) GetError() *Error {
+	if x, ok := x.GetStatus().(*ExportEndEvent_Error); ok {
+		return x.Error
+	}
+	return nil
+}
+
+func (x *ExportEndEvent) GetResult() *ExportResult {
+	if x, ok := x.GetStatus().(*ExportEndEvent_Result); ok {
+		return x.Result
+	}
+	return nil
+}
+
+type isExportEndEvent_Status interface {
+	isExportEndEvent_Status()
+}
+
+type ExportEndEvent_Error struct {
+	Error *Error `protobuf:"bytes,3,opt,name=error,proto3,oneof"`
+}
+
+type ExportEndEvent_Result struct {
+	Result *ExportResult `protobuf:"bytes,4,opt,name=result,proto3,oneof"`
+}
+
+func (*ExportEndEvent_Error) isExportEndEvent_Status() {}
+
+func (*ExportEndEvent_Result) isExportEndEvent_Status() {}
 
 type SyncPointReachedEvent struct {
 	state         protoimpl.MessageState
@@ -1180,7 +2027,7 @@ type SyncPointReachedEvent struct {
 func (x *SyncPointReachedEvent) Reset() {
 	*x = SyncPointReachedEvent{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_events_builtin_v1_builtin_proto_msgTypes[20]
+		mi := &file_events_builtin_v1_builtin_proto_msgTypes[32]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1193,7 +2040,7 @@ func (x *SyncPointReachedEvent) String() string {
 func (*SyncPointReachedEvent) ProtoMessage() {}
 
 func (x *SyncPointReachedEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_events_builtin_v1_builtin_proto_msgTypes[20]
+	mi := &file_events_builtin_v1_builtin_proto_msgTypes[32]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1206,7 +2053,7 @@ func (x *SyncPointReachedEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SyncPointReachedEvent.ProtoReflect.Descriptor instead.
 func (*SyncPointReachedEvent) Descriptor() ([]byte, []int) {
-	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{20}
+	return file_events_builtin_v1_builtin_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *SyncPointReachedEvent) GetBarrierId() string {
@@ -1224,138 +2071,239 @@ var file_events_builtin_v1_builtin_proto_rawDesc = []byte{
 	0x6f, 0x12, 0x17, 0x62, 0x75, 0x69, 0x6c, 0x74, 0x69, 0x6e, 0x2e, 0x65, 0x76, 0x65, 0x6e, 0x74,
 	0x73, 0x2e, 0x6b, 0x6e, 0x69, 0x74, 0x61, 0x2e, 0x69, 0x6f, 0x1a, 0x1a, 0x65, 0x78, 0x65, 0x63,
 	0x75, 0x74, 0x6f, 0x72, 0x2f, 0x76, 0x31, 0x2f, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x6f, 0x72,
-	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x7e, 0x0a, 0x17, 0x52, 0x75, 0x6e, 0x74, 0x69, 0x6d,
-	0x65, 0x54, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x53, 0x74, 0x61, 0x72, 0x74, 0x45, 0x76, 0x65, 0x6e,
-	0x74, 0x12, 0x19, 0x0a, 0x08, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x07, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x49, 0x64, 0x12, 0x1b, 0x0a, 0x09,
-	0x74, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
-	0x08, 0x74, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x49, 0x64, 0x12, 0x2b, 0x0a, 0x04, 0x6f, 0x70, 0x74,
-	0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74,
-	0x6f, 0x72, 0x2e, 0x6b, 0x6e, 0x69, 0x74, 0x61, 0x2e, 0x69, 0x6f, 0x2e, 0x4f, 0x70, 0x74, 0x73,
-	0x52, 0x04, 0x6f, 0x70, 0x74, 0x73, 0x22, 0x34, 0x0a, 0x15, 0x52, 0x75, 0x6e, 0x74, 0x69, 0x6d,
-	0x65, 0x54, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x45, 0x6e, 0x64, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12,
-	0x1b, 0x0a, 0x09, 0x74, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x08, 0x74, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x49, 0x64, 0x22, 0x7a, 0x0a, 0x1b,
-	0x52, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e,
-	0x74, 0x53, 0x74, 0x61, 0x72, 0x74, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x1b, 0x0a, 0x09, 0x74,
-	0x65, 0x6e, 0x64, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08,
-	0x74, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x49, 0x64, 0x12, 0x1f, 0x0a, 0x0b, 0x63, 0x6f, 0x6e, 0x74,
-	0x72, 0x61, 0x63, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x63,
-	0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x49, 0x64, 0x12, 0x1d, 0x0a, 0x0a, 0x72, 0x75, 0x6e,
-	0x74, 0x69, 0x6d, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x72,
-	0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x49, 0x64, 0x22, 0x78, 0x0a, 0x19, 0x52, 0x75, 0x6e, 0x74,
-	0x69, 0x6d, 0x65, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x45, 0x6e, 0x64,
-	0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x1b, 0x0a, 0x09, 0x74, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x5f,
-	0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x74, 0x65, 0x6e, 0x64, 0x65, 0x72,
-	0x49, 0x64, 0x12, 0x1f, 0x0a, 0x0b, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x5f, 0x69,
-	0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63,
-	0x74, 0x49, 0x64, 0x12, 0x1d, 0x0a, 0x0a, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x5f, 0x69,
-	0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65,
-	0x49, 0x64, 0x22, 0x63, 0x0a, 0x15, 0x52, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x4f, 0x70, 0x65,
-	0x6e, 0x53, 0x74, 0x61, 0x72, 0x74, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x72,
-	0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
-	0x09, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x49, 0x64, 0x12, 0x2b, 0x0a, 0x04, 0x6f, 0x70,
-	0x74, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x65, 0x78, 0x65, 0x63, 0x75,
-	0x74, 0x6f, 0x72, 0x2e, 0x6b, 0x6e, 0x69, 0x74, 0x61, 0x2e, 0x69, 0x6f, 0x2e, 0x4f, 0x70, 0x74,
-	0x73, 0x52, 0x04, 0x6f, 0x70, 0x74, 0x73, 0x22, 0x34, 0x0a, 0x13, 0x52, 0x75, 0x6e, 0x74, 0x69,
-	0x6d, 0x65, 0x4f, 0x70, 0x65, 0x6e, 0x45, 0x6e, 0x64, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x1d,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x16, 0x62, 0x72, 0x6f, 0x6b, 0x65, 0x72, 0x2f, 0x76,
+	0x31, 0x2f, 0x62, 0x72, 0x6f, 0x6b, 0x65, 0x72, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x21,
+	0x0a, 0x05, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x12, 0x18, 0x0a, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61,
+	0x67, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67,
+	0x65, 0x22, 0x62, 0x0a, 0x0c, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x49, 0x6e, 0x66,
+	0x6f, 0x12, 0x18, 0x0a, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x38, 0x0a, 0x08, 0x73,
+	0x79, 0x73, 0x5f, 0x69, 0x6e, 0x66, 0x6f, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1d, 0x2e,
+	0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x6f, 0x72, 0x2e, 0x6b, 0x6e, 0x69, 0x74, 0x61, 0x2e, 0x69,
+	0x6f, 0x2e, 0x53, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x07, 0x73, 0x79,
+	0x73, 0x49, 0x6e, 0x66, 0x6f, 0x22, 0x78, 0x0a, 0x0f, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x53, 0x74,
+	0x61, 0x72, 0x74, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x19, 0x0a, 0x08, 0x62, 0x75, 0x69, 0x6c,
+	0x64, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x62, 0x75, 0x69, 0x6c,
+	0x64, 0x49, 0x64, 0x12, 0x4a, 0x0a, 0x0d, 0x64, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x5f,
+	0x69, 0x6e, 0x66, 0x6f, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x25, 0x2e, 0x62, 0x75, 0x69,
+	0x6c, 0x74, 0x69, 0x6e, 0x2e, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x2e, 0x6b, 0x6e, 0x69, 0x74,
+	0x61, 0x2e, 0x69, 0x6f, 0x2e, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x49, 0x6e, 0x66,
+	0x6f, 0x52, 0x0c, 0x64, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x49, 0x6e, 0x66, 0x6f, 0x22,
+	0x0d, 0x0a, 0x0b, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x22, 0xac,
+	0x01, 0x0a, 0x0d, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x45, 0x6e, 0x64, 0x45, 0x76, 0x65, 0x6e, 0x74,
+	0x12, 0x19, 0x0a, 0x08, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x07, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x49, 0x64, 0x12, 0x36, 0x0a, 0x05, 0x65,
+	0x72, 0x72, 0x6f, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x62, 0x75, 0x69,
+	0x6c, 0x74, 0x69, 0x6e, 0x2e, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x2e, 0x6b, 0x6e, 0x69, 0x74,
+	0x61, 0x2e, 0x69, 0x6f, 0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x48, 0x00, 0x52, 0x05, 0x65, 0x72,
+	0x72, 0x6f, 0x72, 0x12, 0x3e, 0x0a, 0x06, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x18, 0x03, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x24, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x74, 0x69, 0x6e, 0x2e, 0x65, 0x76,
+	0x65, 0x6e, 0x74, 0x73, 0x2e, 0x6b, 0x6e, 0x69, 0x74, 0x61, 0x2e, 0x69, 0x6f, 0x2e, 0x42, 0x75,
+	0x69, 0x6c, 0x64, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x48, 0x00, 0x52, 0x06, 0x72, 0x65, 0x73,
+	0x75, 0x6c, 0x74, 0x42, 0x08, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x22, 0x7e, 0x0a,
+	0x17, 0x52, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x54, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x53, 0x74,
+	0x61, 0x72, 0x74, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x19, 0x0a, 0x08, 0x62, 0x75, 0x69, 0x6c,
+	0x64, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x62, 0x75, 0x69, 0x6c,
+	0x64, 0x49, 0x64, 0x12, 0x1b, 0x0a, 0x09, 0x74, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x5f, 0x69, 0x64,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x74, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x49, 0x64,
+	0x12, 0x2b, 0x0a, 0x04, 0x6f, 0x70, 0x74, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x17,
+	0x2e, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x6f, 0x72, 0x2e, 0x6b, 0x6e, 0x69, 0x74, 0x61, 0x2e,
+	0x69, 0x6f, 0x2e, 0x4f, 0x70, 0x74, 0x73, 0x52, 0x04, 0x6f, 0x70, 0x74, 0x73, 0x22, 0x55, 0x0a,
+	0x13, 0x52, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x54, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x52, 0x65,
+	0x73, 0x75, 0x6c, 0x74, 0x12, 0x3e, 0x0a, 0x09, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74,
+	0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x62, 0x72, 0x6f, 0x6b, 0x65, 0x72,
+	0x2e, 0x6b, 0x6e, 0x69, 0x74, 0x61, 0x2e, 0x69, 0x6f, 0x2e, 0x52, 0x75, 0x6e, 0x74, 0x69, 0x6d,
+	0x65, 0x43, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x52, 0x09, 0x63, 0x6f, 0x6e, 0x74, 0x72,
+	0x61, 0x63, 0x74, 0x73, 0x22, 0xbe, 0x01, 0x0a, 0x15, 0x52, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65,
+	0x54, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x45, 0x6e, 0x64, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x1b,
+	0x0a, 0x09, 0x74, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x08, 0x74, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x49, 0x64, 0x12, 0x36, 0x0a, 0x05, 0x65,
+	0x72, 0x72, 0x6f, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x62, 0x75, 0x69,
+	0x6c, 0x74, 0x69, 0x6e, 0x2e, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x2e, 0x6b, 0x6e, 0x69, 0x74,
+	0x61, 0x2e, 0x69, 0x6f, 0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x48, 0x00, 0x52, 0x05, 0x65, 0x72,
+	0x72, 0x6f, 0x72, 0x12, 0x46, 0x0a, 0x06, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x18, 0x03, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x2c, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x74, 0x69, 0x6e, 0x2e, 0x65, 0x76,
+	0x65, 0x6e, 0x74, 0x73, 0x2e, 0x6b, 0x6e, 0x69, 0x74, 0x61, 0x2e, 0x69, 0x6f, 0x2e, 0x52, 0x75,
+	0x6e, 0x74, 0x69, 0x6d, 0x65, 0x54, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x52, 0x65, 0x73, 0x75, 0x6c,
+	0x74, 0x48, 0x00, 0x52, 0x06, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x42, 0x08, 0x0a, 0x06, 0x73,
+	0x74, 0x61, 0x74, 0x75, 0x73, 0x22, 0x7a, 0x0a, 0x1b, 0x52, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65,
+	0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x53, 0x74, 0x61, 0x72, 0x74, 0x45,
+	0x76, 0x65, 0x6e, 0x74, 0x12, 0x1b, 0x0a, 0x09, 0x74, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x5f, 0x69,
+	0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x74, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x49,
+	0x64, 0x12, 0x1f, 0x0a, 0x0b, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x5f, 0x69, 0x64,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x61, 0x63, 0x74,
+	0x49, 0x64, 0x12, 0x1d, 0x0a, 0x0a, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x5f, 0x69, 0x64,
+	0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x49,
+	0x64, 0x22, 0x19, 0x0a, 0x17, 0x52, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x53, 0x65, 0x74, 0x74,
+	0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x22, 0x86, 0x02, 0x0a,
+	0x19, 0x52, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65,
+	0x6e, 0x74, 0x45, 0x6e, 0x64, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x1b, 0x0a, 0x09, 0x74, 0x65,
+	0x6e, 0x64, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x74,
+	0x65, 0x6e, 0x64, 0x65, 0x72, 0x49, 0x64, 0x12, 0x1f, 0x0a, 0x0b, 0x63, 0x6f, 0x6e, 0x74, 0x72,
+	0x61, 0x63, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x63, 0x6f,
+	0x6e, 0x74, 0x72, 0x61, 0x63, 0x74, 0x49, 0x64, 0x12, 0x1d, 0x0a, 0x0a, 0x72, 0x75, 0x6e, 0x74,
+	0x69, 0x6d, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x72, 0x75,
+	0x6e, 0x74, 0x69, 0x6d, 0x65, 0x49, 0x64, 0x12, 0x36, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72,
+	0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x74, 0x69, 0x6e,
+	0x2e, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x2e, 0x6b, 0x6e, 0x69, 0x74, 0x61, 0x2e, 0x69, 0x6f,
+	0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x48, 0x00, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x12,
+	0x4a, 0x0a, 0x06, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x30, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x74, 0x69, 0x6e, 0x2e, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73,
+	0x2e, 0x6b, 0x6e, 0x69, 0x74, 0x61, 0x2e, 0x69, 0x6f, 0x2e, 0x52, 0x75, 0x6e, 0x74, 0x69, 0x6d,
+	0x65, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x75, 0x6c,
+	0x74, 0x48, 0x00, 0x52, 0x06, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x42, 0x08, 0x0a, 0x06, 0x73,
+	0x74, 0x61, 0x74, 0x75, 0x73, 0x22, 0x63, 0x0a, 0x15, 0x52, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65,
+	0x4f, 0x70, 0x65, 0x6e, 0x53, 0x74, 0x61, 0x72, 0x74, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x1d,
 	0x0a, 0x0a, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x09, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x49, 0x64, 0x22, 0x37, 0x0a,
-	0x16, 0x52, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x53, 0x74, 0x61,
-	0x72, 0x74, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x72, 0x75, 0x6e, 0x74, 0x69,
+	0x28, 0x09, 0x52, 0x09, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x49, 0x64, 0x12, 0x2b, 0x0a,
+	0x04, 0x6f, 0x70, 0x74, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x65, 0x78,
+	0x65, 0x63, 0x75, 0x74, 0x6f, 0x72, 0x2e, 0x6b, 0x6e, 0x69, 0x74, 0x61, 0x2e, 0x69, 0x6f, 0x2e,
+	0x4f, 0x70, 0x74, 0x73, 0x52, 0x04, 0x6f, 0x70, 0x74, 0x73, 0x22, 0x13, 0x0a, 0x11, 0x52, 0x75,
+	0x6e, 0x74, 0x69, 0x6d, 0x65, 0x4f, 0x70, 0x65, 0x6e, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x22,
+	0xbc, 0x01, 0x0a, 0x13, 0x52, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x4f, 0x70, 0x65, 0x6e, 0x45,
+	0x6e, 0x64, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x72, 0x75, 0x6e, 0x74, 0x69,
 	0x6d, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x72, 0x75, 0x6e,
-	0x74, 0x69, 0x6d, 0x65, 0x49, 0x64, 0x22, 0x35, 0x0a, 0x14, 0x52, 0x75, 0x6e, 0x74, 0x69, 0x6d,
-	0x65, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x45, 0x6e, 0x64, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x1d,
-	0x0a, 0x0a, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x09, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x49, 0x64, 0x22, 0x62, 0x0a,
-	0x0b, 0x53, 0x74, 0x64, 0x6f, 0x75, 0x74, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x12, 0x0a, 0x04,
-	0x64, 0x61, 0x74, 0x61, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61,
-	0x12, 0x3f, 0x0a, 0x06, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b,
-	0x32, 0x27, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x74, 0x69, 0x6e, 0x2e, 0x65, 0x76, 0x65, 0x6e, 0x74,
-	0x73, 0x2e, 0x6b, 0x6e, 0x69, 0x74, 0x61, 0x2e, 0x69, 0x6f, 0x2e, 0x4c, 0x6f, 0x67, 0x45, 0x76,
-	0x65, 0x6e, 0x74, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x06, 0x73, 0x6f, 0x75, 0x72, 0x63,
-	0x65, 0x22, 0x62, 0x0a, 0x0b, 0x53, 0x74, 0x64, 0x65, 0x72, 0x72, 0x45, 0x76, 0x65, 0x6e, 0x74,
-	0x12, 0x12, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04,
-	0x64, 0x61, 0x74, 0x61, 0x12, 0x3f, 0x0a, 0x06, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x18, 0x02,
-	0x20, 0x01, 0x28, 0x0b, 0x32, 0x27, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x74, 0x69, 0x6e, 0x2e, 0x65,
-	0x76, 0x65, 0x6e, 0x74, 0x73, 0x2e, 0x6b, 0x6e, 0x69, 0x74, 0x61, 0x2e, 0x69, 0x6f, 0x2e, 0x4c,
-	0x6f, 0x67, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x06, 0x73,
-	0x6f, 0x75, 0x72, 0x63, 0x65, 0x22, 0xe9, 0x01, 0x0a, 0x0e, 0x4c, 0x6f, 0x67, 0x45, 0x76, 0x65,
-	0x6e, 0x74, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x12, 0x45, 0x0a, 0x07, 0x72, 0x75, 0x6e, 0x74,
-	0x69, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x29, 0x2e, 0x62, 0x75, 0x69, 0x6c,
-	0x74, 0x69, 0x6e, 0x2e, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x2e, 0x6b, 0x6e, 0x69, 0x74, 0x61,
-	0x2e, 0x69, 0x6f, 0x2e, 0x4c, 0x6f, 0x67, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x75, 0x6e,
-	0x74, 0x69, 0x6d, 0x65, 0x48, 0x00, 0x52, 0x07, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x12,
-	0x3c, 0x0a, 0x04, 0x65, 0x78, 0x65, 0x63, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x26, 0x2e,
-	0x62, 0x75, 0x69, 0x6c, 0x74, 0x69, 0x6e, 0x2e, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x2e, 0x6b,
-	0x6e, 0x69, 0x74, 0x61, 0x2e, 0x69, 0x6f, 0x2e, 0x4c, 0x6f, 0x67, 0x53, 0x6f, 0x75, 0x72, 0x63,
-	0x65, 0x45, 0x78, 0x65, 0x63, 0x48, 0x00, 0x52, 0x04, 0x65, 0x78, 0x65, 0x63, 0x12, 0x48, 0x0a,
-	0x08, 0x64, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32,
-	0x2a, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x74, 0x69, 0x6e, 0x2e, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73,
-	0x2e, 0x6b, 0x6e, 0x69, 0x74, 0x61, 0x2e, 0x69, 0x6f, 0x2e, 0x4c, 0x6f, 0x67, 0x53, 0x6f, 0x75,
-	0x72, 0x63, 0x65, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x48, 0x00, 0x52, 0x08, 0x64,
-	0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x42, 0x08, 0x0a, 0x06, 0x73, 0x6f, 0x75, 0x72, 0x63,
-	0x65, 0x22, 0x31, 0x0a, 0x10, 0x4c, 0x6f, 0x67, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x75,
-	0x6e, 0x74, 0x69, 0x6d, 0x65, 0x12, 0x1d, 0x0a, 0x0a, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65,
-	0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x72, 0x75, 0x6e, 0x74, 0x69,
-	0x6d, 0x65, 0x49, 0x64, 0x22, 0x5f, 0x0a, 0x0d, 0x4c, 0x6f, 0x67, 0x53, 0x6f, 0x75, 0x72, 0x63,
-	0x65, 0x45, 0x78, 0x65, 0x63, 0x12, 0x1d, 0x0a, 0x0a, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65,
-	0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x72, 0x75, 0x6e, 0x74, 0x69,
-	0x6d, 0x65, 0x49, 0x64, 0x12, 0x17, 0x0a, 0x07, 0x65, 0x78, 0x65, 0x63, 0x5f, 0x69, 0x64, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x65, 0x78, 0x65, 0x63, 0x49, 0x64, 0x12, 0x16, 0x0a,
-	0x06, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x52, 0x06, 0x73,
-	0x79, 0x73, 0x74, 0x65, 0x6d, 0x22, 0x13, 0x0a, 0x11, 0x4c, 0x6f, 0x67, 0x53, 0x6f, 0x75, 0x72,
-	0x63, 0x65, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x22, 0xf9, 0x01, 0x0a, 0x0e, 0x45,
-	0x78, 0x65, 0x63, 0x53, 0x74, 0x61, 0x72, 0x74, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x1d, 0x0a,
-	0x0a, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x09, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x49, 0x64, 0x12, 0x17, 0x0a, 0x07,
-	0x65, 0x78, 0x65, 0x63, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x65,
-	0x78, 0x65, 0x63, 0x49, 0x64, 0x12, 0x2f, 0x0a, 0x04, 0x6f, 0x70, 0x74, 0x73, 0x18, 0x03, 0x20,
-	0x01, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x6f, 0x72, 0x2e, 0x6b,
-	0x6e, 0x69, 0x74, 0x61, 0x2e, 0x69, 0x6f, 0x2e, 0x45, 0x78, 0x65, 0x63, 0x4f, 0x70, 0x74, 0x73,
-	0x52, 0x04, 0x6f, 0x70, 0x74, 0x73, 0x12, 0x45, 0x0a, 0x04, 0x74, 0x61, 0x67, 0x73, 0x18, 0x04,
-	0x20, 0x03, 0x28, 0x0b, 0x32, 0x31, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x74, 0x69, 0x6e, 0x2e, 0x65,
-	0x76, 0x65, 0x6e, 0x74, 0x73, 0x2e, 0x6b, 0x6e, 0x69, 0x74, 0x61, 0x2e, 0x69, 0x6f, 0x2e, 0x45,
-	0x78, 0x65, 0x63, 0x53, 0x74, 0x61, 0x72, 0x74, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x2e, 0x54, 0x61,
-	0x67, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x52, 0x04, 0x74, 0x61, 0x67, 0x73, 0x1a, 0x37, 0x0a,
-	0x09, 0x54, 0x61, 0x67, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65,
-	0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x14, 0x0a, 0x05,
-	0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x76, 0x61, 0x6c,
-	0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x22, 0x4e, 0x0a, 0x10, 0x49, 0x6d, 0x70, 0x6f, 0x72, 0x74,
-	0x53, 0x74, 0x61, 0x72, 0x74, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x72, 0x75,
-	0x6e, 0x74, 0x69, 0x6d, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09,
-	0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x49, 0x64, 0x12, 0x1b, 0x0a, 0x09, 0x69, 0x6d, 0x70,
-	0x6f, 0x72, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x69, 0x6d,
-	0x70, 0x6f, 0x72, 0x74, 0x49, 0x64, 0x22, 0x4c, 0x0a, 0x0e, 0x49, 0x6d, 0x70, 0x6f, 0x72, 0x74,
-	0x45, 0x6e, 0x64, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x72, 0x75, 0x6e, 0x74,
-	0x69, 0x6d, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x72, 0x75,
-	0x6e, 0x74, 0x69, 0x6d, 0x65, 0x49, 0x64, 0x12, 0x1b, 0x0a, 0x09, 0x69, 0x6d, 0x70, 0x6f, 0x72,
-	0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x69, 0x6d, 0x70, 0x6f,
-	0x72, 0x74, 0x49, 0x64, 0x22, 0x4e, 0x0a, 0x10, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x53, 0x74,
+	0x74, 0x69, 0x6d, 0x65, 0x49, 0x64, 0x12, 0x36, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x74, 0x69, 0x6e, 0x2e,
+	0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x2e, 0x6b, 0x6e, 0x69, 0x74, 0x61, 0x2e, 0x69, 0x6f, 0x2e,
+	0x45, 0x72, 0x72, 0x6f, 0x72, 0x48, 0x00, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x12, 0x44,
+	0x0a, 0x06, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2a,
+	0x2e, 0x62, 0x75, 0x69, 0x6c, 0x74, 0x69, 0x6e, 0x2e, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x2e,
+	0x6b, 0x6e, 0x69, 0x74, 0x61, 0x2e, 0x69, 0x6f, 0x2e, 0x52, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65,
+	0x4f, 0x70, 0x65, 0x6e, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x48, 0x00, 0x52, 0x06, 0x72, 0x65,
+	0x73, 0x75, 0x6c, 0x74, 0x42, 0x08, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x22, 0x37,
+	0x0a, 0x16, 0x52, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x53, 0x74,
 	0x61, 0x72, 0x74, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x72, 0x75, 0x6e, 0x74,
 	0x69, 0x6d, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x72, 0x75,
-	0x6e, 0x74, 0x69, 0x6d, 0x65, 0x49, 0x64, 0x12, 0x1b, 0x0a, 0x09, 0x65, 0x78, 0x70, 0x6f, 0x72,
-	0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x65, 0x78, 0x70, 0x6f,
-	0x72, 0x74, 0x49, 0x64, 0x22, 0x4c, 0x0a, 0x0e, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x45, 0x6e,
+	0x6e, 0x74, 0x69, 0x6d, 0x65, 0x49, 0x64, 0x22, 0x14, 0x0a, 0x12, 0x52, 0x75, 0x6e, 0x74, 0x69,
+	0x6d, 0x65, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x22, 0xbe, 0x01,
+	0x0a, 0x14, 0x52, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x45, 0x6e,
 	0x64, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d,
 	0x65, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x72, 0x75, 0x6e, 0x74,
-	0x69, 0x6d, 0x65, 0x49, 0x64, 0x12, 0x1b, 0x0a, 0x09, 0x65, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x5f,
-	0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x65, 0x78, 0x70, 0x6f, 0x72, 0x74,
-	0x49, 0x64, 0x22, 0x79, 0x0a, 0x0c, 0x45, 0x78, 0x65, 0x63, 0x45, 0x6e, 0x64, 0x45, 0x76, 0x65,
+	0x69, 0x6d, 0x65, 0x49, 0x64, 0x12, 0x36, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x74, 0x69, 0x6e, 0x2e, 0x65,
+	0x76, 0x65, 0x6e, 0x74, 0x73, 0x2e, 0x6b, 0x6e, 0x69, 0x74, 0x61, 0x2e, 0x69, 0x6f, 0x2e, 0x45,
+	0x72, 0x72, 0x6f, 0x72, 0x48, 0x00, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x12, 0x45, 0x0a,
+	0x06, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2b, 0x2e,
+	0x62, 0x75, 0x69, 0x6c, 0x74, 0x69, 0x6e, 0x2e, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x2e, 0x6b,
+	0x6e, 0x69, 0x74, 0x61, 0x2e, 0x69, 0x6f, 0x2e, 0x52, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x43,
+	0x6c, 0x6f, 0x73, 0x65, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x48, 0x00, 0x52, 0x06, 0x72, 0x65,
+	0x73, 0x75, 0x6c, 0x74, 0x42, 0x08, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x22, 0x62,
+	0x0a, 0x0b, 0x53, 0x74, 0x64, 0x6f, 0x75, 0x74, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x12, 0x0a,
+	0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x64, 0x61, 0x74,
+	0x61, 0x12, 0x3f, 0x0a, 0x06, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x27, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x74, 0x69, 0x6e, 0x2e, 0x65, 0x76, 0x65, 0x6e,
+	0x74, 0x73, 0x2e, 0x6b, 0x6e, 0x69, 0x74, 0x61, 0x2e, 0x69, 0x6f, 0x2e, 0x4c, 0x6f, 0x67, 0x45,
+	0x76, 0x65, 0x6e, 0x74, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x06, 0x73, 0x6f, 0x75, 0x72,
+	0x63, 0x65, 0x22, 0x62, 0x0a, 0x0b, 0x53, 0x74, 0x64, 0x65, 0x72, 0x72, 0x45, 0x76, 0x65, 0x6e,
+	0x74, 0x12, 0x12, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52,
+	0x04, 0x64, 0x61, 0x74, 0x61, 0x12, 0x3f, 0x0a, 0x06, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x27, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x74, 0x69, 0x6e, 0x2e,
+	0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x2e, 0x6b, 0x6e, 0x69, 0x74, 0x61, 0x2e, 0x69, 0x6f, 0x2e,
+	0x4c, 0x6f, 0x67, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x06,
+	0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x22, 0xe9, 0x01, 0x0a, 0x0e, 0x4c, 0x6f, 0x67, 0x45, 0x76,
+	0x65, 0x6e, 0x74, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x12, 0x45, 0x0a, 0x07, 0x72, 0x75, 0x6e,
+	0x74, 0x69, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x29, 0x2e, 0x62, 0x75, 0x69,
+	0x6c, 0x74, 0x69, 0x6e, 0x2e, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x2e, 0x6b, 0x6e, 0x69, 0x74,
+	0x61, 0x2e, 0x69, 0x6f, 0x2e, 0x4c, 0x6f, 0x67, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x75,
+	0x6e, 0x74, 0x69, 0x6d, 0x65, 0x48, 0x00, 0x52, 0x07, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65,
+	0x12, 0x3c, 0x0a, 0x04, 0x65, 0x78, 0x65, 0x63, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x26,
+	0x2e, 0x62, 0x75, 0x69, 0x6c, 0x74, 0x69, 0x6e, 0x2e, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x2e,
+	0x6b, 0x6e, 0x69, 0x74, 0x61, 0x2e, 0x69, 0x6f, 0x2e, 0x4c, 0x6f, 0x67, 0x53, 0x6f, 0x75, 0x72,
+	0x63, 0x65, 0x45, 0x78, 0x65, 0x63, 0x48, 0x00, 0x52, 0x04, 0x65, 0x78, 0x65, 0x63, 0x12, 0x48,
+	0x0a, 0x08, 0x64, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x2a, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x74, 0x69, 0x6e, 0x2e, 0x65, 0x76, 0x65, 0x6e, 0x74,
+	0x73, 0x2e, 0x6b, 0x6e, 0x69, 0x74, 0x61, 0x2e, 0x69, 0x6f, 0x2e, 0x4c, 0x6f, 0x67, 0x53, 0x6f,
+	0x75, 0x72, 0x63, 0x65, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x48, 0x00, 0x52, 0x08,
+	0x64, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x42, 0x08, 0x0a, 0x06, 0x73, 0x6f, 0x75, 0x72,
+	0x63, 0x65, 0x22, 0x31, 0x0a, 0x10, 0x4c, 0x6f, 0x67, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52,
+	0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x12, 0x1d, 0x0a, 0x0a, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d,
+	0x65, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x72, 0x75, 0x6e, 0x74,
+	0x69, 0x6d, 0x65, 0x49, 0x64, 0x22, 0x5f, 0x0a, 0x0d, 0x4c, 0x6f, 0x67, 0x53, 0x6f, 0x75, 0x72,
+	0x63, 0x65, 0x45, 0x78, 0x65, 0x63, 0x12, 0x1d, 0x0a, 0x0a, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d,
+	0x65, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x72, 0x75, 0x6e, 0x74,
+	0x69, 0x6d, 0x65, 0x49, 0x64, 0x12, 0x17, 0x0a, 0x07, 0x65, 0x78, 0x65, 0x63, 0x5f, 0x69, 0x64,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x65, 0x78, 0x65, 0x63, 0x49, 0x64, 0x12, 0x16,
+	0x0a, 0x06, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x52, 0x06,
+	0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x22, 0x13, 0x0a, 0x11, 0x4c, 0x6f, 0x67, 0x53, 0x6f, 0x75,
+	0x72, 0x63, 0x65, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x22, 0xf9, 0x01, 0x0a, 0x0e,
+	0x45, 0x78, 0x65, 0x63, 0x53, 0x74, 0x61, 0x72, 0x74, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x1d,
+	0x0a, 0x0a, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x09, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x49, 0x64, 0x12, 0x17, 0x0a,
+	0x07, 0x65, 0x78, 0x65, 0x63, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06,
+	0x65, 0x78, 0x65, 0x63, 0x49, 0x64, 0x12, 0x2f, 0x0a, 0x04, 0x6f, 0x70, 0x74, 0x73, 0x18, 0x03,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x6f, 0x72, 0x2e,
+	0x6b, 0x6e, 0x69, 0x74, 0x61, 0x2e, 0x69, 0x6f, 0x2e, 0x45, 0x78, 0x65, 0x63, 0x4f, 0x70, 0x74,
+	0x73, 0x52, 0x04, 0x6f, 0x70, 0x74, 0x73, 0x12, 0x45, 0x0a, 0x04, 0x74, 0x61, 0x67, 0x73, 0x18,
+	0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x31, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x74, 0x69, 0x6e, 0x2e,
+	0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x2e, 0x6b, 0x6e, 0x69, 0x74, 0x61, 0x2e, 0x69, 0x6f, 0x2e,
+	0x45, 0x78, 0x65, 0x63, 0x53, 0x74, 0x61, 0x72, 0x74, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x2e, 0x54,
+	0x61, 0x67, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x52, 0x04, 0x74, 0x61, 0x67, 0x73, 0x1a, 0x37,
+	0x0a, 0x09, 0x54, 0x61, 0x67, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12, 0x10, 0x0a, 0x03, 0x6b,
+	0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x14, 0x0a,
+	0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x76, 0x61,
+	0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x22, 0x29, 0x0a, 0x0a, 0x45, 0x78, 0x65, 0x63, 0x52,
+	0x65, 0x73, 0x75, 0x6c, 0x74, 0x12, 0x1b, 0x0a, 0x09, 0x65, 0x78, 0x69, 0x74, 0x5f, 0x63, 0x6f,
+	0x64, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x05, 0x52, 0x08, 0x65, 0x78, 0x69, 0x74, 0x43, 0x6f,
+	0x64, 0x65, 0x22, 0xc7, 0x01, 0x0a, 0x0c, 0x45, 0x78, 0x65, 0x63, 0x45, 0x6e, 0x64, 0x45, 0x76,
+	0x65, 0x6e, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x5f, 0x69,
+	0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65,
+	0x49, 0x64, 0x12, 0x17, 0x0a, 0x07, 0x65, 0x78, 0x65, 0x63, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x06, 0x65, 0x78, 0x65, 0x63, 0x49, 0x64, 0x12, 0x36, 0x0a, 0x05, 0x65,
+	0x72, 0x72, 0x6f, 0x72, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x62, 0x75, 0x69,
+	0x6c, 0x74, 0x69, 0x6e, 0x2e, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x2e, 0x6b, 0x6e, 0x69, 0x74,
+	0x61, 0x2e, 0x69, 0x6f, 0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x48, 0x00, 0x52, 0x05, 0x65, 0x72,
+	0x72, 0x6f, 0x72, 0x12, 0x3d, 0x0a, 0x06, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x18, 0x04, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x23, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x74, 0x69, 0x6e, 0x2e, 0x65, 0x76,
+	0x65, 0x6e, 0x74, 0x73, 0x2e, 0x6b, 0x6e, 0x69, 0x74, 0x61, 0x2e, 0x69, 0x6f, 0x2e, 0x45, 0x78,
+	0x65, 0x63, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x48, 0x00, 0x52, 0x06, 0x72, 0x65, 0x73, 0x75,
+	0x6c, 0x74, 0x42, 0x08, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x22, 0x4e, 0x0a, 0x10,
+	0x49, 0x6d, 0x70, 0x6f, 0x72, 0x74, 0x53, 0x74, 0x61, 0x72, 0x74, 0x45, 0x76, 0x65, 0x6e, 0x74,
+	0x12, 0x1d, 0x0a, 0x0a, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x49, 0x64, 0x12,
+	0x1b, 0x0a, 0x09, 0x69, 0x6d, 0x70, 0x6f, 0x72, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x08, 0x69, 0x6d, 0x70, 0x6f, 0x72, 0x74, 0x49, 0x64, 0x22, 0x0e, 0x0a, 0x0c,
+	0x49, 0x6d, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x22, 0xcf, 0x01, 0x0a,
+	0x0e, 0x49, 0x6d, 0x70, 0x6f, 0x72, 0x74, 0x45, 0x6e, 0x64, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12,
+	0x1d, 0x0a, 0x0a, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x09, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x49, 0x64, 0x12, 0x1b,
+	0x0a, 0x09, 0x69, 0x6d, 0x70, 0x6f, 0x72, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x08, 0x69, 0x6d, 0x70, 0x6f, 0x72, 0x74, 0x49, 0x64, 0x12, 0x36, 0x0a, 0x05, 0x65,
+	0x72, 0x72, 0x6f, 0x72, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x62, 0x75, 0x69,
+	0x6c, 0x74, 0x69, 0x6e, 0x2e, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x2e, 0x6b, 0x6e, 0x69, 0x74,
+	0x61, 0x2e, 0x69, 0x6f, 0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x48, 0x00, 0x52, 0x05, 0x65, 0x72,
+	0x72, 0x6f, 0x72, 0x12, 0x3f, 0x0a, 0x06, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x18, 0x04, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x25, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x74, 0x69, 0x6e, 0x2e, 0x65, 0x76,
+	0x65, 0x6e, 0x74, 0x73, 0x2e, 0x6b, 0x6e, 0x69, 0x74, 0x61, 0x2e, 0x69, 0x6f, 0x2e, 0x49, 0x6d,
+	0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x48, 0x00, 0x52, 0x06, 0x72, 0x65,
+	0x73, 0x75, 0x6c, 0x74, 0x42, 0x08, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x22, 0x4e,
+	0x0a, 0x10, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x53, 0x74, 0x61, 0x72, 0x74, 0x45, 0x76, 0x65,
 	0x6e, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x5f, 0x69, 0x64,
 	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x49,
-	0x64, 0x12, 0x17, 0x0a, 0x07, 0x65, 0x78, 0x65, 0x63, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x06, 0x65, 0x78, 0x65, 0x63, 0x49, 0x64, 0x12, 0x14, 0x0a, 0x05, 0x65, 0x72,
-	0x72, 0x6f, 0x72, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72,
-	0x12, 0x1b, 0x0a, 0x09, 0x65, 0x78, 0x69, 0x74, 0x5f, 0x63, 0x6f, 0x64, 0x65, 0x18, 0x04, 0x20,
-	0x01, 0x28, 0x05, 0x52, 0x08, 0x65, 0x78, 0x69, 0x74, 0x43, 0x6f, 0x64, 0x65, 0x22, 0x36, 0x0a,
-	0x15, 0x53, 0x79, 0x6e, 0x63, 0x50, 0x6f, 0x69, 0x6e, 0x74, 0x52, 0x65, 0x61, 0x63, 0x68, 0x65,
-	0x64, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x62, 0x61, 0x72, 0x72, 0x69, 0x65,
-	0x72, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x62, 0x61, 0x72, 0x72,
-	0x69, 0x65, 0x72, 0x49, 0x64, 0x42, 0x31, 0x5a, 0x2f, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e,
-	0x63, 0x6f, 0x6d, 0x2f, 0x6b, 0x6e, 0x69, 0x74, 0x61, 0x2d, 0x69, 0x6f, 0x2f, 0x6b, 0x6e, 0x69,
-	0x74, 0x61, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x2f, 0x62, 0x75,
-	0x69, 0x6c, 0x74, 0x69, 0x6e, 0x2f, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x64, 0x12, 0x1b, 0x0a, 0x09, 0x65, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x65, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x49, 0x64, 0x22, 0x0e,
+	0x0a, 0x0c, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x22, 0xcf,
+	0x01, 0x0a, 0x0e, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x45, 0x6e, 0x64, 0x45, 0x76, 0x65, 0x6e,
+	0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x5f, 0x69, 0x64, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x49, 0x64,
+	0x12, 0x1b, 0x0a, 0x09, 0x65, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x08, 0x65, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x49, 0x64, 0x12, 0x36, 0x0a,
+	0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x62,
+	0x75, 0x69, 0x6c, 0x74, 0x69, 0x6e, 0x2e, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x2e, 0x6b, 0x6e,
+	0x69, 0x74, 0x61, 0x2e, 0x69, 0x6f, 0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x48, 0x00, 0x52, 0x05,
+	0x65, 0x72, 0x72, 0x6f, 0x72, 0x12, 0x3f, 0x0a, 0x06, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x18,
+	0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x25, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x74, 0x69, 0x6e, 0x2e,
+	0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x2e, 0x6b, 0x6e, 0x69, 0x74, 0x61, 0x2e, 0x69, 0x6f, 0x2e,
+	0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x48, 0x00, 0x52, 0x06,
+	0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x42, 0x08, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73,
+	0x22, 0x36, 0x0a, 0x15, 0x53, 0x79, 0x6e, 0x63, 0x50, 0x6f, 0x69, 0x6e, 0x74, 0x52, 0x65, 0x61,
+	0x63, 0x68, 0x65, 0x64, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x62, 0x61, 0x72,
+	0x72, 0x69, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x62,
+	0x61, 0x72, 0x72, 0x69, 0x65, 0x72, 0x49, 0x64, 0x42, 0x31, 0x5a, 0x2f, 0x67, 0x69, 0x74, 0x68,
+	0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6b, 0x6e, 0x69, 0x74, 0x61, 0x2d, 0x69, 0x6f, 0x2f,
+	0x6b, 0x6e, 0x69, 0x74, 0x61, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73,
+	0x2f, 0x62, 0x75, 0x69, 0x6c, 0x74, 0x69, 0x6e, 0x2f, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1370,48 +2318,81 @@ func file_events_builtin_v1_builtin_proto_rawDescGZIP() []byte {
 	return file_events_builtin_v1_builtin_proto_rawDescData
 }
 
-var file_events_builtin_v1_builtin_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
+var file_events_builtin_v1_builtin_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
 var file_events_builtin_v1_builtin_proto_goTypes = []interface{}{
-	(*RuntimeTenderStartEvent)(nil),     // 0: builtin.events.knita.io.RuntimeTenderStartEvent
-	(*RuntimeTenderEndEvent)(nil),       // 1: builtin.events.knita.io.RuntimeTenderEndEvent
-	(*RuntimeSettlementStartEvent)(nil), // 2: builtin.events.knita.io.RuntimeSettlementStartEvent
-	(*RuntimeSettlementEndEvent)(nil),   // 3: builtin.events.knita.io.RuntimeSettlementEndEvent
-	(*RuntimeOpenStartEvent)(nil),       // 4: builtin.events.knita.io.RuntimeOpenStartEvent
-	(*RuntimeOpenEndEvent)(nil),         // 5: builtin.events.knita.io.RuntimeOpenEndEvent
-	(*RuntimeCloseStartEvent)(nil),      // 6: builtin.events.knita.io.RuntimeCloseStartEvent
-	(*RuntimeCloseEndEvent)(nil),        // 7: builtin.events.knita.io.RuntimeCloseEndEvent
-	(*StdoutEvent)(nil),                 // 8: builtin.events.knita.io.StdoutEvent
-	(*StderrEvent)(nil),                 // 9: builtin.events.knita.io.StderrEvent
-	(*LogEventSource)(nil),              // 10: builtin.events.knita.io.LogEventSource
-	(*LogSourceRuntime)(nil),            // 11: builtin.events.knita.io.LogSourceRuntime
-	(*LogSourceExec)(nil),               // 12: builtin.events.knita.io.LogSourceExec
-	(*LogSourceDirector)(nil),           // 13: builtin.events.knita.io.LogSourceDirector
-	(*ExecStartEvent)(nil),              // 14: builtin.events.knita.io.ExecStartEvent
-	(*ImportStartEvent)(nil),            // 15: builtin.events.knita.io.ImportStartEvent
-	(*ImportEndEvent)(nil),              // 16: builtin.events.knita.io.ImportEndEvent
-	(*ExportStartEvent)(nil),            // 17: builtin.events.knita.io.ExportStartEvent
-	(*ExportEndEvent)(nil),              // 18: builtin.events.knita.io.ExportEndEvent
-	(*ExecEndEvent)(nil),                // 19: builtin.events.knita.io.ExecEndEvent
-	(*SyncPointReachedEvent)(nil),       // 20: builtin.events.knita.io.SyncPointReachedEvent
-	nil,                                 // 21: builtin.events.knita.io.ExecStartEvent.TagsEntry
-	(*v1.Opts)(nil),                     // 22: executor.knita.io.Opts
-	(*v1.ExecOpts)(nil),                 // 23: executor.knita.io.ExecOpts
+	(*Error)(nil),                       // 0: builtin.events.knita.io.Error
+	(*DirectorInfo)(nil),                // 1: builtin.events.knita.io.DirectorInfo
+	(*BuildStartEvent)(nil),             // 2: builtin.events.knita.io.BuildStartEvent
+	(*BuildResult)(nil),                 // 3: builtin.events.knita.io.BuildResult
+	(*BuildEndEvent)(nil),               // 4: builtin.events.knita.io.BuildEndEvent
+	(*RuntimeTenderStartEvent)(nil),     // 5: builtin.events.knita.io.RuntimeTenderStartEvent
+	(*RuntimeTenderResult)(nil),         // 6: builtin.events.knita.io.RuntimeTenderResult
+	(*RuntimeTenderEndEvent)(nil),       // 7: builtin.events.knita.io.RuntimeTenderEndEvent
+	(*RuntimeSettlementStartEvent)(nil), // 8: builtin.events.knita.io.RuntimeSettlementStartEvent
+	(*RuntimeSettlementResult)(nil),     // 9: builtin.events.knita.io.RuntimeSettlementResult
+	(*RuntimeSettlementEndEvent)(nil),   // 10: builtin.events.knita.io.RuntimeSettlementEndEvent
+	(*RuntimeOpenStartEvent)(nil),       // 11: builtin.events.knita.io.RuntimeOpenStartEvent
+	(*RuntimeOpenResult)(nil),           // 12: builtin.events.knita.io.RuntimeOpenResult
+	(*RuntimeOpenEndEvent)(nil),         // 13: builtin.events.knita.io.RuntimeOpenEndEvent
+	(*RuntimeCloseStartEvent)(nil),      // 14: builtin.events.knita.io.RuntimeCloseStartEvent
+	(*RuntimeCloseResult)(nil),          // 15: builtin.events.knita.io.RuntimeCloseResult
+	(*RuntimeCloseEndEvent)(nil),        // 16: builtin.events.knita.io.RuntimeCloseEndEvent
+	(*StdoutEvent)(nil),                 // 17: builtin.events.knita.io.StdoutEvent
+	(*StderrEvent)(nil),                 // 18: builtin.events.knita.io.StderrEvent
+	(*LogEventSource)(nil),              // 19: builtin.events.knita.io.LogEventSource
+	(*LogSourceRuntime)(nil),            // 20: builtin.events.knita.io.LogSourceRuntime
+	(*LogSourceExec)(nil),               // 21: builtin.events.knita.io.LogSourceExec
+	(*LogSourceDirector)(nil),           // 22: builtin.events.knita.io.LogSourceDirector
+	(*ExecStartEvent)(nil),              // 23: builtin.events.knita.io.ExecStartEvent
+	(*ExecResult)(nil),                  // 24: builtin.events.knita.io.ExecResult
+	(*ExecEndEvent)(nil),                // 25: builtin.events.knita.io.ExecEndEvent
+	(*ImportStartEvent)(nil),            // 26: builtin.events.knita.io.ImportStartEvent
+	(*ImportResult)(nil),                // 27: builtin.events.knita.io.ImportResult
+	(*ImportEndEvent)(nil),              // 28: builtin.events.knita.io.ImportEndEvent
+	(*ExportStartEvent)(nil),            // 29: builtin.events.knita.io.ExportStartEvent
+	(*ExportResult)(nil),                // 30: builtin.events.knita.io.ExportResult
+	(*ExportEndEvent)(nil),              // 31: builtin.events.knita.io.ExportEndEvent
+	(*SyncPointReachedEvent)(nil),       // 32: builtin.events.knita.io.SyncPointReachedEvent
+	nil,                                 // 33: builtin.events.knita.io.ExecStartEvent.TagsEntry
+	(*v1.SystemInfo)(nil),               // 34: executor.knita.io.SystemInfo
+	(*v1.Opts)(nil),                     // 35: executor.knita.io.Opts
+	(*v11.RuntimeContract)(nil),         // 36: broker.knita.io.RuntimeContract
+	(*v1.ExecOpts)(nil),                 // 37: executor.knita.io.ExecOpts
 }
 var file_events_builtin_v1_builtin_proto_depIdxs = []int32{
-	22, // 0: builtin.events.knita.io.RuntimeTenderStartEvent.opts:type_name -> executor.knita.io.Opts
-	22, // 1: builtin.events.knita.io.RuntimeOpenStartEvent.opts:type_name -> executor.knita.io.Opts
-	10, // 2: builtin.events.knita.io.StdoutEvent.source:type_name -> builtin.events.knita.io.LogEventSource
-	10, // 3: builtin.events.knita.io.StderrEvent.source:type_name -> builtin.events.knita.io.LogEventSource
-	11, // 4: builtin.events.knita.io.LogEventSource.runtime:type_name -> builtin.events.knita.io.LogSourceRuntime
-	12, // 5: builtin.events.knita.io.LogEventSource.exec:type_name -> builtin.events.knita.io.LogSourceExec
-	13, // 6: builtin.events.knita.io.LogEventSource.director:type_name -> builtin.events.knita.io.LogSourceDirector
-	23, // 7: builtin.events.knita.io.ExecStartEvent.opts:type_name -> executor.knita.io.ExecOpts
-	21, // 8: builtin.events.knita.io.ExecStartEvent.tags:type_name -> builtin.events.knita.io.ExecStartEvent.TagsEntry
-	9,  // [9:9] is the sub-list for method output_type
-	9,  // [9:9] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	34, // 0: builtin.events.knita.io.DirectorInfo.sys_info:type_name -> executor.knita.io.SystemInfo
+	1,  // 1: builtin.events.knita.io.BuildStartEvent.director_info:type_name -> builtin.events.knita.io.DirectorInfo
+	0,  // 2: builtin.events.knita.io.BuildEndEvent.error:type_name -> builtin.events.knita.io.Error
+	3,  // 3: builtin.events.knita.io.BuildEndEvent.result:type_name -> builtin.events.knita.io.BuildResult
+	35, // 4: builtin.events.knita.io.RuntimeTenderStartEvent.opts:type_name -> executor.knita.io.Opts
+	36, // 5: builtin.events.knita.io.RuntimeTenderResult.contracts:type_name -> broker.knita.io.RuntimeContract
+	0,  // 6: builtin.events.knita.io.RuntimeTenderEndEvent.error:type_name -> builtin.events.knita.io.Error
+	6,  // 7: builtin.events.knita.io.RuntimeTenderEndEvent.result:type_name -> builtin.events.knita.io.RuntimeTenderResult
+	0,  // 8: builtin.events.knita.io.RuntimeSettlementEndEvent.error:type_name -> builtin.events.knita.io.Error
+	9,  // 9: builtin.events.knita.io.RuntimeSettlementEndEvent.result:type_name -> builtin.events.knita.io.RuntimeSettlementResult
+	35, // 10: builtin.events.knita.io.RuntimeOpenStartEvent.opts:type_name -> executor.knita.io.Opts
+	0,  // 11: builtin.events.knita.io.RuntimeOpenEndEvent.error:type_name -> builtin.events.knita.io.Error
+	12, // 12: builtin.events.knita.io.RuntimeOpenEndEvent.result:type_name -> builtin.events.knita.io.RuntimeOpenResult
+	0,  // 13: builtin.events.knita.io.RuntimeCloseEndEvent.error:type_name -> builtin.events.knita.io.Error
+	15, // 14: builtin.events.knita.io.RuntimeCloseEndEvent.result:type_name -> builtin.events.knita.io.RuntimeCloseResult
+	19, // 15: builtin.events.knita.io.StdoutEvent.source:type_name -> builtin.events.knita.io.LogEventSource
+	19, // 16: builtin.events.knita.io.StderrEvent.source:type_name -> builtin.events.knita.io.LogEventSource
+	20, // 17: builtin.events.knita.io.LogEventSource.runtime:type_name -> builtin.events.knita.io.LogSourceRuntime
+	21, // 18: builtin.events.knita.io.LogEventSource.exec:type_name -> builtin.events.knita.io.LogSourceExec
+	22, // 19: builtin.events.knita.io.LogEventSource.director:type_name -> builtin.events.knita.io.LogSourceDirector
+	37, // 20: builtin.events.knita.io.ExecStartEvent.opts:type_name -> executor.knita.io.ExecOpts
+	33, // 21: builtin.events.knita.io.ExecStartEvent.tags:type_name -> builtin.events.knita.io.ExecStartEvent.TagsEntry
+	0,  // 22: builtin.events.knita.io.ExecEndEvent.error:type_name -> builtin.events.knita.io.Error
+	24, // 23: builtin.events.knita.io.ExecEndEvent.result:type_name -> builtin.events.knita.io.ExecResult
+	0,  // 24: builtin.events.knita.io.ImportEndEvent.error:type_name -> builtin.events.knita.io.Error
+	27, // 25: builtin.events.knita.io.ImportEndEvent.result:type_name -> builtin.events.knita.io.ImportResult
+	0,  // 26: builtin.events.knita.io.ExportEndEvent.error:type_name -> builtin.events.knita.io.Error
+	30, // 27: builtin.events.knita.io.ExportEndEvent.result:type_name -> builtin.events.knita.io.ExportResult
+	28, // [28:28] is the sub-list for method output_type
+	28, // [28:28] is the sub-list for method input_type
+	28, // [28:28] is the sub-list for extension type_name
+	28, // [28:28] is the sub-list for extension extendee
+	0,  // [0:28] is the sub-list for field type_name
 }
 
 func init() { file_events_builtin_v1_builtin_proto_init() }
@@ -1421,7 +2402,7 @@ func file_events_builtin_v1_builtin_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_events_builtin_v1_builtin_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RuntimeTenderStartEvent); i {
+			switch v := v.(*Error); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1433,7 +2414,7 @@ func file_events_builtin_v1_builtin_proto_init() {
 			}
 		}
 		file_events_builtin_v1_builtin_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RuntimeTenderEndEvent); i {
+			switch v := v.(*DirectorInfo); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1445,7 +2426,7 @@ func file_events_builtin_v1_builtin_proto_init() {
 			}
 		}
 		file_events_builtin_v1_builtin_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RuntimeSettlementStartEvent); i {
+			switch v := v.(*BuildStartEvent); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1457,7 +2438,7 @@ func file_events_builtin_v1_builtin_proto_init() {
 			}
 		}
 		file_events_builtin_v1_builtin_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RuntimeSettlementEndEvent); i {
+			switch v := v.(*BuildResult); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1469,7 +2450,7 @@ func file_events_builtin_v1_builtin_proto_init() {
 			}
 		}
 		file_events_builtin_v1_builtin_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RuntimeOpenStartEvent); i {
+			switch v := v.(*BuildEndEvent); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1481,7 +2462,7 @@ func file_events_builtin_v1_builtin_proto_init() {
 			}
 		}
 		file_events_builtin_v1_builtin_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RuntimeOpenEndEvent); i {
+			switch v := v.(*RuntimeTenderStartEvent); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1493,7 +2474,7 @@ func file_events_builtin_v1_builtin_proto_init() {
 			}
 		}
 		file_events_builtin_v1_builtin_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RuntimeCloseStartEvent); i {
+			switch v := v.(*RuntimeTenderResult); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1505,7 +2486,7 @@ func file_events_builtin_v1_builtin_proto_init() {
 			}
 		}
 		file_events_builtin_v1_builtin_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RuntimeCloseEndEvent); i {
+			switch v := v.(*RuntimeTenderEndEvent); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1517,7 +2498,7 @@ func file_events_builtin_v1_builtin_proto_init() {
 			}
 		}
 		file_events_builtin_v1_builtin_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StdoutEvent); i {
+			switch v := v.(*RuntimeSettlementStartEvent); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1529,7 +2510,7 @@ func file_events_builtin_v1_builtin_proto_init() {
 			}
 		}
 		file_events_builtin_v1_builtin_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StderrEvent); i {
+			switch v := v.(*RuntimeSettlementResult); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1541,7 +2522,7 @@ func file_events_builtin_v1_builtin_proto_init() {
 			}
 		}
 		file_events_builtin_v1_builtin_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LogEventSource); i {
+			switch v := v.(*RuntimeSettlementEndEvent); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1553,7 +2534,7 @@ func file_events_builtin_v1_builtin_proto_init() {
 			}
 		}
 		file_events_builtin_v1_builtin_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LogSourceRuntime); i {
+			switch v := v.(*RuntimeOpenStartEvent); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1565,7 +2546,7 @@ func file_events_builtin_v1_builtin_proto_init() {
 			}
 		}
 		file_events_builtin_v1_builtin_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LogSourceExec); i {
+			switch v := v.(*RuntimeOpenResult); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1577,7 +2558,7 @@ func file_events_builtin_v1_builtin_proto_init() {
 			}
 		}
 		file_events_builtin_v1_builtin_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LogSourceDirector); i {
+			switch v := v.(*RuntimeOpenEndEvent); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1589,7 +2570,7 @@ func file_events_builtin_v1_builtin_proto_init() {
 			}
 		}
 		file_events_builtin_v1_builtin_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ExecStartEvent); i {
+			switch v := v.(*RuntimeCloseStartEvent); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1601,7 +2582,7 @@ func file_events_builtin_v1_builtin_proto_init() {
 			}
 		}
 		file_events_builtin_v1_builtin_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ImportStartEvent); i {
+			switch v := v.(*RuntimeCloseResult); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1613,7 +2594,7 @@ func file_events_builtin_v1_builtin_proto_init() {
 			}
 		}
 		file_events_builtin_v1_builtin_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ImportEndEvent); i {
+			switch v := v.(*RuntimeCloseEndEvent); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1625,7 +2606,7 @@ func file_events_builtin_v1_builtin_proto_init() {
 			}
 		}
 		file_events_builtin_v1_builtin_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ExportStartEvent); i {
+			switch v := v.(*StdoutEvent); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1637,7 +2618,7 @@ func file_events_builtin_v1_builtin_proto_init() {
 			}
 		}
 		file_events_builtin_v1_builtin_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ExportEndEvent); i {
+			switch v := v.(*StderrEvent); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1649,7 +2630,7 @@ func file_events_builtin_v1_builtin_proto_init() {
 			}
 		}
 		file_events_builtin_v1_builtin_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ExecEndEvent); i {
+			switch v := v.(*LogEventSource); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1661,6 +2642,150 @@ func file_events_builtin_v1_builtin_proto_init() {
 			}
 		}
 		file_events_builtin_v1_builtin_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*LogSourceRuntime); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_events_builtin_v1_builtin_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*LogSourceExec); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_events_builtin_v1_builtin_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*LogSourceDirector); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_events_builtin_v1_builtin_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ExecStartEvent); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_events_builtin_v1_builtin_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ExecResult); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_events_builtin_v1_builtin_proto_msgTypes[25].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ExecEndEvent); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_events_builtin_v1_builtin_proto_msgTypes[26].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ImportStartEvent); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_events_builtin_v1_builtin_proto_msgTypes[27].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ImportResult); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_events_builtin_v1_builtin_proto_msgTypes[28].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ImportEndEvent); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_events_builtin_v1_builtin_proto_msgTypes[29].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ExportStartEvent); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_events_builtin_v1_builtin_proto_msgTypes[30].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ExportResult); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_events_builtin_v1_builtin_proto_msgTypes[31].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ExportEndEvent); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_events_builtin_v1_builtin_proto_msgTypes[32].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*SyncPointReachedEvent); i {
 			case 0:
 				return &v.state
@@ -1673,10 +2798,42 @@ func file_events_builtin_v1_builtin_proto_init() {
 			}
 		}
 	}
+	file_events_builtin_v1_builtin_proto_msgTypes[4].OneofWrappers = []interface{}{
+		(*BuildEndEvent_Error)(nil),
+		(*BuildEndEvent_Result)(nil),
+	}
+	file_events_builtin_v1_builtin_proto_msgTypes[7].OneofWrappers = []interface{}{
+		(*RuntimeTenderEndEvent_Error)(nil),
+		(*RuntimeTenderEndEvent_Result)(nil),
+	}
 	file_events_builtin_v1_builtin_proto_msgTypes[10].OneofWrappers = []interface{}{
+		(*RuntimeSettlementEndEvent_Error)(nil),
+		(*RuntimeSettlementEndEvent_Result)(nil),
+	}
+	file_events_builtin_v1_builtin_proto_msgTypes[13].OneofWrappers = []interface{}{
+		(*RuntimeOpenEndEvent_Error)(nil),
+		(*RuntimeOpenEndEvent_Result)(nil),
+	}
+	file_events_builtin_v1_builtin_proto_msgTypes[16].OneofWrappers = []interface{}{
+		(*RuntimeCloseEndEvent_Error)(nil),
+		(*RuntimeCloseEndEvent_Result)(nil),
+	}
+	file_events_builtin_v1_builtin_proto_msgTypes[19].OneofWrappers = []interface{}{
 		(*LogEventSource_Runtime)(nil),
 		(*LogEventSource_Exec)(nil),
 		(*LogEventSource_Director)(nil),
+	}
+	file_events_builtin_v1_builtin_proto_msgTypes[25].OneofWrappers = []interface{}{
+		(*ExecEndEvent_Error)(nil),
+		(*ExecEndEvent_Result)(nil),
+	}
+	file_events_builtin_v1_builtin_proto_msgTypes[28].OneofWrappers = []interface{}{
+		(*ImportEndEvent_Error)(nil),
+		(*ImportEndEvent_Result)(nil),
+	}
+	file_events_builtin_v1_builtin_proto_msgTypes[31].OneofWrappers = []interface{}{
+		(*ExportEndEvent_Error)(nil),
+		(*ExportEndEvent_Result)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -1684,7 +2841,7 @@ func file_events_builtin_v1_builtin_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_events_builtin_v1_builtin_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   22,
+			NumMessages:   34,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

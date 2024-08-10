@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/moby/moby/client"
@@ -36,6 +37,7 @@ type Runtime struct {
 	containerManager *ContainerManager
 	syslog           *zap.SugaredLogger
 	log              *runtime.Log
+	deadline         time.Time
 	state            struct {
 		started         bool
 		containerID     string
@@ -110,6 +112,14 @@ func (r *Runtime) ID() string {
 
 func (r *Runtime) Log() *runtime.Log {
 	return r.log
+}
+
+func (r *Runtime) Deadline() time.Time {
+	return r.deadline
+}
+
+func (r *Runtime) SetDeadline(deadline time.Time) {
+	r.deadline = deadline
 }
 
 func (r *Runtime) Directory() string {

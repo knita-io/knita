@@ -34,7 +34,7 @@ func (s *Server) Open(ctx context.Context, req *directorv1.OpenRequest) (*direct
 	if err := s.validateOpenRequest(req); err != nil {
 		return nil, err
 	}
-	runtime, err := s.build.Runtime(ctx, req.Opts)
+	runtime, err := s.build.OpenRuntime(ctx, req.Opts)
 	if err != nil {
 		return nil, err
 	}
@@ -88,8 +88,14 @@ func (s *Server) Exec(req *directorv1.ExecRequest, stream directorv1.Director_Ex
 			if p.RuntimeId != runtime.ID() || p.ExecId != execID {
 				return
 			}
-			execEvent.Payload = &directorv1.ExecEvent_ExecEnd{
-				ExecEnd: &directorv1.ExecEndEvent{Error: p.Error, ExitCode: p.ExitCode}}
+			switch s := p.Status.(type) {
+			case *builtinv1.ExecEndEvent_Result:
+				execEvent.Payload = &directorv1.ExecEvent_ExecEnd{
+					ExecEnd: &directorv1.ExecEndEvent{ExitCode: s.Result.ExitCode}}
+			case *builtinv1.ExecEndEvent_Error:
+				execEvent.Payload = &directorv1.ExecEvent_ExecEnd{
+					ExecEnd: &directorv1.ExecEndEvent{Error: s.Error.Message}}
+			}
 		default:
 			return
 		}

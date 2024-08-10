@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"context"
+	"time"
 
 	executorv1 "github.com/knita-io/knita/api/executor/v1"
 	"github.com/knita-io/knita/internal/file"
@@ -9,9 +10,11 @@ import (
 
 type Runtime interface {
 	file.WriteFS
-	Start(ctx context.Context) error
 	ID() string
+	Deadline() time.Time
+	SetDeadline(deadline time.Time)
 	Log() *Log
+	Start(ctx context.Context) error
 	Exec(ctx context.Context, execID string, opts *executorv1.ExecOpts) (*ExecResult, error)
 	Close() error
 }

@@ -41,8 +41,8 @@ func (l *BuildLog) Stream() event.Stream {
 	return l.stream
 }
 
-func (l *BuildLog) MustPublish(payload proto.Message) {
-	l.sequencer.MustPublish(&event.Event{
+func (l *BuildLog) Publish(payload proto.Message) {
+	l.sequencer.Publish(&event.Event{
 		Meta: &eventsv1.Meta{
 			BuildId:       l.buildID,
 			CorrelationId: l.name,
@@ -51,11 +51,11 @@ func (l *BuildLog) MustPublish(payload proto.Message) {
 	})
 }
 
-func (l *BuildLog) MustRepublish(event *event.Event) {
+func (l *BuildLog) Republish(event *event.Event) {
 	if event.Meta == nil || event.Meta.BuildId != l.buildID {
 		panic("build id mismatch")
 	}
-	l.sequencer.MustPublish(event)
+	l.sequencer.Publish(event)
 }
 
 func (l *BuildLog) Named(name string) *BuildLog {
@@ -83,8 +83,8 @@ func (l *BuildLog) Stdout() io.WriteCloser {
 				return
 			}
 			if n > 0 {
-				event := builtinv1.NewStdoutEvent(buf[:n], l.source)
-				l.MustPublish(event)
+				event := &builtinv1.StdoutEvent{Data: buf[:n], Source: l.source}
+				l.Publish(event)
 			}
 		}
 	}()
@@ -102,8 +102,8 @@ func (l *BuildLog) Stderr() io.WriteCloser {
 				return
 			}
 			if n > 0 {
-				event := builtinv1.NewStderrEvent(buf[:n], l.source)
-				l.MustPublish(event)
+				event := &builtinv1.StderrEvent{Data: buf[:n], Source: l.source}
+				l.Publish(event)
 			}
 		}
 	}()
@@ -116,8 +116,8 @@ func (l *BuildLog) Printf(format string, args ...interface{}) {
 	if !strings.HasSuffix(str, "\n") {
 		str += "\n"
 	}
-	event := builtinv1.NewStdoutEvent([]byte(str), l.source)
-	l.MustPublish(event)
+	event := &builtinv1.StdoutEvent{Data: []byte(str), Source: l.source}
+	l.Publish(event)
 }
 
 func (l *BuildLog) Close() error {

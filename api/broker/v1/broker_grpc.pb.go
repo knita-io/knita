@@ -27,8 +27,8 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RuntimeBrokerClient interface {
-	Tender(ctx context.Context, in *RuntimeTender, opts ...grpc.CallOption) (*RuntimeContracts, error)
-	Settle(ctx context.Context, in *RuntimeContract, opts ...grpc.CallOption) (*RuntimeSettlement, error)
+	Tender(ctx context.Context, in *TenderRequest, opts ...grpc.CallOption) (*TenderResponse, error)
+	Settle(ctx context.Context, in *SettlementRequest, opts ...grpc.CallOption) (*SettlementResponse, error)
 }
 
 type runtimeBrokerClient struct {
@@ -39,8 +39,8 @@ func NewRuntimeBrokerClient(cc grpc.ClientConnInterface) RuntimeBrokerClient {
 	return &runtimeBrokerClient{cc}
 }
 
-func (c *runtimeBrokerClient) Tender(ctx context.Context, in *RuntimeTender, opts ...grpc.CallOption) (*RuntimeContracts, error) {
-	out := new(RuntimeContracts)
+func (c *runtimeBrokerClient) Tender(ctx context.Context, in *TenderRequest, opts ...grpc.CallOption) (*TenderResponse, error) {
+	out := new(TenderResponse)
 	err := c.cc.Invoke(ctx, RuntimeBroker_Tender_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -48,8 +48,8 @@ func (c *runtimeBrokerClient) Tender(ctx context.Context, in *RuntimeTender, opt
 	return out, nil
 }
 
-func (c *runtimeBrokerClient) Settle(ctx context.Context, in *RuntimeContract, opts ...grpc.CallOption) (*RuntimeSettlement, error) {
-	out := new(RuntimeSettlement)
+func (c *runtimeBrokerClient) Settle(ctx context.Context, in *SettlementRequest, opts ...grpc.CallOption) (*SettlementResponse, error) {
+	out := new(SettlementResponse)
 	err := c.cc.Invoke(ctx, RuntimeBroker_Settle_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -61,8 +61,8 @@ func (c *runtimeBrokerClient) Settle(ctx context.Context, in *RuntimeContract, o
 // All implementations must embed UnimplementedRuntimeBrokerServer
 // for forward compatibility
 type RuntimeBrokerServer interface {
-	Tender(context.Context, *RuntimeTender) (*RuntimeContracts, error)
-	Settle(context.Context, *RuntimeContract) (*RuntimeSettlement, error)
+	Tender(context.Context, *TenderRequest) (*TenderResponse, error)
+	Settle(context.Context, *SettlementRequest) (*SettlementResponse, error)
 	mustEmbedUnimplementedRuntimeBrokerServer()
 }
 
@@ -70,10 +70,10 @@ type RuntimeBrokerServer interface {
 type UnimplementedRuntimeBrokerServer struct {
 }
 
-func (UnimplementedRuntimeBrokerServer) Tender(context.Context, *RuntimeTender) (*RuntimeContracts, error) {
+func (UnimplementedRuntimeBrokerServer) Tender(context.Context, *TenderRequest) (*TenderResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Tender not implemented")
 }
-func (UnimplementedRuntimeBrokerServer) Settle(context.Context, *RuntimeContract) (*RuntimeSettlement, error) {
+func (UnimplementedRuntimeBrokerServer) Settle(context.Context, *SettlementRequest) (*SettlementResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Settle not implemented")
 }
 func (UnimplementedRuntimeBrokerServer) mustEmbedUnimplementedRuntimeBrokerServer() {}
@@ -90,7 +90,7 @@ func RegisterRuntimeBrokerServer(s grpc.ServiceRegistrar, srv RuntimeBrokerServe
 }
 
 func _RuntimeBroker_Tender_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RuntimeTender)
+	in := new(TenderRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -102,13 +102,13 @@ func _RuntimeBroker_Tender_Handler(srv interface{}, ctx context.Context, dec fun
 		FullMethod: RuntimeBroker_Tender_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RuntimeBrokerServer).Tender(ctx, req.(*RuntimeTender))
+		return srv.(RuntimeBrokerServer).Tender(ctx, req.(*TenderRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _RuntimeBroker_Settle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RuntimeContract)
+	in := new(SettlementRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func _RuntimeBroker_Settle_Handler(srv interface{}, ctx context.Context, dec fun
 		FullMethod: RuntimeBroker_Settle_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RuntimeBrokerServer).Settle(ctx, req.(*RuntimeContract))
+		return srv.(RuntimeBrokerServer).Settle(ctx, req.(*SettlementRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

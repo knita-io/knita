@@ -155,7 +155,12 @@ func (ui *Manager) onEventCallback(event *event.Event) {
 		})
 	case *builtinv1.RuntimeCloseEndEvent:
 		withElement(ui, ui.runtimeIDToTenderID[p.RuntimeId], func(ele *RuntimeElement) {
-			ele.Complete("") // TODO would be nice to get the error from a failed runtime
+			switch s := p.Status.(type) {
+			case *builtinv1.RuntimeCloseEndEvent_Result:
+				ele.Complete("")
+			case *builtinv1.RuntimeCloseEndEvent_Error:
+				ele.Complete(s.Error.Message)
+			}
 			delete(ui.runtimeIDToTenderID, p.RuntimeId)
 		})
 	case *builtinv1.ExecStartEvent:
@@ -168,7 +173,12 @@ func (ui *Manager) onEventCallback(event *event.Event) {
 			ele.EndExec()
 		})
 		withElement(ui, p.ExecId, func(ele *ExecElement) {
-			ele.Complete(p.ExitCode, p.Error)
+			switch s := p.Status.(type) {
+			case *builtinv1.ExecEndEvent_Result:
+				ele.Complete(s.Result.ExitCode, "")
+			case *builtinv1.ExecEndEvent_Error:
+				ele.Complete(-1, s.Error.Message)
+			}
 		})
 	case *builtinv1.ImportStartEvent:
 		withElement(ui, ui.runtimeIDToTenderID[p.RuntimeId], func(ele *RuntimeElement) {

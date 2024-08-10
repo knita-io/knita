@@ -7,18 +7,14 @@ option go_package = "github.com/knita-io/knita/api/broker/v1";
 import "executor/v1/executor.proto";
 
 service RuntimeBroker {
-  rpc Tender(RuntimeTender) returns (RuntimeContracts);
-  rpc Settle(RuntimeContract) returns (RuntimeSettlement);
+  rpc Tender(TenderRequest) returns (TenderResponse);
+  rpc Settle(SettlementRequest) returns (SettlementResponse);
 }
 
-message RuntimeTender {
+message TenderRequest {
   string build_id = 1;
   string tender_id = 2;
   executor.knita.io.Opts opts = 3;
-}
-
-message RuntimeContracts {
-  repeated RuntimeContract contracts = 1;
 }
 
 message RuntimeContract {
@@ -30,7 +26,15 @@ message RuntimeContract {
   executor.knita.io.ExecutorInfo executor_info = 6;
 }
 
-message RuntimeSettlement {
+message TenderResponse {
+  repeated RuntimeContract contracts = 1;
+}
+
+message SettlementRequest {
+    RuntimeContract contract = 1;
+}
+
+message SettlementResponse {
   RuntimeConnectionInfo connection_info = 1;
 }
 

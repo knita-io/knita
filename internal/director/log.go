@@ -11,7 +11,9 @@ type Log struct {
 }
 
 func NewLog(stream event.Stream, buildID string) *Log {
+	source := &builtinv1.LogEventSource{Source: &builtinv1.LogEventSource_Director{
+		Director: &builtinv1.LogSourceDirector{}}}
 	return &Log{
-		BuildLog: log.NewBuildLog(stream, buildID, builtinv1.NewDirectorLogEventSource()),
+		BuildLog: log.NewBuildLog(stream, buildID, source),
 	}
 }

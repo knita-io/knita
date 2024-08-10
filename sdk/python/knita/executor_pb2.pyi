@@ -1,4 +1,4 @@
-from events.v1 import event_pb2 as _event_pb2
+from . import event_pb2 as _event_pb2
 from google.protobuf import duration_pb2 as _duration_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper

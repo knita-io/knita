@@ -5,6 +5,31 @@ package builtin.events.knita.io;
 option go_package = "github.com/knita-io/knita/api/events/builtin/v1";
 
 import "executor/v1/executor.proto";
+import "broker/v1/broker.proto";
+
+message Error {
+  string message = 1;
+}
+
+message DirectorInfo {
+  string version = 1;
+  executor.knita.io.SystemInfo sys_info = 2;
+}
+
+message BuildStartEvent {
+  string build_id = 1;
+  DirectorInfo director_info = 2;
+}
+
+message BuildResult {}
+
+message BuildEndEvent {
+  string build_id = 1;
+  oneof status {
+    Error error = 2;
+    BuildResult result = 3;
+  }
+}
 
 message RuntimeTenderStartEvent {
   string build_id = 1;
@@ -12,9 +37,16 @@ message RuntimeTenderStartEvent {
   executor.knita.io.Opts opts = 3;
 }
 
+message RuntimeTenderResult {
+  repeated broker.knita.io.RuntimeContract contracts = 1;
+}
+
 message RuntimeTenderEndEvent {
   string tender_id = 1;
-  // TODO contracts (need events to be in their own package to avoid circular dependency on broker)
+  oneof status {
+    Error error = 2;
+    RuntimeTenderResult result = 3;
+  }
 }
 
 message RuntimeSettlementStartEvent {
@@ -23,10 +55,16 @@ message RuntimeSettlementStartEvent {
   string runtime_id = 3;
 }
 
+message RuntimeSettlementResult {}
+
 message RuntimeSettlementEndEvent {
   string tender_id = 1;
   string contract_id = 2;
   string runtime_id = 3;
+  oneof status {
+    Error error = 4;
+    RuntimeSettlementResult result = 5;
+  }
 }
 
 message RuntimeOpenStartEvent {
@@ -34,16 +72,28 @@ message RuntimeOpenStartEvent {
   executor.knita.io.Opts opts = 2;
 }
 
+message RuntimeOpenResult {}
+
 message RuntimeOpenEndEvent {
   string runtime_id = 1;
+  oneof status {
+    Error error = 2;
+    RuntimeOpenResult result = 3;
+  }
 }
 
 message RuntimeCloseStartEvent {
   string runtime_id = 1;
 }
 
+message RuntimeCloseResult {}
+
 message RuntimeCloseEndEvent {
   string runtime_id = 1;
+  oneof status {
+    Error error = 2;
+    RuntimeCloseResult result = 3;
+  }
 }
 
 message StdoutEvent {
@@ -84,14 +134,33 @@ message ExecStartEvent {
   map<string, string> tags = 4;
 }
 
+message ExecResult {
+  int32 exit_code = 4;
+}
+
+message ExecEndEvent {
+  string runtime_id = 1;
+  string exec_id = 2;
+  oneof status {
+    Error error = 3;
+    ExecResult result = 4;
+  }
+}
+
 message ImportStartEvent {
   string runtime_id = 1;
   string import_id = 2;
 }
 
+message ImportResult {}
+
 message ImportEndEvent {
   string runtime_id = 1;
   string import_id = 2;
+  oneof status {
+    Error error = 3;
+    ImportResult result = 4;
+  }
 }
 
 message ExportStartEvent {
@@ -99,16 +168,15 @@ message ExportStartEvent {
   string export_id = 2;
 }
 
+message ExportResult {}
+
 message ExportEndEvent {
   string runtime_id = 1;
   string export_id = 2;
-}
-
-message ExecEndEvent {
-  string runtime_id = 1;
-  string exec_id = 2;
-  string error = 3; // TODO structured error?
-  int32 exit_code = 4;
+  oneof status {
+    Error error = 3;
+    ExportResult result = 4;
+  }
 }
 
 message SyncPointReachedEvent {

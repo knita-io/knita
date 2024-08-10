@@ -12,7 +12,7 @@ from google.protobuf.internal import builder as _builder
 _sym_db = _symbol_database.Default()
 
 
-from events.v1 import event_pb2 as events_dot_v1_dot_event__pb2
+from . import event_pb2 as events_dot_v1_dot_event__pb2
 from google.protobuf import duration_pb2 as google_dot_protobuf_dot_duration__pb2
 
 

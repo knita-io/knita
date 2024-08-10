@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-from events.v1 import event_pb2 as events_dot_v1_dot_event__pb2
+from . import event_pb2 as events_dot_v1_dot_event__pb2
 from . import executor_pb2 as executor_dot_v1_dot_executor__pb2
 
 GRPC_GENERATED_VERSION = '1.63.0'

@@ -89,10 +89,12 @@ func protobuf(input *JobProtobufInput) (*JobProtobufOutput, error) {
 			--pyi_out=api \
 			--grpc_python_out=api \
 			executor/v1/executor.proto \
-			director/v1/director.proto
+			director/v1/director.proto \
+			events/v1/event.proto
 
 			sed -i -e 's/from director.v1/from ./g' api/*/v1/*.py*
-			sed -i -e 's/from executor.v1/from ./g' api/*/v1/*.py*`))
+			sed -i -e 's/from executor.v1/from ./g' api/*/v1/*.py*
+			sed -i -e 's/from events.v1/from ./g' api/*/v1/*.py*`))
 	container.MustExport("api/**/*.py*", export.WithDest("sdk/python/knita/"))
 
 	container.MustExec(

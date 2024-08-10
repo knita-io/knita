@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -20,6 +21,7 @@ type Runtime struct {
 	runtimeID string
 	baseDir   string
 	log       *runtime.Log
+	deadline  time.Time
 }
 
 func NewRuntime(syslog *zap.SugaredLogger, log *runtime.Log, runtimeID string) (*Runtime, error) {
@@ -42,6 +44,14 @@ func (r *Runtime) ID() string {
 
 func (r *Runtime) Log() *runtime.Log {
 	return r.log
+}
+
+func (r *Runtime) Deadline() time.Time {
+	return r.deadline
+}
+
+func (r *Runtime) SetDeadline(deadline time.Time) {
+	r.deadline = deadline
 }
 
 func (r *Runtime) Start(ctx context.Context) error {

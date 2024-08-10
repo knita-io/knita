@@ -50,8 +50,8 @@ func NewServer(syslog *zap.SugaredLogger, config Config) *Server {
 }
 
 // Tender brokers a runtime contract based on the provided runtime tender.
-func (b *Server) Tender(ctx context.Context, req *brokerv1.RuntimeTender) (*brokerv1.RuntimeContracts, error) {
-	if err := validateRuntimeTender(req); err != nil {
+func (b *Server) Tender(ctx context.Context, req *brokerv1.TenderRequest) (*brokerv1.TenderResponse, error) {
+	if err := validateTenderRequest(req); err != nil {
 		return nil, err
 	}
 	b.initOnce.Do(b.init)
@@ -76,26 +76,26 @@ func (b *Server) Tender(ctx context.Context, req *brokerv1.RuntimeTender) (*brok
 		}
 	}
 	b.syslog.Infow("Brokered contracts", "n_contracts", len(contracts))
-	return &brokerv1.RuntimeContracts{Contracts: contracts}, nil
+	return &brokerv1.TenderResponse{Contracts: contracts}, nil
 }
 
 // Settle settles the contract identified by the provided runtime contract.
-func (b *Server) Settle(ctx context.Context, req *brokerv1.RuntimeContract) (*brokerv1.RuntimeSettlement, error) {
-	if err := validateRuntimeContract(req); err != nil {
+func (b *Server) Settle(ctx context.Context, req *brokerv1.SettlementRequest) (*brokerv1.SettlementResponse, error) {
+	if err := validateSettlementRequest(req); err != nil {
 		return nil, err
 	}
-	syslog := b.syslog.With("contract_id", req.ContractId)
+	syslog := b.syslog.With("contract_id", req.Contract.ContractId)
 	syslog.Infow("Settling contract...")
-	executor, ok := b.executorsByID[req.ContractId]
+	executor, ok := b.executorsByID[req.Contract.ContractId]
 	if !ok {
 		return nil, fmt.Errorf("executor not found")
 	}
 	// TODO: Hook up auth
 	syslog.Infow("Settled contract")
-	return &brokerv1.RuntimeSettlement{ConnectionInfo: executor.config.Connection}, nil
+	return &brokerv1.SettlementResponse{ConnectionInfo: executor.config.Connection}, nil
 }
 
-func (b *Server) canBid(intro *executorv1.IntrospectResponse, tender *brokerv1.RuntimeTender) bool {
+func (b *Server) canBid(intro *executorv1.IntrospectResponse, tender *brokerv1.TenderRequest) bool {
 	return isSubset(tender.Opts.Labels, intro.Labels)
 }
 
@@ -180,9 +180,9 @@ func (b *Server) connInfoToString(connInfo *brokerv1.RuntimeConnectionInfo) stri
 	}
 }
 
-// validateRuntimeTender validates the fields of a RuntimeTender request.
+// validateTenderRequest validates the fields of a RuntimeTender request.
 // It returns an error if any of the mandatory fields are empty, otherwise returns nil.
-func validateRuntimeTender(req *brokerv1.RuntimeTender) error {
+func validateTenderRequest(req *brokerv1.TenderRequest) error {
 	if req == nil {
 		return fmt.Errorf("nil request")
 	}
@@ -201,22 +201,25 @@ func validateRuntimeTender(req *brokerv1.RuntimeTender) error {
 	return nil
 }
 
-// validateRuntimeContract validates the fields of a RuntimeContract request.
+// validateSettlementRequest validates the fields of a RuntimeContract request.
 // It returns an error if any of the mandatory fields are empty, otherwise returns nil.
-func validateRuntimeContract(req *brokerv1.RuntimeContract) error {
+func validateSettlementRequest(req *brokerv1.SettlementRequest) error {
 	if req == nil {
 		return fmt.Errorf("nil request")
 	}
-	if req.TenderId == "" {
+	if req.Contract == nil {
+		return fmt.Errorf("nil contract")
+	}
+	if req.Contract.TenderId == "" {
 		return fmt.Errorf("empty tender_id")
 	}
-	if req.ContractId == "" {
+	if req.Contract.ContractId == "" {
 		return fmt.Errorf("empty contract_id")
 	}
-	if req.RuntimeId == "" {
+	if req.Contract.RuntimeId == "" {
 		return fmt.Errorf("empty runtime_id")
 	}
-	if req.Opts == nil {
+	if req.Contract.Opts == nil {
 		return fmt.Errorf("empty opts")
 	}
 	return nil

@@ -8,7 +8,7 @@ import (
 )
 
 type Stream interface {
-	MustPublish(event *Event)
+	Publish(event *Event)
 	Subscribe(handler Handler, opts ...Opt) func()
 }
 
@@ -34,7 +34,7 @@ func NewBroker(syslog *zap.SugaredLogger) *Broker {
 	}
 }
 
-func (b *Broker) MustPublish(event *Event) {
+func (b *Broker) Publish(event *Event) {
 	b.mu.RLock()
 	subscriptions := make(map[*subscription]struct{})
 	for k, v := range b.subscriptions {
@@ -46,7 +46,7 @@ func (b *Broker) MustPublish(event *Event) {
 	if event.Payload == nil {
 		b.syslog.Panicf("event payload is nil: %v", event)
 	}
-	for sub := range b.subscriptions {
+	for sub := range subscriptions {
 		send := true
 		for _, pred := range sub.opts.Predicates {
 			if !pred(event) {
