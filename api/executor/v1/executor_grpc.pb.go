@@ -8,6 +8,7 @@ package v1
 
 import (
 	context "context"
+	v1 "github.com/knita-io/knita/api/events/v1"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -19,14 +20,14 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Executor_Introspect_FullMethodName = "/executor.Executor/Introspect"
-	Executor_Events_FullMethodName     = "/executor.Executor/Events"
-	Executor_Open_FullMethodName       = "/executor.Executor/Open"
-	Executor_Heartbeat_FullMethodName  = "/executor.Executor/Heartbeat"
-	Executor_Exec_FullMethodName       = "/executor.Executor/Exec"
-	Executor_Import_FullMethodName     = "/executor.Executor/Import"
-	Executor_Export_FullMethodName     = "/executor.Executor/Export"
-	Executor_Close_FullMethodName      = "/executor.Executor/Close"
+	Executor_Introspect_FullMethodName = "/executor.knita.io.Executor/Introspect"
+	Executor_Events_FullMethodName     = "/executor.knita.io.Executor/Events"
+	Executor_Open_FullMethodName       = "/executor.knita.io.Executor/Open"
+	Executor_Heartbeat_FullMethodName  = "/executor.knita.io.Executor/Heartbeat"
+	Executor_Exec_FullMethodName       = "/executor.knita.io.Executor/Exec"
+	Executor_Import_FullMethodName     = "/executor.knita.io.Executor/Import"
+	Executor_Export_FullMethodName     = "/executor.knita.io.Executor/Export"
+	Executor_Close_FullMethodName      = "/executor.knita.io.Executor/Close"
 )
 
 // ExecutorClient is the client API for Executor service.
@@ -76,7 +77,7 @@ func (c *executorClient) Events(ctx context.Context, in *EventsRequest, opts ...
 }
 
 type Executor_EventsClient interface {
-	Recv() (*Event, error)
+	Recv() (*v1.Event, error)
 	grpc.ClientStream
 }
 
@@ -84,8 +85,8 @@ type executorEventsClient struct {
 	grpc.ClientStream
 }
 
-func (x *executorEventsClient) Recv() (*Event, error) {
-	m := new(Event)
+func (x *executorEventsClient) Recv() (*v1.Event, error) {
+	m := new(v1.Event)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -277,7 +278,7 @@ func _Executor_Events_Handler(srv interface{}, stream grpc.ServerStream) error {
 }
 
 type Executor_EventsServer interface {
-	Send(*Event) error
+	Send(*v1.Event) error
 	grpc.ServerStream
 }
 
@@ -285,7 +286,7 @@ type executorEventsServer struct {
 	grpc.ServerStream
 }
 
-func (x *executorEventsServer) Send(m *Event) error {
+func (x *executorEventsServer) Send(m *v1.Event) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -412,7 +413,7 @@ func _Executor_Close_Handler(srv interface{}, ctx context.Context, dec func(inte
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Executor_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "executor.Executor",
+	ServiceName: "executor.knita.io.Executor",
 	HandlerType: (*ExecutorServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

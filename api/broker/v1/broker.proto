@@ -1,36 +1,40 @@
 syntax = "proto3";
 
-package broker;
+package broker.knita.io;
 
 option go_package = "github.com/knita-io/knita/api/broker/v1";
 
 import "executor/v1/executor.proto";
 
 service RuntimeBroker {
-  rpc Tender(RuntimeTender) returns (RuntimeContracts);
-  rpc Settle(RuntimeContract) returns (RuntimeSettlement);
+  rpc Tender(TenderRequest) returns (TenderResponse);
+  rpc Settle(SettlementRequest) returns (SettlementResponse);
 }
 
-message RuntimeTender {
+message TenderRequest {
   string build_id = 1;
   string tender_id = 2;
-  executor.Opts opts = 3;
-}
-
-message RuntimeContracts {
-  repeated RuntimeContract contracts = 1;
+  executor.knita.io.Opts opts = 3;
 }
 
 message RuntimeContract {
   string tender_id = 1;
   string contract_id = 2;
   string runtime_id = 3;
-  executor.Opts opts = 4;
-  executor.SystemInfo sys_info = 5;
-  executor.ExecutorInfo executor_info = 6;
+  executor.knita.io.Opts opts = 4;
+  executor.knita.io.SystemInfo sys_info = 5;
+  executor.knita.io.ExecutorInfo executor_info = 6;
 }
 
-message RuntimeSettlement {
+message TenderResponse {
+  repeated RuntimeContract contracts = 1;
+}
+
+message SettlementRequest {
+    RuntimeContract contract = 1;
+}
+
+message SettlementResponse {
   RuntimeConnectionInfo connection_info = 1;
 }
 

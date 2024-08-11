@@ -1,7 +1,7 @@
 package runtime
 
 import (
-	executorv1 "github.com/knita-io/knita/api/executor/v1"
+	builtinv1 "github.com/knita-io/knita/api/events/builtin/v1"
 	"github.com/knita-io/knita/internal/event"
 	"github.com/knita-io/knita/internal/log"
 )
@@ -12,8 +12,10 @@ type Log struct {
 }
 
 func NewLog(stream event.Stream, buildID string, runtimeID string) *Log {
+	source := &builtinv1.LogEventSource{Source: &builtinv1.LogEventSource_Runtime{
+		Runtime: &builtinv1.LogSourceRuntime{RuntimeId: runtimeID}}}
 	return &Log{
-		BuildLog:  log.NewBuildLog(stream, buildID, executorv1.NewRuntimeLogEventSource(runtimeID)),
+		BuildLog:  log.NewBuildLog(stream, buildID, source),
 		runtimeID: runtimeID,
 	}
 }
@@ -26,8 +28,10 @@ func (l *Log) Named(name string) *Log {
 }
 
 func (l *Log) ExecSource(execID string, system bool) *Log {
+	source := &builtinv1.LogEventSource{Source: &builtinv1.LogEventSource_Exec{
+		Exec: &builtinv1.LogSourceExec{RuntimeId: l.runtimeID, ExecId: execID, System: system}}}
 	return &Log{
-		BuildLog:  l.BuildLog.Source(executorv1.NewExecLogEventSource(l.runtimeID, execID, system)),
+		BuildLog:  l.BuildLog.Source(source),
 		runtimeID: l.runtimeID,
 	}
 }

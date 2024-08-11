@@ -7,26 +7,17 @@ import (
 	"io"
 	"os"
 	stdruntime "runtime"
-	"sync"
-	"time"
 
-	"github.com/moby/moby/client"
 	"github.com/pbnjay/memory"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	"github.com/knita-io/knita/internal/executor/runtime/docker"
-	"github.com/knita-io/knita/internal/executor/runtime/host"
-	"github.com/knita-io/knita/internal/file"
-
+	builtinv1 "github.com/knita-io/knita/api/events/builtin/v1"
 	executorv1 "github.com/knita-io/knita/api/executor/v1"
 	"github.com/knita-io/knita/internal/event"
 	"github.com/knita-io/knita/internal/executor/runtime"
+	"github.com/knita-io/knita/internal/file"
 )
-
-const deadlineExtensionPeriod = time.Minute * 2
-
-type runtimeFactory func(ctx context.Context, stream event.Stream, buildID string, runtimeID string, opts *executorv1.Opts) (runtime.Runtime, error)
 
 type Config struct {
 	// Name is the name of the executor.
@@ -37,26 +28,18 @@ type Config struct {
 
 type Server struct {
 	executorv1.UnimplementedExecutorServer
-	syslog         *zap.SugaredLogger
-	config         Config
-	runtimeFactory runtimeFactory
-	ctx            context.Context
-	ctxCancel      context.CancelFunc
-	mu             sync.RWMutex
-	runtimes       map[string]*runtimeState
+	syslog     *zap.SugaredLogger
+	config     Config
+	supervisor *supervisor
 }
 
 func NewServer(syslog *zap.SugaredLogger, config Config) *Server {
-	ctx, cancel := context.WithCancel(context.Background())
 	syslog = syslog.Named("executor")
 	exec := &Server{
-		syslog:    syslog,
-		config:    config,
-		ctx:       ctx,
-		ctxCancel: cancel,
-		runtimes:  map[string]*runtimeState{}}
-	exec.runtimeFactory = exec.defaultRuntimeFactory()
-	go exec.watchdog()
+		syslog:     syslog,
+		config:     config,
+		supervisor: newSupervisor(syslog),
+	}
 	return exec
 }
 
@@ -64,34 +47,40 @@ func (s *Server) Events(req *executorv1.EventsRequest, stream executorv1.Executo
 	if err := validateEventsRequest(req); err != nil {
 		return err
 	}
-	syslog := s.syslog.With("runtime_id", req.RuntimeId)
-	runtime, created := s.findOrCreateRuntime(req.RuntimeId)
-	if !created {
-		return fmt.Errorf("event stream already opened")
+	log, done, err := s.supervisor.PrepareRuntime(req.BuildId, req.RuntimeId)
+	if err != nil {
+		return err
 	}
-	defer s.Close(context.Background(), &executorv1.CloseRequest{RuntimeId: req.RuntimeId})
-	var (
-		closed bool
-		errC   = make(chan error)
-	)
-	done := runtime.stream.Subscribe(func(event *executorv1.Event) {
-		if err := stream.Send(event); err != nil {
-			if !closed {
-				closed = true
-				errC <- err
-			}
+	defer done()
+	var closed bool
+	var sendErrC = make(chan error)
+	fail := func(err error) {
+		if !closed {
+			closed = true
+			sendErrC <- err
+		}
+	}
+	done = log.Stream().Subscribe(func(event *event.Event) {
+		out, err := event.Marshal()
+		if err != nil {
+			fail(err)
+			return
+		}
+		if err := stream.Send(out); err != nil {
+			fail(err)
+			return
 		}
 	})
 	defer done()
-	if err := stream.Send(&executorv1.Event{Sequence: 0}); err != nil {
-		return fmt.Errorf("error sending initial event")
-	}
+	log.Publish(&builtinv1.SyncPointReachedEvent{BarrierId: req.BarrierId})
+	syslog := s.syslog.With("runtime_id", req.RuntimeId)
 	syslog.Infow("Event stream opened")
 	select {
 	case <-stream.Context().Done():
 		syslog.Infow("Event stream closed")
-	case err := <-errC:
-		syslog.Infow("Event stream closed with error: %v", err)
+	case err := <-sendErrC:
+		syslog.Infow("Event stream closed with send error: %v", err)
+		return err
 	}
 	return nil
 }
@@ -100,29 +89,11 @@ func (s *Server) Open(ctx context.Context, req *executorv1.OpenRequest) (*execut
 	if err := s.validateOpenRequest(req); err != nil {
 		return nil, err
 	}
-	runtime, err := s.getRuntime(req.RuntimeId)
+	s.syslog.Infow("Opening runtime", "runtime_id", req.RuntimeId)
+	runtime, err := s.supervisor.OpenRuntime(ctx, req.BuildId, req.RuntimeId, req.Opts)
 	if err != nil {
 		return nil, err
 	}
-	if runtime.IsOpen() {
-		return nil, fmt.Errorf("error runtime already open")
-	}
-	inner, err := s.runtimeFactory(ctx, runtime.stream, req.BuildId, req.RuntimeId, req.Opts)
-	if err != nil {
-		return nil, fmt.Errorf("error creating runtime: %w", err)
-	}
-	inner.Log().Publish(executorv1.NewRuntimeOpenStartEvent(req.RuntimeId, req.Opts))
-	err = inner.Start(ctx)
-	if err != nil {
-		inner.Log().Publish(executorv1.NewRuntimeOpenEndEvent(req.RuntimeId))
-		inner.Log().Publish(executorv1.NewRuntimeCloseStartEvent(req.RuntimeId))
-		inner.Close()
-		inner.Log().Publish(executorv1.NewRuntimeCloseEndEvent(req.RuntimeId))
-		return nil, fmt.Errorf("error starting runtime: %w", err)
-	}
-	runtime.SetDeadline(time.Now().Add(deadlineExtensionPeriod))
-	runtime.Open(inner)
-	runtime.Log().Publish(executorv1.NewRuntimeOpenEndEvent(req.RuntimeId))
 	s.syslog.Infow("Opened runtime", "runtime_id", req.RuntimeId)
 	return &executorv1.OpenResponse{WorkDirectory: runtime.Directory(), SysInfo: s.getSysInfo()}, nil
 }
@@ -131,26 +102,21 @@ func (s *Server) Exec(ctx context.Context, req *executorv1.ExecRequest) (*execut
 	if err := validateExecRequest(req); err != nil {
 		return nil, err
 	}
-	runtime, err := s.getRuntime(req.RuntimeId)
+	runtime, err := s.supervisor.GetRuntime(req.RuntimeId)
 	if err != nil {
 		return nil, err
 	}
-	if !runtime.IsOpen() {
-		return nil, fmt.Errorf("runtime not found")
-	}
-	runtime.Log().Publish(executorv1.NewExecStartEvent(req.RuntimeId, req.ExecId, req.Opts))
 	res, err := runtime.Exec(ctx, req.ExecId, req.Opts)
 	if err != nil {
-		runtime.Log().Publish(executorv1.NewExecEndEvent(req.RuntimeId, req.ExecId, err.Error(), -1))
 		return nil, err
 	}
-	runtime.Log().Publish(executorv1.NewExecEndEvent(req.RuntimeId, req.ExecId, "", res.ExitCode))
+	runtime.Log().Publish(&builtinv1.SyncPointReachedEvent{BarrierId: req.BarrierId})
 	return &executorv1.ExecResponse{ExitCode: res.ExitCode}, nil
 }
 
 func (s *Server) Import(stream executorv1.Executor_ImportServer) error {
 	var (
-		runtime   *runtimeState
+		runtime   runtime.Runtime
 		importID  string
 		receivers = make(map[string]*file.Receiver)
 	)
@@ -167,12 +133,9 @@ func (s *Server) Import(stream executorv1.Executor_ImportServer) error {
 			return err
 		}
 		if runtime == nil {
-			runtime, err = s.getRuntime(req.RuntimeId)
+			runtime, err = s.supervisor.GetRuntime(req.RuntimeId)
 			if err != nil {
 				return err
-			}
-			if !runtime.IsOpen() {
-				return fmt.Errorf("runtime not found")
 			}
 			importID = req.TransferId
 		}
@@ -201,15 +164,10 @@ func (s *Server) Export(req *executorv1.ExportRequest, stream executorv1.Executo
 	if err := validateExportRequest(req); err != nil {
 		return err
 	}
-	runtime, err := s.getRuntime(req.RuntimeId)
+	runtime, err := s.supervisor.GetRuntime(req.RuntimeId)
 	if err != nil {
 		return err
 	}
-	if !runtime.IsOpen() {
-		return fmt.Errorf("runtime not found")
-	}
-	runtime.Log().Publish(executorv1.NewExportStartEvent(req.RuntimeId, req.ExportId))
-	defer runtime.Log().Publish(executorv1.NewExportEndEvent(req.RuntimeId, req.ExportId))
 	sendCallback := func(header *executorv1.FileTransferHeader) {
 		if header.IsDir {
 			runtime.Log().Printf("Exported directory src=%s, dest=%s, mode=%s", header.SrcPath, header.DestPath, os.FileMode(header.Mode))
@@ -224,9 +182,7 @@ func (s *Server) Export(req *executorv1.ExportRequest, stream executorv1.Executo
 			runtime.Log().Printf("Skipped file export src=%s, excluded_by=%s", path, excludedBy)
 		}
 	}
-	sendOpts := []file.SendOpt{
-		file.WithSendCallback(sendCallback),
-		file.WithSkipCallback(skipCallback)}
+	sendOpts := []file.SendOpt{file.WithSendCallback(sendCallback), file.WithSkipCallback(skipCallback)}
 	if req.Opts != nil {
 		if len(req.Opts.Excludes) > 0 {
 			sendOpts = append(sendOpts, file.WithExcludes(req.Opts.Excludes))
@@ -238,6 +194,32 @@ func (s *Server) Export(req *executorv1.ExportRequest, stream executorv1.Executo
 	sender := file.NewSender(s.syslog, runtime.ReadFS(), stream, runtime.ID(), req.ExportId, sendOpts...)
 	_, err = sender.Send(req.SrcPath)
 	return err
+}
+
+func (s *Server) Heartbeat(ctx context.Context, req *executorv1.HeartbeatRequest) (*executorv1.HeartbeatResponse, error) {
+	if err := validateHeartbeatRequest(req); err != nil {
+		return nil, err
+	}
+	extendedBy, err := s.supervisor.ExtendRuntime(req.RuntimeId)
+	if err != nil {
+		return nil, err
+	}
+	return &executorv1.HeartbeatResponse{ExtendedBy: durationpb.New(extendedBy)}, nil
+}
+
+func (s *Server) Close(ctx context.Context, req *executorv1.CloseRequest) (*executorv1.CloseResponse, error) {
+	if err := validateCloseRequest(req); err != nil {
+		return nil, err
+	}
+	runtime, err := s.supervisor.GetRuntime(req.RuntimeId)
+	if err != nil {
+		return nil, err
+	}
+	s.syslog.Infow("Closing runtime", "runtime_id", req.RuntimeId)
+	s.supervisor.CloseRuntime(req.RuntimeId)
+	s.syslog.Infow("Closed runtime", "runtime_id", req.RuntimeId)
+	runtime.Log().Publish(&builtinv1.SyncPointReachedEvent{BarrierId: req.BarrierId})
+	return &executorv1.CloseResponse{}, nil
 }
 
 func (s *Server) Introspect(ctx context.Context, req *executorv1.IntrospectRequest) (*executorv1.IntrospectResponse, error) {
@@ -254,93 +236,8 @@ func (s *Server) Introspect(ctx context.Context, req *executorv1.IntrospectReque
 	}, nil
 }
 
-func (s *Server) Heartbeat(ctx context.Context, req *executorv1.HeartbeatRequest) (*executorv1.HeartbeatResponse, error) {
-	if err := validateHeartbeatRequest(req); err != nil {
-		return nil, err
-	}
-	runtime, err := s.getRuntime(req.RuntimeId)
-	if err != nil {
-		return nil, err
-	}
-	deadline := time.Now().Add(deadlineExtensionPeriod)
-	runtime.SetDeadline(deadline)
-	s.syslog.Debugf("Extended runtime %s deadline to: %s", runtime.ID(), deadline)
-	return &executorv1.HeartbeatResponse{ExtendedBy: durationpb.New(deadlineExtensionPeriod)}, nil
-}
-
-func (s *Server) Close(ctx context.Context, req *executorv1.CloseRequest) (*executorv1.CloseResponse, error) {
-	if err := validateCloseRequest(req); err != nil {
-		return nil, err
-	}
-	runtime, removed := s.findAndRemoveRuntime(req.RuntimeId)
-	if !removed {
-		return nil, fmt.Errorf("error runtime not found")
-	}
-	s.syslog.Infow("Closing runtime", "runtime_id", req.RuntimeId)
-	runtime.Log().Publish(executorv1.NewRuntimeCloseStartEvent(req.RuntimeId))
-	defer runtime.Log().Publish(executorv1.NewRuntimeCloseEndEvent(req.RuntimeId))
-	err := runtime.Close()
-	if err != nil {
-		s.syslog.Errorw("Ignoring error closing runtime: %v", err)
-	}
-	return &executorv1.CloseResponse{}, nil
-}
-
 func (s *Server) Stop() {
-	s.ctxCancel()
-	var runtimeIDs []string
-	s.mu.Lock()
-	for id, _ := range s.runtimes {
-		runtimeIDs = append(runtimeIDs, id)
-	}
-	s.mu.Unlock()
-	for _, id := range runtimeIDs {
-		s.Close(context.Background(), &executorv1.CloseRequest{RuntimeId: id})
-	}
-}
-
-// getRuntime returns the runtime with the specified ID.
-// If the runtime is not found, it returns an error.
-func (s *Server) getRuntime(id string) (*runtimeState, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	runtime, ok := s.runtimes[id]
-	if !ok {
-		return nil, fmt.Errorf("error runtime not found")
-	}
-	return runtime, nil
-}
-
-// findOrCreateRuntime tries to find the runtime with the specified ID.
-// If the runtime is found, it returns the runtime and "false" indicating that it already exists.
-// If the runtime is not found, it creates a new one, adds it to the list of runtimes, and then returns the new runtime and "true".
-func (s *Server) findOrCreateRuntime(runtimeID string) (*runtimeState, bool) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	runtime, ok := s.runtimes[runtimeID]
-	if ok {
-		return runtime, false
-	}
-	runtime = newRuntimeState(s.syslog)
-	s.runtimes[runtimeID] = runtime
-	return runtime, true
-}
-
-// findAndRemoveRuntime finds and removes the runtime with the specified runtime ID from the list of runtimes if it is open.
-// If the runtime is found, it returns the runtime and "true" indicating that it was removed.
-// If the runtime is not found, or it is found but not opened, it returns nil and "false".
-func (s *Server) findAndRemoveRuntime(runtimeID string) (*runtimeState, bool) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	runtime, ok := s.runtimes[runtimeID]
-	if !ok {
-		return nil, false
-	}
-	if !runtime.IsOpen() {
-		return nil, false
-	}
-	delete(s.runtimes, runtimeID)
-	return runtime, true
+	s.supervisor.Stop()
 }
 
 // getSysInfo returns system information about the executor server host.
@@ -350,64 +247,6 @@ func (s *Server) getSysInfo() *executorv1.SystemInfo {
 		Arch:          stdruntime.GOARCH,
 		TotalCpuCores: uint32(stdruntime.NumCPU()),
 		TotalMemory:   memory.TotalMemory(),
-	}
-}
-
-// watchdog continuously monitors the deadlines of runtime terminates any runtime that exceeds its deadline.
-func (s *Server) watchdog() {
-	for {
-		s.mu.Lock()
-		var (
-			deadlinedRuntimes []string
-			wakeupIn          = deadlineExtensionPeriod
-		)
-		for id, runtime := range s.runtimes {
-			deadline := runtime.Deadline()
-			if deadline.Before(time.Now()) {
-				deadlinedRuntimes = append(deadlinedRuntimes, id)
-				continue
-			}
-			deadlineIn := (time.Now().Sub(deadline)) + 1
-			if deadlineIn < wakeupIn {
-				wakeupIn = deadlineIn
-			}
-		}
-		s.mu.Unlock()
-		for _, id := range deadlinedRuntimes {
-			s.syslog.Warnf("Runtime %s has deadlined", id)
-			s.Close(context.Background(), &executorv1.CloseRequest{RuntimeId: id})
-		}
-		select {
-		case <-s.ctx.Done():
-			return
-		case <-time.After(wakeupIn):
-		}
-	}
-}
-
-func (s *Server) defaultRuntimeFactory() runtimeFactory {
-	return func(ctx context.Context, stream event.Stream, buildID string, runtimeID string, opts *executorv1.Opts) (runtime.Runtime, error) {
-		switch opts.Type {
-		case executorv1.RuntimeType_RUNTIME_HOST:
-			return host.NewRuntime(s.syslog, stream, buildID, runtimeID)
-		case executorv1.RuntimeType_RUNTIME_DOCKER:
-			dOpts := opts.GetDocker()
-			if dOpts == nil {
-				return nil, fmt.Errorf("error no docker options provided")
-			}
-			dClient, err := client.NewClientWithOpts(client.FromEnv)
-			if err != nil {
-				return nil, fmt.Errorf("error making Docker API client: %w", err)
-			}
-			dRuntime, err := docker.NewRuntime(s.syslog, stream, buildID, runtimeID, dOpts, dClient)
-			if err != nil {
-				dClient.Close()
-				return nil, fmt.Errorf("error creating Docker runtime: %w", err)
-			}
-			return dRuntime, nil
-		default:
-			return nil, fmt.Errorf("error unsupported runtime: %T", opts.Type)
-		}
 	}
 }
 

@@ -2,9 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
-	"github.com/knita-io/knita/internal/broker/fixed"
-	"github.com/knita-io/knita/internal/server"
 	"io"
 	"log"
 	"net"
@@ -15,6 +12,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -22,12 +20,15 @@ import (
 
 	brokerv1 "github.com/knita-io/knita/api/broker/v1"
 	directorv1 "github.com/knita-io/knita/api/director/v1"
+	builtinv1 "github.com/knita-io/knita/api/events/builtin/v1"
 	executorv1 "github.com/knita-io/knita/api/executor/v1"
 	"github.com/knita-io/knita/cmd/knita/ui"
+	"github.com/knita-io/knita/internal/broker/fixed"
 	"github.com/knita-io/knita/internal/director"
 	"github.com/knita-io/knita/internal/event"
 	"github.com/knita-io/knita/internal/executor"
 	"github.com/knita-io/knita/internal/file"
+	"github.com/knita-io/knita/internal/server"
 	"github.com/knita-io/knita/internal/version"
 )
 
@@ -140,11 +141,14 @@ var buildCMD = &cobra.Command{
 		if embeddedExecutorName == "" {
 			embeddedExecutorName = "knita-exec-local"
 		}
-		executor := executor.NewServer(syslog, executor.Config{Name: embeddedExecutorName, Labels: config.Executors.Local.Labels})
-		defer executor.Stop()
 
-		var executors []*fixed.ExecutorConfig
+		var (
+			executorSrv *executor.Server
+			executors   []*fixed.ExecutorConfig
+		)
 		if !config.Executors.Local.Disabled {
+			executorSrv = executor.NewServer(syslog, executor.Config{Name: embeddedExecutorName, Labels: config.Executors.Local.Labels})
+			defer executorSrv.Stop()
 			executors = append(executors, &fixed.ExecutorConfig{
 				Connection: &brokerv1.RuntimeConnectionInfo{
 					Transport: &brokerv1.RuntimeConnectionInfo_Unix{
@@ -176,7 +180,9 @@ var buildCMD = &cobra.Command{
 			grpc.ChainStreamInterceptor(
 				recovery.StreamServerInterceptor(),
 				server.MakeStreamServerLogInterceptor(syslog.Named("grpc"))))
-		executorv1.RegisterExecutorServer(srv, executor)
+		if executorSrv != nil {
+			executorv1.RegisterExecutorServer(srv, executorSrv)
+		}
 		brokerv1.RegisterRuntimeBrokerServer(srv, broker)
 		directorv1.RegisterDirectorServer(srv, directorServer)
 
@@ -195,12 +201,12 @@ var buildCMD = &cobra.Command{
 			defer uiManager.Stop()
 		}
 
-		buildLog.Stream().Subscribe(func(event *executorv1.Event) {
+		buildLog.Stream().Subscribe(func(event *event.Event) {
 			switch p := event.Payload.(type) {
-			case *executorv1.Event_Stdout:
-				buildOut.Write([]byte(fmt.Sprintf("%s", string(p.Stdout.Data))))
-			case *executorv1.Event_Stderr:
-				buildOut.Write([]byte(fmt.Sprintf("%s", string(p.Stderr.Data))))
+			case *builtinv1.StdoutEvent:
+				buildOut.Write([]byte(fmt.Sprintf("%s", string(p.Data))))
+			case *builtinv1.StderrEvent:
+				buildOut.Write([]byte(fmt.Sprintf("%s", string(p.Data))))
 			}
 		})
 
@@ -210,18 +216,24 @@ var buildCMD = &cobra.Command{
 			fmt.Sprintf("KNITA_BUILD_ID=%s", buildID),
 		}...)
 
-		execCmd := exec.Command(args[0], args[:1]...)
-		execCmd.Env = env
-		execCmd.Stdout = buildLog.Stdout()
-		execCmd.Stderr = buildLog.Stderr()
-		err = execCmd.Run()
+		err = build.Run(func() error {
+			execCmd := exec.Command(args[0], args[:1]...)
+			execCmd.Env = env
+			execCmd.Stdout = buildLog.Stdout()
+			execCmd.Stderr = buildLog.Stderr()
+			err := execCmd.Run()
+			if err != nil {
+				return fmt.Errorf("error running command: %w", err)
+			}
+			return nil
+		})
 		if !verbose {
 			uiManager.Stop()
 			fmt.Fprintf(os.Stdout, "\nBuild log available at: %s\n", buildLogPath)
 		}
 		if err != nil {
 			fmt.Fprintf(os.Stdout, "\n")
-			return fmt.Errorf("error running command: %w", err)
+			return err
 		}
 		return nil
 	},

@@ -1,3 +1,4 @@
+from . import event_pb2 as _event_pb2
 from google.protobuf import duration_pb2 as _duration_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
@@ -47,6 +48,16 @@ class IntrospectResponse(_message.Message):
     executor_info: ExecutorInfo
     labels: _containers.RepeatedScalarFieldContainer[str]
     def __init__(self, sys_info: _Optional[_Union[SystemInfo, _Mapping]] = ..., executor_info: _Optional[_Union[ExecutorInfo, _Mapping]] = ..., labels: _Optional[_Iterable[str]] = ...) -> None: ...
+
+class EventsRequest(_message.Message):
+    __slots__ = ("build_id", "runtime_id", "barrier_id")
+    BUILD_ID_FIELD_NUMBER: _ClassVar[int]
+    RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
+    BARRIER_ID_FIELD_NUMBER: _ClassVar[int]
+    build_id: str
+    runtime_id: str
+    barrier_id: str
+    def __init__(self, build_id: _Optional[str] = ..., runtime_id: _Optional[str] = ..., barrier_id: _Optional[str] = ...) -> None: ...
 
 class OpenRequest(_message.Message):
     __slots__ = ("build_id", "runtime_id", "opts")
@@ -156,14 +167,16 @@ class AWSECRAuth(_message.Message):
     def __init__(self, region: _Optional[str] = ..., aws_access_key_id: _Optional[str] = ..., aws_secret_key: _Optional[str] = ...) -> None: ...
 
 class ExecRequest(_message.Message):
-    __slots__ = ("runtime_id", "exec_id", "opts")
+    __slots__ = ("runtime_id", "exec_id", "barrier_id", "opts")
     RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
     EXEC_ID_FIELD_NUMBER: _ClassVar[int]
+    BARRIER_ID_FIELD_NUMBER: _ClassVar[int]
     OPTS_FIELD_NUMBER: _ClassVar[int]
     runtime_id: str
     exec_id: str
+    barrier_id: str
     opts: ExecOpts
-    def __init__(self, runtime_id: _Optional[str] = ..., exec_id: _Optional[str] = ..., opts: _Optional[_Union[ExecOpts, _Mapping]] = ...) -> None: ...
+    def __init__(self, runtime_id: _Optional[str] = ..., exec_id: _Optional[str] = ..., barrier_id: _Optional[str] = ..., opts: _Optional[_Union[ExecOpts, _Mapping]] = ...) -> None: ...
 
 class ExecOpts(_message.Message):
     __slots__ = ("name", "args", "env", "tags")
@@ -259,230 +272,13 @@ class ExportOpts(_message.Message):
     def __init__(self, dest_path: _Optional[str] = ..., excludes: _Optional[_Iterable[str]] = ...) -> None: ...
 
 class CloseRequest(_message.Message):
-    __slots__ = ("runtime_id",)
+    __slots__ = ("runtime_id", "barrier_id")
     RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
+    BARRIER_ID_FIELD_NUMBER: _ClassVar[int]
     runtime_id: str
-    def __init__(self, runtime_id: _Optional[str] = ...) -> None: ...
+    barrier_id: str
+    def __init__(self, runtime_id: _Optional[str] = ..., barrier_id: _Optional[str] = ...) -> None: ...
 
 class CloseResponse(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...
-
-class EventsRequest(_message.Message):
-    __slots__ = ("runtime_id",)
-    RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
-    runtime_id: str
-    def __init__(self, runtime_id: _Optional[str] = ...) -> None: ...
-
-class Event(_message.Message):
-    __slots__ = ("build_id", "group_name", "sequence", "runtime_tender_start", "runtime_tender_end", "runtime_settlement_start", "runtime_settlement_end", "runtime_open_start", "runtime_open_end", "exec_start", "exec_end", "import_start", "import_end", "export_start", "export_end", "stdout", "stderr", "runtime_close_start", "runtime_close_end")
-    BUILD_ID_FIELD_NUMBER: _ClassVar[int]
-    GROUP_NAME_FIELD_NUMBER: _ClassVar[int]
-    SEQUENCE_FIELD_NUMBER: _ClassVar[int]
-    RUNTIME_TENDER_START_FIELD_NUMBER: _ClassVar[int]
-    RUNTIME_TENDER_END_FIELD_NUMBER: _ClassVar[int]
-    RUNTIME_SETTLEMENT_START_FIELD_NUMBER: _ClassVar[int]
-    RUNTIME_SETTLEMENT_END_FIELD_NUMBER: _ClassVar[int]
-    RUNTIME_OPEN_START_FIELD_NUMBER: _ClassVar[int]
-    RUNTIME_OPEN_END_FIELD_NUMBER: _ClassVar[int]
-    EXEC_START_FIELD_NUMBER: _ClassVar[int]
-    EXEC_END_FIELD_NUMBER: _ClassVar[int]
-    IMPORT_START_FIELD_NUMBER: _ClassVar[int]
-    IMPORT_END_FIELD_NUMBER: _ClassVar[int]
-    EXPORT_START_FIELD_NUMBER: _ClassVar[int]
-    EXPORT_END_FIELD_NUMBER: _ClassVar[int]
-    STDOUT_FIELD_NUMBER: _ClassVar[int]
-    STDERR_FIELD_NUMBER: _ClassVar[int]
-    RUNTIME_CLOSE_START_FIELD_NUMBER: _ClassVar[int]
-    RUNTIME_CLOSE_END_FIELD_NUMBER: _ClassVar[int]
-    build_id: str
-    group_name: str
-    sequence: int
-    runtime_tender_start: RuntimeTenderStartEvent
-    runtime_tender_end: RuntimeTenderEndEvent
-    runtime_settlement_start: RuntimeSettlementStartEvent
-    runtime_settlement_end: RuntimeSettlementEndEvent
-    runtime_open_start: RuntimeOpenStartEvent
-    runtime_open_end: RuntimeOpenEndEvent
-    exec_start: ExecStartEvent
-    exec_end: ExecEndEvent
-    import_start: ImportStartEvent
-    import_end: ImportEndEvent
-    export_start: ExportStartEvent
-    export_end: ExportEndEvent
-    stdout: StdoutEvent
-    stderr: StderrEvent
-    runtime_close_start: RuntimeCloseStartEvent
-    runtime_close_end: RuntimeCloseEndEvent
-    def __init__(self, build_id: _Optional[str] = ..., group_name: _Optional[str] = ..., sequence: _Optional[int] = ..., runtime_tender_start: _Optional[_Union[RuntimeTenderStartEvent, _Mapping]] = ..., runtime_tender_end: _Optional[_Union[RuntimeTenderEndEvent, _Mapping]] = ..., runtime_settlement_start: _Optional[_Union[RuntimeSettlementStartEvent, _Mapping]] = ..., runtime_settlement_end: _Optional[_Union[RuntimeSettlementEndEvent, _Mapping]] = ..., runtime_open_start: _Optional[_Union[RuntimeOpenStartEvent, _Mapping]] = ..., runtime_open_end: _Optional[_Union[RuntimeOpenEndEvent, _Mapping]] = ..., exec_start: _Optional[_Union[ExecStartEvent, _Mapping]] = ..., exec_end: _Optional[_Union[ExecEndEvent, _Mapping]] = ..., import_start: _Optional[_Union[ImportStartEvent, _Mapping]] = ..., import_end: _Optional[_Union[ImportEndEvent, _Mapping]] = ..., export_start: _Optional[_Union[ExportStartEvent, _Mapping]] = ..., export_end: _Optional[_Union[ExportEndEvent, _Mapping]] = ..., stdout: _Optional[_Union[StdoutEvent, _Mapping]] = ..., stderr: _Optional[_Union[StderrEvent, _Mapping]] = ..., runtime_close_start: _Optional[_Union[RuntimeCloseStartEvent, _Mapping]] = ..., runtime_close_end: _Optional[_Union[RuntimeCloseEndEvent, _Mapping]] = ...) -> None: ...
-
-class RuntimeTenderStartEvent(_message.Message):
-    __slots__ = ("build_id", "tender_id", "opts")
-    BUILD_ID_FIELD_NUMBER: _ClassVar[int]
-    TENDER_ID_FIELD_NUMBER: _ClassVar[int]
-    OPTS_FIELD_NUMBER: _ClassVar[int]
-    build_id: str
-    tender_id: str
-    opts: Opts
-    def __init__(self, build_id: _Optional[str] = ..., tender_id: _Optional[str] = ..., opts: _Optional[_Union[Opts, _Mapping]] = ...) -> None: ...
-
-class RuntimeTenderEndEvent(_message.Message):
-    __slots__ = ("tender_id",)
-    TENDER_ID_FIELD_NUMBER: _ClassVar[int]
-    tender_id: str
-    def __init__(self, tender_id: _Optional[str] = ...) -> None: ...
-
-class RuntimeSettlementStartEvent(_message.Message):
-    __slots__ = ("tender_id", "contract_id", "runtime_id")
-    TENDER_ID_FIELD_NUMBER: _ClassVar[int]
-    CONTRACT_ID_FIELD_NUMBER: _ClassVar[int]
-    RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
-    tender_id: str
-    contract_id: str
-    runtime_id: str
-    def __init__(self, tender_id: _Optional[str] = ..., contract_id: _Optional[str] = ..., runtime_id: _Optional[str] = ...) -> None: ...
-
-class RuntimeSettlementEndEvent(_message.Message):
-    __slots__ = ("tender_id", "contract_id", "runtime_id")
-    TENDER_ID_FIELD_NUMBER: _ClassVar[int]
-    CONTRACT_ID_FIELD_NUMBER: _ClassVar[int]
-    RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
-    tender_id: str
-    contract_id: str
-    runtime_id: str
-    def __init__(self, tender_id: _Optional[str] = ..., contract_id: _Optional[str] = ..., runtime_id: _Optional[str] = ...) -> None: ...
-
-class RuntimeOpenStartEvent(_message.Message):
-    __slots__ = ("runtime_id", "opts")
-    RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
-    OPTS_FIELD_NUMBER: _ClassVar[int]
-    runtime_id: str
-    opts: Opts
-    def __init__(self, runtime_id: _Optional[str] = ..., opts: _Optional[_Union[Opts, _Mapping]] = ...) -> None: ...
-
-class RuntimeOpenEndEvent(_message.Message):
-    __slots__ = ("runtime_id",)
-    RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
-    runtime_id: str
-    def __init__(self, runtime_id: _Optional[str] = ...) -> None: ...
-
-class RuntimeCloseStartEvent(_message.Message):
-    __slots__ = ("runtime_id",)
-    RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
-    runtime_id: str
-    def __init__(self, runtime_id: _Optional[str] = ...) -> None: ...
-
-class RuntimeCloseEndEvent(_message.Message):
-    __slots__ = ("runtime_id",)
-    RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
-    runtime_id: str
-    def __init__(self, runtime_id: _Optional[str] = ...) -> None: ...
-
-class StdoutEvent(_message.Message):
-    __slots__ = ("data", "source")
-    DATA_FIELD_NUMBER: _ClassVar[int]
-    SOURCE_FIELD_NUMBER: _ClassVar[int]
-    data: bytes
-    source: LogEventSource
-    def __init__(self, data: _Optional[bytes] = ..., source: _Optional[_Union[LogEventSource, _Mapping]] = ...) -> None: ...
-
-class StderrEvent(_message.Message):
-    __slots__ = ("data", "source")
-    DATA_FIELD_NUMBER: _ClassVar[int]
-    SOURCE_FIELD_NUMBER: _ClassVar[int]
-    data: bytes
-    source: LogEventSource
-    def __init__(self, data: _Optional[bytes] = ..., source: _Optional[_Union[LogEventSource, _Mapping]] = ...) -> None: ...
-
-class LogEventSource(_message.Message):
-    __slots__ = ("runtime", "exec", "director")
-    RUNTIME_FIELD_NUMBER: _ClassVar[int]
-    EXEC_FIELD_NUMBER: _ClassVar[int]
-    DIRECTOR_FIELD_NUMBER: _ClassVar[int]
-    runtime: LogSourceRuntime
-    exec: LogSourceExec
-    director: LogSourceDirector
-    def __init__(self, runtime: _Optional[_Union[LogSourceRuntime, _Mapping]] = ..., exec: _Optional[_Union[LogSourceExec, _Mapping]] = ..., director: _Optional[_Union[LogSourceDirector, _Mapping]] = ...) -> None: ...
-
-class LogSourceRuntime(_message.Message):
-    __slots__ = ("runtime_id",)
-    RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
-    runtime_id: str
-    def __init__(self, runtime_id: _Optional[str] = ...) -> None: ...
-
-class LogSourceExec(_message.Message):
-    __slots__ = ("runtime_id", "exec_id", "system")
-    RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
-    EXEC_ID_FIELD_NUMBER: _ClassVar[int]
-    SYSTEM_FIELD_NUMBER: _ClassVar[int]
-    runtime_id: str
-    exec_id: str
-    system: bool
-    def __init__(self, runtime_id: _Optional[str] = ..., exec_id: _Optional[str] = ..., system: bool = ...) -> None: ...
-
-class LogSourceDirector(_message.Message):
-    __slots__ = ()
-    def __init__(self) -> None: ...
-
-class ExecStartEvent(_message.Message):
-    __slots__ = ("runtime_id", "exec_id", "opts", "tags")
-    class TagsEntry(_message.Message):
-        __slots__ = ("key", "value")
-        KEY_FIELD_NUMBER: _ClassVar[int]
-        VALUE_FIELD_NUMBER: _ClassVar[int]
-        key: str
-        value: str
-        def __init__(self, key: _Optional[str] = ..., value: _Optional[str] = ...) -> None: ...
-    RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
-    EXEC_ID_FIELD_NUMBER: _ClassVar[int]
-    OPTS_FIELD_NUMBER: _ClassVar[int]
-    TAGS_FIELD_NUMBER: _ClassVar[int]
-    runtime_id: str
-    exec_id: str
-    opts: ExecOpts
-    tags: _containers.ScalarMap[str, str]
-    def __init__(self, runtime_id: _Optional[str] = ..., exec_id: _Optional[str] = ..., opts: _Optional[_Union[ExecOpts, _Mapping]] = ..., tags: _Optional[_Mapping[str, str]] = ...) -> None: ...
-
-class ImportStartEvent(_message.Message):
-    __slots__ = ("runtime_id", "import_id")
-    RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
-    IMPORT_ID_FIELD_NUMBER: _ClassVar[int]
-    runtime_id: str
-    import_id: str
-    def __init__(self, runtime_id: _Optional[str] = ..., import_id: _Optional[str] = ...) -> None: ...
-
-class ImportEndEvent(_message.Message):
-    __slots__ = ("runtime_id", "import_id")
-    RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
-    IMPORT_ID_FIELD_NUMBER: _ClassVar[int]
-    runtime_id: str
-    import_id: str
-    def __init__(self, runtime_id: _Optional[str] = ..., import_id: _Optional[str] = ...) -> None: ...
-
-class ExportStartEvent(_message.Message):
-    __slots__ = ("runtime_id", "export_id")
-    RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
-    EXPORT_ID_FIELD_NUMBER: _ClassVar[int]
-    runtime_id: str
-    export_id: str
-    def __init__(self, runtime_id: _Optional[str] = ..., export_id: _Optional[str] = ...) -> None: ...
-
-class ExportEndEvent(_message.Message):
-    __slots__ = ("runtime_id", "export_id")
-    RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
-    EXPORT_ID_FIELD_NUMBER: _ClassVar[int]
-    runtime_id: str
-    export_id: str
-    def __init__(self, runtime_id: _Optional[str] = ..., export_id: _Optional[str] = ...) -> None: ...
-
-class ExecEndEvent(_message.Message):
-    __slots__ = ("runtime_id", "exec_id", "error", "exit_code")
-    RUNTIME_ID_FIELD_NUMBER: _ClassVar[int]
-    EXEC_ID_FIELD_NUMBER: _ClassVar[int]
-    ERROR_FIELD_NUMBER: _ClassVar[int]
-    EXIT_CODE_FIELD_NUMBER: _ClassVar[int]
-    runtime_id: str
-    exec_id: str
-    error: str
-    exit_code: int
-    def __init__(self, runtime_id: _Optional[str] = ..., exec_id: _Optional[str] = ..., error: _Optional[str] = ..., exit_code: _Optional[int] = ...) -> None: ...

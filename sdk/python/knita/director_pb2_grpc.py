@@ -4,7 +4,6 @@ import grpc
 import warnings
 
 from . import director_pb2 as director_dot_v1_dot_director__pb2
-from . import executor_pb2 as executor_dot_v1_dot_executor__pb2
 
 GRPC_GENERATED_VERSION = '1.63.0'
 GRPC_VERSION = grpc.__version__
@@ -41,29 +40,29 @@ class DirectorStub(object):
             channel: A grpc.Channel.
         """
         self.Open = channel.unary_unary(
-                '/director.Director/Open',
+                '/director.knita.io.Director/Open',
                 request_serializer=director_dot_v1_dot_director__pb2.OpenRequest.SerializeToString,
                 response_deserializer=director_dot_v1_dot_director__pb2.OpenResponse.FromString,
                 _registered_method=True)
         self.Exec = channel.unary_stream(
-                '/director.Director/Exec',
+                '/director.knita.io.Director/Exec',
                 request_serializer=director_dot_v1_dot_director__pb2.ExecRequest.SerializeToString,
                 response_deserializer=director_dot_v1_dot_director__pb2.ExecEvent.FromString,
                 _registered_method=True)
         self.Import = channel.unary_unary(
-                '/director.Director/Import',
+                '/director.knita.io.Director/Import',
                 request_serializer=director_dot_v1_dot_director__pb2.ImportRequest.SerializeToString,
                 response_deserializer=director_dot_v1_dot_director__pb2.ImportResponse.FromString,
                 _registered_method=True)
         self.Export = channel.unary_unary(
-                '/director.Director/Export',
+                '/director.knita.io.Director/Export',
                 request_serializer=director_dot_v1_dot_director__pb2.ExportRequest.SerializeToString,
                 response_deserializer=director_dot_v1_dot_director__pb2.ExportResponse.FromString,
                 _registered_method=True)
         self.Close = channel.unary_unary(
-                '/director.Director/Close',
-                request_serializer=executor_dot_v1_dot_executor__pb2.CloseRequest.SerializeToString,
-                response_deserializer=executor_dot_v1_dot_executor__pb2.CloseResponse.FromString,
+                '/director.knita.io.Director/Close',
+                request_serializer=director_dot_v1_dot_director__pb2.CloseRequest.SerializeToString,
+                response_deserializer=director_dot_v1_dot_director__pb2.CloseResponse.FromString,
                 _registered_method=True)
 
 
@@ -125,12 +124,12 @@ def add_DirectorServicer_to_server(servicer, server):
             ),
             'Close': grpc.unary_unary_rpc_method_handler(
                     servicer.Close,
-                    request_deserializer=executor_dot_v1_dot_executor__pb2.CloseRequest.FromString,
-                    response_serializer=executor_dot_v1_dot_executor__pb2.CloseResponse.SerializeToString,
+                    request_deserializer=director_dot_v1_dot_director__pb2.CloseRequest.FromString,
+                    response_serializer=director_dot_v1_dot_director__pb2.CloseResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'director.Director', rpc_method_handlers)
+            'director.knita.io.Director', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
 
 
@@ -152,7 +151,7 @@ class Director(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/director.Director/Open',
+            '/director.knita.io.Director/Open',
             director_dot_v1_dot_director__pb2.OpenRequest.SerializeToString,
             director_dot_v1_dot_director__pb2.OpenResponse.FromString,
             options,
@@ -179,7 +178,7 @@ class Director(object):
         return grpc.experimental.unary_stream(
             request,
             target,
-            '/director.Director/Exec',
+            '/director.knita.io.Director/Exec',
             director_dot_v1_dot_director__pb2.ExecRequest.SerializeToString,
             director_dot_v1_dot_director__pb2.ExecEvent.FromString,
             options,
@@ -206,7 +205,7 @@ class Director(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/director.Director/Import',
+            '/director.knita.io.Director/Import',
             director_dot_v1_dot_director__pb2.ImportRequest.SerializeToString,
             director_dot_v1_dot_director__pb2.ImportResponse.FromString,
             options,
@@ -233,7 +232,7 @@ class Director(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/director.Director/Export',
+            '/director.knita.io.Director/Export',
             director_dot_v1_dot_director__pb2.ExportRequest.SerializeToString,
             director_dot_v1_dot_director__pb2.ExportResponse.FromString,
             options,
@@ -260,9 +259,9 @@ class Director(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/director.Director/Close',
-            executor_dot_v1_dot_executor__pb2.CloseRequest.SerializeToString,
-            executor_dot_v1_dot_executor__pb2.CloseResponse.FromString,
+            '/director.knita.io.Director/Close',
+            director_dot_v1_dot_director__pb2.CloseRequest.SerializeToString,
+            director_dot_v1_dot_director__pb2.CloseResponse.FromString,
             options,
             channel_credentials,
             insecure,
