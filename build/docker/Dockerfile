@@ -21,7 +21,7 @@ RUN set -eux; \
     rm -rf /tmp/protoc
 
 RUN set -eux; \
-    GOLANG_VERSION=1.22.4; \
+    GOLANG_VERSION=1.23.0; \
     dpkgArch="$(dpkg --print-architecture)"; \
     case "$dpkgArch" in \
         amd64)  arch='amd64' ;; \

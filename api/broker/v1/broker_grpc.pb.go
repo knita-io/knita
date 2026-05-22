@@ -19,126 +19,126 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	RuntimeBroker_Tender_FullMethodName = "/broker.RuntimeBroker/Tender"
-	RuntimeBroker_Settle_FullMethodName = "/broker.RuntimeBroker/Settle"
+	Broker_Tender_FullMethodName = "/broker.knita.io.Broker/Tender"
+	Broker_Settle_FullMethodName = "/broker.knita.io.Broker/Settle"
 )
 
-// RuntimeBrokerClient is the client API for RuntimeBroker service.
+// BrokerClient is the client API for Broker service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type RuntimeBrokerClient interface {
-	Tender(ctx context.Context, in *RuntimeTender, opts ...grpc.CallOption) (*RuntimeContracts, error)
-	Settle(ctx context.Context, in *RuntimeContract, opts ...grpc.CallOption) (*RuntimeSettlement, error)
+type BrokerClient interface {
+	Tender(ctx context.Context, in *TenderRequest, opts ...grpc.CallOption) (*TenderResponse, error)
+	Settle(ctx context.Context, in *SettlementRequest, opts ...grpc.CallOption) (*SettlementResponse, error)
 }
 
-type runtimeBrokerClient struct {
+type brokerClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewRuntimeBrokerClient(cc grpc.ClientConnInterface) RuntimeBrokerClient {
-	return &runtimeBrokerClient{cc}
+func NewBrokerClient(cc grpc.ClientConnInterface) BrokerClient {
+	return &brokerClient{cc}
 }
 
-func (c *runtimeBrokerClient) Tender(ctx context.Context, in *RuntimeTender, opts ...grpc.CallOption) (*RuntimeContracts, error) {
-	out := new(RuntimeContracts)
-	err := c.cc.Invoke(ctx, RuntimeBroker_Tender_FullMethodName, in, out, opts...)
+func (c *brokerClient) Tender(ctx context.Context, in *TenderRequest, opts ...grpc.CallOption) (*TenderResponse, error) {
+	out := new(TenderResponse)
+	err := c.cc.Invoke(ctx, Broker_Tender_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *runtimeBrokerClient) Settle(ctx context.Context, in *RuntimeContract, opts ...grpc.CallOption) (*RuntimeSettlement, error) {
-	out := new(RuntimeSettlement)
-	err := c.cc.Invoke(ctx, RuntimeBroker_Settle_FullMethodName, in, out, opts...)
+func (c *brokerClient) Settle(ctx context.Context, in *SettlementRequest, opts ...grpc.CallOption) (*SettlementResponse, error) {
+	out := new(SettlementResponse)
+	err := c.cc.Invoke(ctx, Broker_Settle_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// RuntimeBrokerServer is the server API for RuntimeBroker service.
-// All implementations must embed UnimplementedRuntimeBrokerServer
+// BrokerServer is the server API for Broker service.
+// All implementations must embed UnimplementedBrokerServer
 // for forward compatibility
-type RuntimeBrokerServer interface {
-	Tender(context.Context, *RuntimeTender) (*RuntimeContracts, error)
-	Settle(context.Context, *RuntimeContract) (*RuntimeSettlement, error)
-	mustEmbedUnimplementedRuntimeBrokerServer()
+type BrokerServer interface {
+	Tender(context.Context, *TenderRequest) (*TenderResponse, error)
+	Settle(context.Context, *SettlementRequest) (*SettlementResponse, error)
+	mustEmbedUnimplementedBrokerServer()
 }
 
-// UnimplementedRuntimeBrokerServer must be embedded to have forward compatible implementations.
-type UnimplementedRuntimeBrokerServer struct {
+// UnimplementedBrokerServer must be embedded to have forward compatible implementations.
+type UnimplementedBrokerServer struct {
 }
 
-func (UnimplementedRuntimeBrokerServer) Tender(context.Context, *RuntimeTender) (*RuntimeContracts, error) {
+func (UnimplementedBrokerServer) Tender(context.Context, *TenderRequest) (*TenderResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Tender not implemented")
 }
-func (UnimplementedRuntimeBrokerServer) Settle(context.Context, *RuntimeContract) (*RuntimeSettlement, error) {
+func (UnimplementedBrokerServer) Settle(context.Context, *SettlementRequest) (*SettlementResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Settle not implemented")
 }
-func (UnimplementedRuntimeBrokerServer) mustEmbedUnimplementedRuntimeBrokerServer() {}
+func (UnimplementedBrokerServer) mustEmbedUnimplementedBrokerServer() {}
 
-// UnsafeRuntimeBrokerServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to RuntimeBrokerServer will
+// UnsafeBrokerServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to BrokerServer will
 // result in compilation errors.
-type UnsafeRuntimeBrokerServer interface {
-	mustEmbedUnimplementedRuntimeBrokerServer()
+type UnsafeBrokerServer interface {
+	mustEmbedUnimplementedBrokerServer()
 }
 
-func RegisterRuntimeBrokerServer(s grpc.ServiceRegistrar, srv RuntimeBrokerServer) {
-	s.RegisterService(&RuntimeBroker_ServiceDesc, srv)
+func RegisterBrokerServer(s grpc.ServiceRegistrar, srv BrokerServer) {
+	s.RegisterService(&Broker_ServiceDesc, srv)
 }
 
-func _RuntimeBroker_Tender_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RuntimeTender)
+func _Broker_Tender_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TenderRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RuntimeBrokerServer).Tender(ctx, in)
+		return srv.(BrokerServer).Tender(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RuntimeBroker_Tender_FullMethodName,
+		FullMethod: Broker_Tender_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RuntimeBrokerServer).Tender(ctx, req.(*RuntimeTender))
+		return srv.(BrokerServer).Tender(ctx, req.(*TenderRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RuntimeBroker_Settle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RuntimeContract)
+func _Broker_Settle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SettlementRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RuntimeBrokerServer).Settle(ctx, in)
+		return srv.(BrokerServer).Settle(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RuntimeBroker_Settle_FullMethodName,
+		FullMethod: Broker_Settle_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RuntimeBrokerServer).Settle(ctx, req.(*RuntimeContract))
+		return srv.(BrokerServer).Settle(ctx, req.(*SettlementRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// RuntimeBroker_ServiceDesc is the grpc.ServiceDesc for RuntimeBroker service.
+// Broker_ServiceDesc is the grpc.ServiceDesc for Broker service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var RuntimeBroker_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "broker.RuntimeBroker",
-	HandlerType: (*RuntimeBrokerServer)(nil),
+var Broker_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "broker.knita.io.Broker",
+	HandlerType: (*BrokerServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "Tender",
-			Handler:    _RuntimeBroker_Tender_Handler,
+			Handler:    _Broker_Tender_Handler,
 		},
 		{
 			MethodName: "Settle",
-			Handler:    _RuntimeBroker_Settle_Handler,
+			Handler:    _Broker_Settle_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

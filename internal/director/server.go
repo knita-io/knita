@@ -9,7 +9,8 @@ import (
 	"go.uber.org/zap"
 
 	directorv1 "github.com/knita-io/knita/api/director/v1"
-	executorv1 "github.com/knita-io/knita/api/executor/v1"
+	builtinv1 "github.com/knita-io/knita/api/events/builtin/v1"
+	"github.com/knita-io/knita/internal/event"
 )
 
 type Server struct {
@@ -33,7 +34,7 @@ func (s *Server) Open(ctx context.Context, req *directorv1.OpenRequest) (*direct
 	if err := s.validateOpenRequest(req); err != nil {
 		return nil, err
 	}
-	runtime, err := s.build.Runtime(ctx, req.Opts)
+	runtime, err := s.build.OpenRuntime(ctx, req.Opts)
 	if err != nil {
 		return nil, err
 	}
@@ -60,46 +61,39 @@ func (s *Server) Exec(req *directorv1.ExecRequest, stream directorv1.Director_Ex
 		closed bool
 		execID = uuid.New().String()
 	)
-	done := s.build.Log().Stream().Subscribe(func(event *executorv1.Event) {
+	done := s.build.Log().Stream().Subscribe(func(event *event.Event) {
 		if closed {
 			return
 		}
-		execEvent := &directorv1.ExecEvent{}
 		switch p := event.Payload.(type) {
-		case *executorv1.Event_ExecStart:
-			if p.ExecStart.RuntimeId != runtime.ID() || p.ExecStart.ExecId != execID {
+		case *builtinv1.ExecStartEvent:
+			if p.RuntimeId != runtime.ID() || p.ExecId != execID {
 				return
 			}
-			execEvent.Payload = &directorv1.ExecEvent_ExecStart{ExecStart: &directorv1.ExecStartEvent{}}
-		case *executorv1.Event_Stdout:
-			src, ok := p.Stdout.Source.Source.(*executorv1.LogEventSource_Exec)
+		case *builtinv1.StdoutEvent:
+			src, ok := p.Source.Source.(*builtinv1.LogEventSource_Exec)
 			if !ok || src.Exec.RuntimeId != runtime.ID() || src.Exec.ExecId != execID || src.Exec.System {
 				return
 			}
-			execEvent.Payload = &directorv1.ExecEvent_Stdout{Stdout: &directorv1.ExecStdoutEvent{
-				Data: p.Stdout.Data,
-			}}
-		case *executorv1.Event_Stderr:
-			src, ok := p.Stderr.Source.Source.(*executorv1.LogEventSource_Exec)
+		case *builtinv1.StderrEvent:
+			src, ok := p.Source.Source.(*builtinv1.LogEventSource_Exec)
 			if !ok || src.Exec.RuntimeId != runtime.ID() || src.Exec.ExecId != execID || src.Exec.System {
 				return
 			}
-			execEvent.Payload = &directorv1.ExecEvent_Stderr{Stderr: &directorv1.ExecStderrEvent{
-				Data: p.Stderr.Data,
-			}}
-		case *executorv1.Event_ExecEnd:
-			if p.ExecEnd.RuntimeId != runtime.ID() || p.ExecEnd.ExecId != execID {
+		case *builtinv1.ExecEndEvent:
+			if p.RuntimeId != runtime.ID() || p.ExecId != execID {
 				return
 			}
-			execEvent.Payload = &directorv1.ExecEvent_ExecEnd{ExecEnd: &directorv1.ExecEndEvent{
-				Error:    p.ExecEnd.Error,
-				ExitCode: p.ExecEnd.ExitCode,
-			}}
 		default:
 			return
 		}
-		s.syslog.Debugf("Forwarded exec event to SDK: %T", execEvent.Payload)
-		if err := stream.Send(execEvent); err != nil {
+		out, err := event.Marshal()
+		if err != nil {
+			s.syslog.Warnf("Failed to marshal event; unable to forward: %v", err)
+			return
+		}
+		s.syslog.Debugf("Forwarded exec event to SDK: %T", event.Payload)
+		if err := stream.Send(out); err != nil {
 			s.syslog.Errorf("Exec stream closed early: %v", err)
 			closed = true
 		}
@@ -122,7 +116,7 @@ func (s *Server) Import(ctx context.Context, req *directorv1.ImportRequest) (*di
 	if err != nil {
 		return nil, err
 	}
-	err = runtime.Import(ctx, req.SrcPath, req.Opts)
+	err = runtime.Import(ctx, req.Opts)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +132,7 @@ func (s *Server) Export(ctx context.Context, req *directorv1.ExportRequest) (*di
 	if err != nil {
 		return nil, err
 	}
-	err = runtime.Export(ctx, req.SrcPath, req.Opts)
+	err = runtime.Export(ctx, req.Opts)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +140,7 @@ func (s *Server) Export(ctx context.Context, req *directorv1.ExportRequest) (*di
 }
 
 // Close the runtime. The runtime cannot be reused after a call to close.
-func (s *Server) Close(ctx context.Context, req *executorv1.CloseRequest) (*executorv1.CloseResponse, error) {
+func (s *Server) Close(ctx context.Context, req *directorv1.CloseRequest) (*directorv1.CloseResponse, error) {
 	if err := validateCloseRequest(req); err != nil {
 		return nil, err
 	}
@@ -163,7 +157,7 @@ func (s *Server) Close(ctx context.Context, req *executorv1.CloseRequest) (*exec
 	if err != nil {
 		return nil, err
 	}
-	return &executorv1.CloseResponse{}, nil
+	return &directorv1.CloseResponse{}, nil
 }
 
 // getRuntime returns the runtime with the specified ID.
@@ -219,7 +213,10 @@ func validateImportRequest(req *directorv1.ImportRequest) error {
 	if req.RuntimeId == "" {
 		return fmt.Errorf("empty runtime_id")
 	}
-	if req.SrcPath == "" {
+	if req.Opts == nil {
+		return fmt.Errorf("empty opts")
+	}
+	if req.Opts.SrcPath == "" {
 		return fmt.Errorf("empty source path")
 	}
 	// NOTE: An empty dest path is valid
@@ -234,7 +231,10 @@ func validateExportRequest(req *directorv1.ExportRequest) error {
 	if req.RuntimeId == "" {
 		return fmt.Errorf("empty runtime_id")
 	}
-	if req.SrcPath == "" {
+	if req.Opts == nil {
+		return fmt.Errorf("empty opts")
+	}
+	if req.Opts.SrcPath == "" {
 		return fmt.Errorf("empty src_path")
 	}
 	// NOTE: An empty dest path is valid
@@ -242,7 +242,7 @@ func validateExportRequest(req *directorv1.ExportRequest) error {
 }
 
 // validateCloseRequest validates a CloseRequest.
-func validateCloseRequest(req *executorv1.CloseRequest) error {
+func validateCloseRequest(req *directorv1.CloseRequest) error {
 	if req == nil {
 		return fmt.Errorf("nil request")
 	}

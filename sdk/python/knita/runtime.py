@@ -1,9 +1,54 @@
 import os
 from enum import Enum
-
+from typing import Optional, List
+from google.protobuf.any_pb2 import Any
 from . import director_pb2
 from . import director_pb2_grpc
 from . import executor_pb2
+from . import builtin_pb2
+
+
+class Operator(str, Enum):
+    """Operator values for a label-selector Requirement (matches the gRPC proto)."""
+    in_ = "in"
+    not_in = "not-in"
+    exists = "exists"
+    does_not_exist = "not-exists"
+
+
+class Requirement:
+    """A single matchExpression entry on a LabelSelector."""
+
+    def __init__(self, key: str, operator: Operator, values: Optional[List[str]] = None):
+        self.key = key
+        self.operator = operator
+        self.values = values or []
+
+
+def _opts_meta(labels: Optional[dict] = None,
+               annotations: Optional[dict] = None) -> Optional[executor_pb2.OptsMeta]:
+    """Build an OptsMeta from labels/annotations, or return None if both are empty."""
+    if not labels and not annotations:
+        return None
+    return executor_pb2.OptsMeta(labels=labels or {}, annotations=annotations or {})
+
+
+def _label_selector(match_labels: Optional[dict],
+                    match_expressions: Optional[List[Requirement]]) -> Optional[executor_pb2.LabelSelector]:
+    """Build a LabelSelector from a matchLabels dict and a list of Requirement, or None."""
+    if not match_labels and not match_expressions:
+        return None
+    op_map = {
+        Operator.in_: executor_pb2.LabelSelectorRequirement.IN,
+        Operator.not_in: executor_pb2.LabelSelectorRequirement.NOT_IN,
+        Operator.exists: executor_pb2.LabelSelectorRequirement.EXISTS,
+        Operator.does_not_exist: executor_pb2.LabelSelectorRequirement.DOES_NOT_EXIST,
+    }
+    exprs = []
+    for r in match_expressions or []:
+        exprs.append(executor_pb2.LabelSelectorRequirement(
+            key=r.key, operator=op_map[r.operator], values=r.values))
+    return executor_pb2.LabelSelector(matchLabels=match_labels or {}, matchExpressions=exprs)
 
 
 class RuntimeType(str, Enum):
@@ -97,41 +142,64 @@ class Runtime:
         else:
             return os.path.join(self.__remote_work_directory, rel_path)
 
-    def import_(self, src: str, dest: str = None, excludes: [str] = None):
+    def import_(self, src: str, dest: str = None, excludes: [str] = None,
+                display_name: str = "", labels: Optional[dict] = None,
+                annotations: Optional[dict] = None):
         """Import files from the local work directory into the runtime's remote work directory. src must be a
         relative path, and may be a glob (doublestar syntax supported). By default, all files identified by src will
         be copied to their original location on the remote. Use ImportOpts.dest to override this."""
-        req = director_pb2.ImportRequest(runtime_id=self.__runtime_id, src_path=src,
-                                         opts=director_pb2.ImportOpts(dest_path=dest, excludes=excludes))
+        req = director_pb2.ImportRequest(
+            runtime_id=self.__runtime_id,
+            opts=director_pb2.ImportOpts(src_path=src, dest_path=dest, excludes=excludes,
+                                         display_name=display_name,
+                                         meta=_opts_meta(labels, annotations)))
         self.__director_stub.Import(req)
 
-    def export(self, src: str, dest: str = None, excludes: [str] = None):
+    def export(self, src: str, dest: str = None, excludes: [str] = None,
+               display_name: str = "", labels: Optional[dict] = None,
+               annotations: Optional[dict] = None):
         """Export files from the runtime's remote work directory into the local work directory. src must be a
         relative path, and may be a glob (doublestar syntax supported). By default, all files identified by src will
         be copied to their original location locally. Use ExportOpts.dest to override this."""
-        req = director_pb2.ExportRequest(runtime_id=self.__runtime_id, src_path=src,
-                                         opts=director_pb2.ExportOpts(dest_path=dest, excludes=excludes))
+        req = director_pb2.ExportRequest(
+            runtime_id=self.__runtime_id,
+            opts=director_pb2.ExportOpts(src_path=src, dest_path=dest, excludes=excludes,
+                                         display_name=display_name,
+                                         meta=_opts_meta(labels, annotations)))
         self.__director_stub.Export(req)
 
-    def exec(self, name: str, args: [str] = None, env: [str] = None, tags: dict[str, str] = None, stdout=None,
-             stderr=None):
+    def exec(self, name: str, args: [str] = None, env: [str] = None, display_name: str = "", stdout=None,
+             stderr=None, labels: Optional[dict] = None, annotations: Optional[dict] = None):
         """Exec executes a command inside the remote runtime.
-        Check the returned ExecResponse to see the command's exit code (a non-zero code is not an exception)."""
-        req = director_pb2.ExecRequest(runtime_id=self.__runtime_id,
-                                       opts=executor_pb2.ExecOpts(name=name, args=args, env=env, tags=tags))
+        Raises ExecException if the command finishes with a non-zero code."""
+        req = director_pb2.ExecRequest(
+            runtime_id=self.__runtime_id,
+            opts=executor_pb2.ExecOpts(name=name, args=args, env=env,
+                                       display_name=display_name,
+                                       meta=_opts_meta(labels, annotations)))
         for event in self.__director_stub.Exec(req):
-            field = event.WhichOneof('payload')
-            payload = getattr(event, field)
-            if field == 'exec_end':
-                if payload.exit_code is not 0:
-                    raise ExecException(payload.exit_code)
-                return
-            elif field == 'stdout':
-                if stdout is not None:
-                    stdout.write(payload.data.decode())
-            elif field == 'stderr':
-                if stderr is not None:
-                    stderr.write(payload.data.decode())
+            any_msg: Any = event.payload
+            type_name = any_msg.TypeName()
+            if type_name == builtin_pb2.StdoutEvent.DESCRIPTOR.full_name:
+                ev = builtin_pb2.StdoutEvent()
+                any_msg.Unpack(ev)
+                if stdout:
+                    stdout.write(ev.data.decode())
+                continue
+            if type_name == builtin_pb2.StderrEvent.DESCRIPTOR.full_name:
+                ev = builtin_pb2.StderrEvent()
+                any_msg.Unpack(ev)
+                if stderr:
+                    stderr.write(ev.data.decode())
+                continue
+            if type_name == builtin_pb2.ExecEndEvent.DESCRIPTOR.full_name:
+                ev = builtin_pb2.ExecEndEvent()
+                any_msg.Unpack(ev)
+                if ev.HasField("result"):
+                    code = ev.result.exit_code
+                    if code != 0:
+                        raise ExecException(code)
+                    return
 
     def close(self):
         """Close the runtime. After a call to close the runtime can no longer be used."""

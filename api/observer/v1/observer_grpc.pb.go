@@ -8,7 +8,7 @@ package v1
 
 import (
 	context "context"
-	v1 "github.com/knita-io/knita/api/executor/v1"
+	v1 "github.com/knita-io/knita/api/events/v1"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -20,7 +20,7 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Observer_Watch_FullMethodName = "/observer.Observer/Watch"
+	Observer_Watch_FullMethodName = "/observer.knita.io.Observer/Watch"
 )
 
 // ObserverClient is the client API for Observer service.
@@ -130,7 +130,7 @@ func (x *observerWatchServer) Recv() (*v1.Event, error) {
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Observer_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "observer.Observer",
+	ServiceName: "observer.knita.io.Observer",
 	HandlerType: (*ObserverServer)(nil),
 	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{

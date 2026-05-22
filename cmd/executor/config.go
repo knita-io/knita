@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/rs/xid"
 	"os"
+
+	"github.com/rs/xid"
 
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -16,7 +17,7 @@ type config struct {
 	// This should be unique across all executors.
 	Name string `mapstructure:"name"`
 	// Labels the executor will advertise to the broker.
-	Labels []string `mapstructure:"labels"`
+	Labels map[string]string `mapstructure:"labels"`
 }
 
 func fillDefaultValues(config *config) *config {

@@ -4,13 +4,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/knita-io/knita/sdk/go/knita/runtime/export"
 	"io"
 	"path/filepath"
 
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoregistry"
+	"google.golang.org/protobuf/types/known/anypb"
+
 	directorv1 "github.com/knita-io/knita/api/director/v1"
+	builtinv1 "github.com/knita-io/knita/api/events/builtin/v1"
 	executorv1 "github.com/knita-io/knita/api/executor/v1"
 	"github.com/knita-io/knita/sdk/go/knita/runtime/exec"
+	"github.com/knita-io/knita/sdk/go/knita/runtime/export"
 	import_ "github.com/knita-io/knita/sdk/go/knita/runtime/import"
 )
 
@@ -63,9 +68,10 @@ func (c *Runtime) MustImport(src string, opts ...import_.Opt) {
 func (c *Runtime) ImportWithContext(ctx context.Context, src string, opts ...import_.Opt) error {
 	o := &directorv1.ImportOpts{}
 	for _, opt := range opts {
-		opt.Apply(o)
+		opt(o)
 	}
-	_, err := c.client.Import(ctx, &directorv1.ImportRequest{RuntimeId: c.runtimeID, SrcPath: src, Opts: o})
+	o.SrcPath = src
+	_, err := c.client.Import(ctx, &directorv1.ImportRequest{RuntimeId: c.runtimeID, Opts: o})
 	return err
 }
 
@@ -88,9 +94,10 @@ func (c *Runtime) MustExport(src string, opts ...export.Opt) {
 func (c *Runtime) ExportWithContext(ctx context.Context, src string, opts ...export.Opt) error {
 	o := &directorv1.ExportOpts{}
 	for _, opt := range opts {
-		opt.Apply(o)
+		opt(o)
 	}
-	_, err := c.client.Export(ctx, &directorv1.ExportRequest{RuntimeId: c.runtimeID, SrcPath: src, Opts: o})
+	o.SrcPath = src
+	_, err := c.client.Export(ctx, &directorv1.ExportRequest{RuntimeId: c.runtimeID, Opts: o})
 	return err
 }
 
@@ -116,7 +123,7 @@ func (c *Runtime) MustExec(opts ...exec.Opt) *executorv1.ExecResponse {
 func (c *Runtime) ExecWithContext(ctx context.Context, opts ...exec.Opt) (*executorv1.ExecResponse, error) {
 	o := &exec.Opts{ExecOpts: &executorv1.ExecOpts{}}
 	for _, opt := range opts {
-		opt.Apply(o)
+		opt(o)
 	}
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -136,17 +143,33 @@ func (c *Runtime) ExecWithContext(ctx context.Context, opts ...exec.Opt) (*execu
 			}
 			return nil, err
 		}
-		switch p := msg.Payload.(type) {
-		case *directorv1.ExecEvent_Stdout:
+		if msg.Payload == nil {
+			continue
+		}
+		payload, err := anypb.UnmarshalNew(msg.Payload, proto.UnmarshalOptions{})
+		if err != nil {
+			if errors.Is(err, protoregistry.NotFound) {
+				continue
+			} else {
+				return nil, err
+			}
+		}
+		switch p := payload.(type) {
+		case *builtinv1.StdoutEvent:
 			if o.Stdout != nil {
-				o.Stdout.Write(p.Stdout.Data)
+				o.Stdout.Write(p.Data)
 			}
-		case *directorv1.ExecEvent_Stderr:
+		case *builtinv1.StderrEvent:
 			if o.Stderr != nil {
-				o.Stderr.Write(p.Stderr.Data)
+				o.Stderr.Write(p.Data)
 			}
-		case *directorv1.ExecEvent_ExecEnd:
-			execEnd = &executorv1.ExecResponse{ExitCode: p.ExecEnd.ExitCode}
+		case *builtinv1.ExecEndEvent:
+			switch res := p.Status.(type) {
+			case *builtinv1.ExecEndEvent_Result:
+				execEnd = &executorv1.ExecResponse{ExitCode: res.Result.ExitCode}
+			case *builtinv1.ExecEndEvent_Error:
+				return nil, fmt.Errorf("error in exec: %v", res.Error.Message)
+			}
 		}
 	}
 }
@@ -166,6 +189,6 @@ func (c *Runtime) MustClose() {
 
 // CloseWithContext is like Close, but it allows a context to be set.
 func (c *Runtime) CloseWithContext(ctx context.Context) error {
-	_, err := c.client.Close(ctx, &executorv1.CloseRequest{RuntimeId: c.runtimeID})
+	_, err := c.client.Close(ctx, &directorv1.CloseRequest{RuntimeId: c.runtimeID})
 	return err
 }

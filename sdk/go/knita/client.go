@@ -17,50 +17,32 @@ import (
 // FatalFunc is a function that will be called when a MustXXX function encounters an error.
 type FatalFunc func(err error)
 
-const (
-	// NameTag is the standard name tag that is recognized by convention by other Knita components.
-	// e.g. If a runtime or exec command is tagged with name, the name will be displayed in the Knita CLI.
-	NameTag = "name"
-)
-
 // Log is a simple logger for the Knita SDK to use to write logs.
 type Log interface {
 	Printf(format string, args ...interface{})
 }
 
+// Opt configures the Options.
+type Opt func(*Opts)
+
+// Opts holds customizable behaviors.
 type Opts struct {
 	Log       Log
 	FatalFunc FatalFunc
 }
 
-type Opt interface {
-	Apply(opts *Opts)
-}
-
-type withLog struct {
-	log Log
-}
-
-func (o *withLog) Apply(opts *Opts) {
-	opts.Log = o.log
-}
-
 // WithLog sets a custom Log that Knita will write to.
 func WithLog(log Log) Opt {
-	return &withLog{log: log}
+	return func(o *Opts) {
+		o.Log = log
+	}
 }
 
-type withFatalFunc struct {
-	fatalFunc FatalFunc
-}
-
-func (o *withFatalFunc) Apply(opts *Opts) {
-	opts.FatalFunc = o.fatalFunc
-}
-
-// WithFatalFunc sets a custom function that all MustXXX functions will call when they encounter an error.
+// WithFatalFunc sets a custom function that all MustXXX functions will call on errors.
 func WithFatalFunc(fn FatalFunc) Opt {
-	return &withFatalFunc{fatalFunc: fn}
+	return func(o *Opts) {
+		o.FatalFunc = fn
+	}
 }
 
 type defaultLog struct{}
@@ -129,11 +111,11 @@ func (c *Client) MustRuntime(opts ...runtime.Opt) *Runtime {
 
 // RuntimeWithContext is like Runtime, but it allows a context to be set.
 func (c *Client) RuntimeWithContext(ctx context.Context, opts ...runtime.Opt) (*Runtime, error) {
-	o := &executorv1.Opts{}
+	req := &directorv1.OpenRequest{BuildId: c.buildID, Opts: &executorv1.RuntimeOpts{}}
 	for _, opt := range opts {
-		opt.Apply(o)
+		opt(req)
 	}
-	res, err := c.client.Open(ctx, &directorv1.OpenRequest{BuildId: c.buildID, Opts: o})
+	res, err := c.client.Open(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("error opening runtime: %w", err)
 	}
@@ -150,7 +132,7 @@ func (c *Client) RuntimeWithContext(ctx context.Context, opts ...runtime.Opt) (*
 func makeOpts(opts ...Opt) *Opts {
 	o := &Opts{}
 	for _, opt := range opts {
-		opt.Apply(o)
+		opt(o)
 	}
 	if o.Log == nil {
 		o.Log = &defaultLog{}

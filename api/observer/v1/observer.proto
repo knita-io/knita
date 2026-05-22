@@ -1,13 +1,13 @@
 syntax = "proto3";
 
-package observer;
+package observer.knita.io;
 
 option go_package = "github.com/knita-io/knita/api/observer/v1";
 
-import "executor/v1/executor.proto";
+import "events/v1/event.proto";
 
 service Observer {
-  rpc Watch(stream executor.Event) returns (WatchResponse);
+  rpc Watch(stream events.knita.io.Event) returns (WatchResponse);
 }
 
 message WatchResponse {}

@@ -1,4 +1,5 @@
 import os
+from typing import Optional, List
 import grpc
 
 from . import director_pb2
@@ -32,15 +33,26 @@ class Client:
 
     def runtime(self,
                 type: runtime.RuntimeType,
-                tags: dict[str, str] = None,
-                runs_on: [str] = None,
+                display_name: str = "",
                 docker_image: str = None,
                 docker_pull_strategy: runtime.DockerPullStrategy = None,
                 docker_basic_auth: runtime.DockerBasicAuth = None,
-                docker_aws_ecr_auth: runtime.DockerAWSECRAuth = None):
-        """Opens a new remote runtime configured based on options."""
+                docker_aws_ecr_auth: runtime.DockerAWSECRAuth = None,
+                labels: Optional[dict] = None,
+                annotations: Optional[dict] = None,
+                runs_on: Optional[dict] = None,
+                runs_on_expressions: Optional[List[runtime.Requirement]] = None):
+        """Opens a new remote runtime configured based on options.
 
-        opts = executor_pb2.Opts(tags=tags, labels=runs_on)
+        labels / annotations attach metadata to the runtime (carried through to its events).
+        runs_on is a dict of matchLabels constraining which executor can host the runtime.
+        runs_on_expressions is a list of label-selector Requirement entries (more expressive
+        matching). Both runs_on and runs_on_expressions can be combined."""
+
+        opts = executor_pb2.RuntimeOpts(
+            display_name=display_name,
+            meta=runtime._opts_meta(labels, annotations),
+            label_selector=runtime._label_selector(runs_on, runs_on_expressions))
         if type == runtime.RuntimeType.host:
             opts.type = executor_pb2.RuntimeType.RUNTIME_HOST
         elif type == runtime.RuntimeType.docker:

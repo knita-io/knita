@@ -43,7 +43,7 @@ func dockerImage(input *JobDockerImageInput) (*JobDockerImageOutput, error) {
 	builderDockerImage := fmt.Sprintf("ghcr.io/knita-io/knita/build:%s", fingerprint)
 
 	host := input.Client.MustRuntime(
-		runtime.WithTag(knita.NameTag, "docker"),
+		runtime.WithDisplayName("docker"),
 		runtime.WithType(runtime.TypeHost))
 	defer host.MustClose()
 
@@ -55,7 +55,7 @@ func dockerImage(input *JobDockerImageInput) (*JobDockerImageOutput, error) {
 
 	host.MustImport("build/docker/*")
 	host.MustExec(
-		exec.WithTag(knita.NameTag, "knita/build"),
+		exec.WithDisplayName("knita/build"),
 		exec.WithEnv("DOCKER_PASSWORD="+password),
 		exec.WithCommand("/bin/bash", "-c", `
 			export DOCKER_CLI_EXPERIMENTAL=enabled
@@ -72,7 +72,7 @@ func dockerImage(input *JobDockerImageInput) (*JobDockerImageOutput, error) {
 // protobuf generates protobuf bindings for the languages used in the Knita repo.
 func protobuf(input *JobProtobufInput) (*JobProtobufOutput, error) {
 	container := input.Client.MustRuntime(
-		runtime.WithTag(knita.NameTag, "protobuf"),
+		runtime.WithDisplayName("protobuf"),
 		runtime.WithType(runtime.TypeDocker),
 		runtime.WithImage(input.Docker.KnitaBuildImage))
 	defer container.MustClose()
@@ -80,23 +80,32 @@ func protobuf(input *JobProtobufInput) (*JobProtobufOutput, error) {
 	container.MustImport("api/**/*.proto")
 
 	container.MustExec(
-		exec.WithTag(knita.NameTag, "python"),
+		exec.WithDisplayName("python"),
 		exec.WithCommand("/bin/bash", "-c", `
+			shopt -s globstar
+
 			python \
 			-m grpc_tools.protoc \
 			-I api \
 			--python_out=api \
 			--pyi_out=api \
 			--grpc_python_out=api \
+			broker/v1/broker.proto \
 			executor/v1/executor.proto \
-			director/v1/director.proto
+			director/v1/director.proto \
+			observer/v1/observer.proto \
+			events/v1/event.proto \
+			events/builtin/v1/builtin.proto
 
-			sed -i -e 's/from director.v1/from ./g' api/*/v1/*.py*
-			sed -i -e 's/from executor.v1/from ./g' api/*/v1/*.py*`))
+			sed -i -e 's/from director.v1/from ./g' api/**/*.py*
+			sed -i -e 's/from broker.v1/from ./g' api/**/*.py*
+			sed -i -e 's/from executor.v1/from ./g' api/**/*.py*
+			sed -i -e 's/from events.v1/from ./g' api/**/*.py*
+			sed -i -e 's/from builtin.v1/from ./g' api/**/*.py*`))
 	container.MustExport("api/**/*.py*", export.WithDest("sdk/python/knita/"))
 
 	container.MustExec(
-		exec.WithTag(knita.NameTag, "go"),
+		exec.WithDisplayName("go"),
 		exec.WithCommand("/bin/bash", "-c", `
 			protoc \
 			--proto_path=api \
@@ -107,7 +116,9 @@ func protobuf(input *JobProtobufInput) (*JobProtobufOutput, error) {
 			broker/v1/broker.proto \
 			executor/v1/executor.proto \
 			director/v1/director.proto \
-			observer/v1/observer.proto`))
+			observer/v1/observer.proto \
+			events/v1/event.proto \
+			events/builtin/v1/builtin.proto`))
 	container.MustExport("api/**/*.pb.go")
 
 	return &JobProtobufOutput{}, nil
@@ -116,7 +127,7 @@ func protobuf(input *JobProtobufInput) (*JobProtobufOutput, error) {
 // unit executes unit tests for the Knita repo.
 func unit(input *JobUnitTestInput) (*JobUnitTestOutput, error) {
 	container := input.Client.MustRuntime(
-		runtime.WithTag(knita.NameTag, "unit-test"),
+		runtime.WithDisplayName("unit-test"),
 		runtime.WithType(runtime.TypeDocker),
 		runtime.WithImage(input.Docker.KnitaBuildImage))
 	defer container.MustClose()
@@ -126,7 +137,7 @@ func unit(input *JobUnitTestInput) (*JobUnitTestOutput, error) {
 	}
 
 	container.MustExec(
-		exec.WithTag(knita.NameTag, "go"),
+		exec.WithDisplayName("go"),
 		exec.WithCommand("/bin/bash", "-c", "go test ./..."))
 
 	return &JobUnitTestOutput{}, nil
@@ -144,7 +155,7 @@ func build(input *JobBuildInput) (*JobBuildOutput, error) {
 	}
 
 	container := input.Client.MustRuntime(
-		runtime.WithTag(knita.NameTag, "build"),
+		runtime.WithDisplayName("build"),
 		runtime.WithType(runtime.TypeDocker),
 		runtime.WithImage(input.Docker.KnitaBuildImage))
 	defer container.MustClose()
@@ -161,12 +172,12 @@ func build(input *JobBuildInput) (*JobBuildOutput, error) {
 				defer wg.Done()
 				ldFLagsEnv := fmt.Sprintf("LDFLAGS=-X github.com/knita-io/knita/internal/version.Version=%s", input.Version.KnitaVersion)
 				container.MustExec(
-					exec.WithTag(knita.NameTag, fmt.Sprintf("knita-cli-%[1]s-%[2]s", os, arch)),
+					exec.WithDisplayName(fmt.Sprintf("knita-cli-%[1]s-%[2]s", os, arch)),
 					exec.WithEnv(ldFLagsEnv),
 					exec.WithCommand("/bin/bash", "-c",
 						fmt.Sprintf("cd cmd/knita && env GOOS=%[1]s GOARCH=%[2]s go build -ldflags \"$LDFLAGS\" -o ../../build/output/cli/knita-%[1]s-%[2]s .", os, arch)))
 				container.MustExec(
-					exec.WithTag(knita.NameTag, fmt.Sprintf("knita-executor-%[1]s-%[2]s", os, arch)),
+					exec.WithDisplayName(fmt.Sprintf("knita-executor-%[1]s-%[2]s", os, arch)),
 					exec.WithEnv(ldFLagsEnv),
 					exec.WithCommand("/bin/bash", "-c",
 						fmt.Sprintf("cd cmd/executor && env GOOS=%[1]s GOARCH=%[2]s go build -ldflags \"$LDFLAGS\" -o ../../build/output/executor/knita-executor-%[1]s-%[2]s .", os, arch)))
@@ -183,7 +194,7 @@ func build(input *JobBuildInput) (*JobBuildOutput, error) {
 // from inside an existing `knita build`, but targeting a per-sdk test pattern file.
 func testSDK(input *JobTestSDKInput) (*JobTestSDKOutput, error) {
 	host := input.Client.MustRuntime(
-		runtime.WithTag(knita.NameTag, "sdk-test"),
+		runtime.WithDisplayName("sdk-test"),
 		runtime.WithType(runtime.TypeHost))
 	defer host.MustClose()
 
@@ -195,7 +206,7 @@ func testSDK(input *JobTestSDKInput) (*JobTestSDKOutput, error) {
 	host.MustImport("sdk")
 
 	host.MustExec(
-		exec.WithTag(knita.NameTag, "python"),
+		exec.WithDisplayName("python"),
 		exec.WithCommand("/bin/bash", "-c", `
 			python3 -m venv python-sdk-test
 			source python-sdk-test/bin/activate
@@ -205,7 +216,7 @@ func testSDK(input *JobTestSDKInput) (*JobTestSDKOutput, error) {
 			knita build ./pattern.py`))
 
 	host.MustExec(
-		exec.WithTag(knita.NameTag, "go"),
+		exec.WithDisplayName("go"),
 		exec.WithCommand("/bin/bash", "-c", `
 			export PATH=$PATH:$(pwd)
 			cd test/sdk/go
@@ -229,14 +240,14 @@ func publishSDK(input *JobPublishSDKInput) (*JobPublishSDKOutput, error) {
 	}
 
 	container := input.Client.MustRuntime(
-		runtime.WithTag(knita.NameTag, "sdk-publish"),
+		runtime.WithDisplayName("sdk-publish"),
 		runtime.WithType(runtime.TypeDocker),
 		runtime.WithImage(input.Docker.KnitaBuildImage))
 	defer container.MustClose()
 
 	container.MustImport("sdk/python")
 	container.MustExec(
-		exec.WithTag(knita.NameTag, "python"),
+		exec.WithDisplayName("python"),
 		exec.WithEnv("TWINE_PASSWORD="+os.Getenv("KNITA_BUILD_TWINE_PASSWORD")),
 		exec.WithCommand("/bin/bash", "-c", `
 			cd sdk/python

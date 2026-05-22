@@ -4,9 +4,9 @@ import knita
 
 kclient = knita.Client()
 
-opts = [{"type": "host", "tags": {"name": "host-test"}},
+opts = [{"type": "host", "display_name": "host-test"},
         {"type": "docker", "docker_image": "ubuntu:latest", "docker_pull_strategy": "not-exists",
-         "tags": {"name": "docker-test"}}]
+         "display_name": "docker-test"}]
 
 for opts in opts:
     with kclient.runtime(**opts) as runtime:
@@ -31,12 +31,12 @@ for opts in opts:
                                                    f"if [[ \"$contents\" != \"{expected_contents}\" ]]; then\n"
                                                    f"   exit 1\n"
                                                    f"fi\n"],
-                     tags={"name": "import-test"})
+                     display_name="import-test")
 
         # Verify zero-byte files can be imported
         runtime.import_(src='input/zero-bytes.txt')
         runtime.exec(name="/bin/bash", args=["-c", f"stat input/zero-bytes.txt"],
-                     tags={"name": "zero-byte-import-test"})
+                     display_name="zero-byte-import-test")
 
         # Verify import excludes work
         runtime.import_(src='input/exclude', excludes=['input/exclude/exclude*',
@@ -55,21 +55,21 @@ for opts in opts:
         
         if [ -f input/exclude/include1/include2/exclude2.txt ]; then exit 1; fi
         if [ ! -f input/exclude/include1/include2/include2.txt ]; then exit 1; fi'''],
-                     tags={"name": "exclude-import-test"})
+                     display_name="exclude-import-test")
 
         # Verify the remote work directory is reported correctly
         runtime.exec(name="/bin/bash", args=["-c", f"contents=\"$(cat {runtime.work_directory(expected_file_path)})\"\n"
                                                    f"if [[ \"$contents\" != \"{expected_contents}\" ]]; then\n"
                                                    f"   exit 1\n"
                                                    f"fi\n"],
-                     tags={"name": "work-directory-test"})
+                     display_name="work-directory-test")
 
         # Verify files can be exported
         expected_contents = 'hello world\n'
         expected_file_path = 'output/host.txt'
         runtime.exec(name="/bin/bash",
                      args=["-c", f"mkdir output && echo -n '{expected_contents}' > {expected_file_path}"],
-                     tags={"name": "export-test"})
+                     display_name="export-test")
         runtime.export(src=expected_file_path)
         with open(expected_file_path, "r") as file:
             contents = file.read()
@@ -80,7 +80,7 @@ for opts in opts:
         expected_output = 'hello world\n'
         with io.StringIO() as stdout, io.StringIO() as stderr:
             runtime.exec(name="/bin/bash", args=["-c", f" echo -n \"{expected_output}\" | tee /dev/stderr "],
-                         tags={"name": "io-test"},
+                         display_name="io-test",
                          stdout=stdout,
                          stderr=stderr)
             if stdout.getvalue() != expected_output:

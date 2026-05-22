@@ -4,8 +4,13 @@ import (
 	"io"
 
 	executorv1 "github.com/knita-io/knita/api/executor/v1"
+	"github.com/knita-io/knita/sdk/go/knita/runtime"
 )
 
+// Opt configures an Exec call.
+type Opt func(*Opts)
+
+// Opts holds the options for an Exec invocation.
 type Opts struct {
 	*executorv1.ExecOpts
 	Stdout io.Writer
@@ -13,120 +18,78 @@ type Opts struct {
 	Stdin  io.Reader
 }
 
-type Opt interface {
-	Apply(opts *Opts)
-}
-
-type withCommand struct {
-	name string
-	args []string
-}
-
-func (o *withCommand) Apply(opts *Opts) {
-	if opts.ExecOpts == nil {
-		opts.ExecOpts = &executorv1.ExecOpts{}
-	}
-	opts.Name = o.name
-	opts.Args = o.args
-}
-
-// WithCommand specifies the command to execute.
+// WithCommand specifies the command name and args.
 func WithCommand(name string, args ...string) Opt {
-	return &withCommand{name: name, args: args}
-}
-
-type withStdout struct {
-	stdout io.Writer
-}
-
-func (o *withStdout) Apply(opts *Opts) {
-	if opts.ExecOpts == nil {
-		opts.ExecOpts = &executorv1.ExecOpts{}
+	return func(o *Opts) {
+		if o.ExecOpts == nil {
+			o.ExecOpts = &executorv1.ExecOpts{}
+		}
+		o.Name = name
+		o.Args = args
 	}
-	opts.Stdout = o.stdout
 }
 
-// WithStdout wires up the command's stdout to the specified writer.
-func WithStdout(stdout io.Writer) Opt {
-	return &withStdout{stdout: stdout}
-}
-
-type withStderr struct {
-	stderr io.Writer
-}
-
-func (o *withStderr) Apply(opts *Opts) {
-	if opts.ExecOpts == nil {
-		opts.ExecOpts = &executorv1.ExecOpts{}
+// WithStdout directs stdout to the provided writer.
+func WithStdout(w io.Writer) Opt {
+	return func(o *Opts) {
+		o.Stdout = w
 	}
-	opts.Stderr = o.stderr
 }
 
-// WithStderr wires up the command's stderr to the specified writer.
-func WithStderr(stderr io.Writer) Opt {
-	return &withStderr{stderr: stderr}
-}
-
-type withEnv struct {
-	env []string
-}
-
-func (o *withEnv) Apply(opts *Opts) {
-	if opts.ExecOpts == nil {
-		opts.ExecOpts = &executorv1.ExecOpts{}
+// WithStderr directs stderr to the provided writer.
+func WithStderr(w io.Writer) Opt {
+	return func(o *Opts) {
+		o.Stderr = w
 	}
-	opts.Env = append(opts.Env, o.env...)
 }
 
-// WithEnv provides one or more environment variables to the command.
-// Variables are specified as key value pairs separated by an = sign e.g. 'FOO=bar'.
+// WithEnv adds environment variables (e.g. "KEY=VALUE").
 func WithEnv(env ...string) Opt {
-	return &withEnv{env: env}
-}
-
-type withTag struct {
-	key   string
-	value string
-}
-
-func (o *withTag) Apply(opts *Opts) {
-	if opts.ExecOpts == nil {
-		opts.ExecOpts = &executorv1.ExecOpts{}
-	}
-	if opts.Tags == nil {
-		opts.Tags = map[string]string{}
-	}
-	opts.Tags[o.key] = o.value
-}
-
-// WithTag tags the command with a key value pair.
-func WithTag(key string, value string) Opt {
-	return &withTag{key: key, value: value}
-}
-
-type withTags struct {
-	tags map[string]string
-}
-
-func (o *withTags) Apply(opts *Opts) {
-	if opts.ExecOpts == nil {
-		opts.ExecOpts = &executorv1.ExecOpts{}
-	}
-	if opts.Tags == nil {
-		opts.Tags = map[string]string{}
-	}
-	for k, v := range o.tags {
-		opts.Tags[k] = v
+	return func(o *Opts) {
+		if o.ExecOpts == nil {
+			o.ExecOpts = &executorv1.ExecOpts{}
+		}
+		o.Env = append(o.Env, env...)
 	}
 }
 
-// WithTags tags the command with one or more key value pairs.
-// The expected format of tags is an array of alternating key value pairs.
-// If tags are mismatched this function will panic.
-func WithTags(tags ...string) Opt {
-	m := map[string]string{}
-	if len(tags)%2 != 0 {
-		panic("expected alternating kv paris")
+// WithDisplayName sets the display name for the exec.
+func WithDisplayName(displayName string) Opt {
+	return func(o *Opts) {
+		o.DisplayName = displayName
 	}
-	return &withTags{tags: m}
+}
+
+// WithLabel sets a single label.
+func WithLabel(key, value string) Opt {
+	return WithLabels(key, value)
+}
+
+// WithLabels sets multiple labels from an alternating key/value list.
+// Panics if you pass an odd number of args.
+func WithLabels(kv ...string) Opt {
+	m := runtime.KVMap("WithLabels", kv)
+	return func(o *Opts) {
+		if o.ExecOpts == nil {
+			o.ExecOpts = &executorv1.ExecOpts{}
+		}
+		o.Meta = runtime.MergeLabels(o.Meta, m)
+	}
+}
+
+// WithAnnotation sets a single annotation.
+func WithAnnotation(key, value string) Opt {
+	return WithAnnotations(key, value)
+}
+
+// WithAnnotations sets multiple annotations from an alternating key/value list.
+// Panics if you pass an odd number of args.
+func WithAnnotations(kv ...string) Opt {
+	m := runtime.KVMap("WithAnnotations", kv)
+	return func(o *Opts) {
+		if o.ExecOpts == nil {
+			o.ExecOpts = &executorv1.ExecOpts{}
+		}
+		o.Meta = runtime.MergeAnnotations(o.Meta, m)
+	}
 }

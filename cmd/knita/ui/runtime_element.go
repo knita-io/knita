@@ -15,7 +15,7 @@ type RuntimeElement struct {
 	*ElementContainer
 	ui             *Manager
 	tenderID       string
-	opts           *executorv1.Opts
+	opts           *executorv1.RuntimeOpts
 	height         int
 	message        string
 	complete       bool
@@ -27,7 +27,7 @@ type RuntimeElement struct {
 	currentExports int
 }
 
-func NewRuntimeElement(ui *Manager, tenderID string, opts *executorv1.Opts) *RuntimeElement {
+func NewRuntimeElement(ui *Manager, tenderID string, opts *executorv1.RuntimeOpts) *RuntimeElement {
 	return &RuntimeElement{ui: ui, tenderID: tenderID, opts: opts, height: 1, ElementContainer: NewElementContainer(ui)}
 }
 
@@ -44,12 +44,9 @@ func (e *RuntimeElement) Height() int {
 }
 
 func (e *RuntimeElement) Render(writer io.Writer, width int) {
-	displayName := e.tenderID
-	if e.opts.Tags != nil {
-		name, ok := e.opts.Tags["name"]
-		if ok {
-			displayName = formatUntrustedText(name)
-		}
+	displayName := e.opts.DisplayName
+	if displayName == "" {
+		displayName = e.tenderID
 	}
 	var text string
 	if e.complete {

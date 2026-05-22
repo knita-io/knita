@@ -62,12 +62,9 @@ func (e *ExecElement) Height() int {
 }
 
 func (e *ExecElement) Render(writer io.Writer, width int) {
-	displayName := e.execID
-	if e.opts.Tags != nil {
-		name, ok := e.opts.Tags["name"]
-		if ok {
-			displayName = formatUntrustedText(name)
-		}
+	displayName := e.opts.DisplayName
+	if displayName == "" {
+		displayName = e.execID
 	}
 	runTime := fmt.Sprintf("%s", e.runTime.Round(time.Millisecond*100))
 

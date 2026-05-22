@@ -1,10 +1,9 @@
 package main
 
 import (
+	"context"
+	"crypto/tls"
 	"fmt"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
-	"github.com/knita-io/knita/internal/broker/fixed"
-	"github.com/knita-io/knita/internal/server"
 	"io"
 	"log"
 	"net"
@@ -15,19 +14,25 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 
 	brokerv1 "github.com/knita-io/knita/api/broker/v1"
 	directorv1 "github.com/knita-io/knita/api/director/v1"
+	builtinv1 "github.com/knita-io/knita/api/events/builtin/v1"
 	executorv1 "github.com/knita-io/knita/api/executor/v1"
+	observerv1 "github.com/knita-io/knita/api/observer/v1"
 	"github.com/knita-io/knita/cmd/knita/ui"
+	"github.com/knita-io/knita/internal/broker/fixed"
 	"github.com/knita-io/knita/internal/director"
 	"github.com/knita-io/knita/internal/event"
 	"github.com/knita-io/knita/internal/executor"
 	"github.com/knita-io/knita/internal/file"
+	"github.com/knita-io/knita/internal/server"
 	"github.com/knita-io/knita/internal/version"
 )
 
@@ -80,6 +85,9 @@ var buildCMD = &cobra.Command{
 		}
 		defer syslog.Sync()
 
+		syslog.Infof("Starting build: %v", buildID)
+		syslog.Infof("Knita CLI version: %v", version.Version)
+
 		configFilePath, _ := cmd.Flags().GetString("config")
 		config, err := getConfig(syslog, configFilePath)
 		if err != nil {
@@ -131,7 +139,7 @@ var buildCMD = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("error dialing local knita socket %s: %w", socket, err)
 		}
-		brokerClient := brokerv1.NewRuntimeBrokerClient(conn)
+		brokerClient := brokerv1.NewBrokerClient(conn)
 		buildLog := director.NewLog(event.NewBroker(syslog), buildID)
 		defer buildLog.Close()
 		build := director.NewBuild(syslog, buildLog, buildID, brokerClient, file.WriteDirFS(work))
@@ -140,11 +148,14 @@ var buildCMD = &cobra.Command{
 		if embeddedExecutorName == "" {
 			embeddedExecutorName = "knita-exec-local"
 		}
-		executor := executor.NewServer(syslog, executor.Config{Name: embeddedExecutorName, Labels: config.Executors.Local.Labels})
-		defer executor.Stop()
 
-		var executors []*fixed.ExecutorConfig
+		var (
+			executorSrv *executor.Server
+			executors   []*fixed.ExecutorConfig
+		)
 		if !config.Executors.Local.Disabled {
+			executorSrv = executor.NewServer(syslog, executor.Config{Name: embeddedExecutorName, Labels: config.Executors.Local.Labels})
+			defer executorSrv.Stop()
 			executors = append(executors, &fixed.ExecutorConfig{
 				Connection: &brokerv1.RuntimeConnectionInfo{
 					Transport: &brokerv1.RuntimeConnectionInfo_Unix{
@@ -176,8 +187,10 @@ var buildCMD = &cobra.Command{
 			grpc.ChainStreamInterceptor(
 				recovery.StreamServerInterceptor(),
 				server.MakeStreamServerLogInterceptor(syslog.Named("grpc"))))
-		executorv1.RegisterExecutorServer(srv, executor)
-		brokerv1.RegisterRuntimeBrokerServer(srv, broker)
+		if executorSrv != nil {
+			executorv1.RegisterExecutorServer(srv, executorSrv)
+		}
+		brokerv1.RegisterBrokerServer(srv, broker)
 		directorv1.RegisterDirectorServer(srv, directorServer)
 
 		go func() {
@@ -195,12 +208,39 @@ var buildCMD = &cobra.Command{
 			defer uiManager.Stop()
 		}
 
-		buildLog.Stream().Subscribe(func(event *executorv1.Event) {
+		var oStream observerv1.Observer_WatchClient
+		if config.Observer.Address == "" {
+			syslog.Infof("No observer configured")
+		} else {
+			syslog.Infof("Using observer address: %v", config.Observer.Address)
+			oStream, err = establishObserverWatch(syslog, config)
+			if err != nil {
+				if !config.Observer.Required {
+					syslog.Warnf("Unable to connect to observer; Will ignore and continue: %v", err)
+				} else {
+					return err
+				}
+			} else {
+				buildLog.Stream().Subscribe(func(event *event.Event) {
+					m, err := event.Marshal()
+					if err != nil {
+						syslog.Warnf("error marshaling observer event: %v", err)
+						return
+					}
+					err = oStream.Send(m)
+					if err != nil {
+						syslog.Warnf("Error sending event to observer: %v", err)
+					}
+				})
+			}
+		}
+
+		buildLog.Stream().Subscribe(func(event *event.Event) {
 			switch p := event.Payload.(type) {
-			case *executorv1.Event_Stdout:
-				buildOut.Write([]byte(fmt.Sprintf("%s", string(p.Stdout.Data))))
-			case *executorv1.Event_Stderr:
-				buildOut.Write([]byte(fmt.Sprintf("%s", string(p.Stderr.Data))))
+			case *builtinv1.StdoutEvent:
+				buildOut.Write([]byte(fmt.Sprintf("%s", string(p.Data))))
+			case *builtinv1.StderrEvent:
+				buildOut.Write([]byte(fmt.Sprintf("%s", string(p.Data))))
 			}
 		})
 
@@ -210,21 +250,56 @@ var buildCMD = &cobra.Command{
 			fmt.Sprintf("KNITA_BUILD_ID=%s", buildID),
 		}...)
 
-		execCmd := exec.Command(args[0], args[:1]...)
-		execCmd.Env = env
-		execCmd.Stdout = buildLog.Stdout()
-		execCmd.Stderr = buildLog.Stderr()
-		err = execCmd.Run()
+		err = build.Run(func() error {
+			execCmd := exec.Command(args[0], args[:1]...)
+			execCmd.Env = env
+			execCmd.Stdout = buildLog.Stdout()
+			execCmd.Stderr = buildLog.Stderr()
+			err := execCmd.Run()
+			if err != nil {
+				return fmt.Errorf("error running command: %w", err)
+			}
+			return nil
+		})
+
+		// TODO clobbers err
+		if oStream != nil {
+			_, err = oStream.CloseAndRecv()
+			if err != nil {
+				return fmt.Errorf("error sending event to observer: %w", err)
+			}
+		}
+
 		if !verbose {
 			uiManager.Stop()
 			fmt.Fprintf(os.Stdout, "\nBuild log available at: %s\n", buildLogPath)
 		}
 		if err != nil {
 			fmt.Fprintf(os.Stdout, "\n")
-			return fmt.Errorf("error running command: %w", err)
+			return err
 		}
 		return nil
 	},
+}
+
+func establishObserverWatch(syslog *zap.SugaredLogger, config *config) (observerv1.Observer_WatchClient, error) {
+	if config.Observer.InsecureSkipVerify {
+		syslog.Warnf("Skipping observer TLS verification")
+	}
+	creds := credentials.NewTLS(&tls.Config{InsecureSkipVerify: config.Observer.InsecureSkipVerify})
+	ctx, cancel := context.WithTimeout(context.Background(), config.Observer.TimeoutMS)
+	defer cancel()
+	conn, err := grpc.DialContext(ctx, config.Observer.Address, grpc.WithTransportCredentials(creds), grpc.WithBlock())
+	if err != nil {
+		return nil, fmt.Errorf("error dialing observer: %w", err)
+	}
+	defer conn.Close()
+	observerClient := observerv1.NewObserverClient(conn)
+	watch, err := observerClient.Watch(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("error establishing observer watch: %w", err)
+	}
+	return watch, nil
 }
 
 func makeLogger(logPath string) (*zap.SugaredLogger, error) {

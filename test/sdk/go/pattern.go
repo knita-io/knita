@@ -18,14 +18,14 @@ func main() {
 		func() *knita.Runtime {
 			return kClient.MustRuntime(
 				runtime.WithType(runtime.TypeHost),
-				runtime.WithTag("name", "host-test"))
+				runtime.WithDisplayName("host-test"))
 		},
 		func() *knita.Runtime {
 			return kClient.MustRuntime(
 				runtime.WithType(runtime.TypeDocker),
 				runtime.WithImage("ubuntu:latest"),
 				runtime.WithPullStrategy(runtime.PullStrategyNotExists),
-				runtime.WithTag("name", "docker-test"))
+				runtime.WithDisplayName("docker-test"))
 		},
 	}
 
@@ -60,7 +60,7 @@ func main() {
 			expectedContents := string(buf)
 			rt.MustImport(expectedFilePath)
 			rt.MustExec(
-				exec.WithTag("name", "import-test"),
+				exec.WithDisplayName("import-test"),
 				exec.WithCommand("/bin/bash", "-c", `
 				contents="$(cat `+expectedFilePath+`)"
 				if [[ "$contents" != "`+expectedContents+`" ]]; then
@@ -71,7 +71,7 @@ func main() {
 			// Verify zero-byte files can be imported
 			rt.MustImport("input/zero-bytes.txt")
 			rt.MustExec(
-				exec.WithTag("name", "zero-byte-import-test"),
+				exec.WithDisplayName("zero-byte-import-test"),
 				exec.WithCommand("/bin/bash", "-c", `stat input/zero-bytes.txt`))
 
 			// Verify import excludes work
@@ -80,7 +80,7 @@ func main() {
 				"input/exclude/include1/exclude**",
 				"input/exclude/include1/include2/exclude2.txt"))
 			rt.MustExec(
-				exec.WithTag("name", "exclude-import-test"),
+				exec.WithDisplayName("exclude-import-test"),
 				exec.WithCommand("/bin/bash", "-c", `set -x
 				if [ -d input/exclude/exclude1 ]; then exit 1; fi
 				if [ ! -d input/exclude/include1 ]; then exit 1; fi
@@ -98,7 +98,7 @@ func main() {
 
 			// Verify the remote work directory is reported correctly
 			rt.MustExec(
-				exec.WithTag("name", "work-directory-test"),
+				exec.WithDisplayName("work-directory-test"),
 				exec.WithCommand("/bin/bash", "-c", `
 				contents="$(cat `+rt.WorkDirectory(expectedFilePath)+`)"
 				if [[ "$contents" != "`+expectedContents+`" ]]; then
@@ -110,7 +110,7 @@ func main() {
 			expectedContents = "hello world\n"
 			expectedFilePath = "output/host.txt"
 			rt.MustExec(
-				exec.WithTag("name", "export-test"),
+				exec.WithDisplayName("export-test"),
 				exec.WithCommand("/bin/bash", "-c", `
 				mkdir output && echo -n '`+expectedContents+`' > `+expectedFilePath+`
 			`))
@@ -128,7 +128,7 @@ func main() {
 			stdout := bytes.NewBuffer(make([]byte, 0))
 			stderr := bytes.NewBuffer(make([]byte, 0))
 			rt.MustExec(
-				exec.WithTag("name", "io-test"),
+				exec.WithDisplayName("io-test"),
 				exec.WithStdout(stdout),
 				exec.WithStderr(stderr),
 				exec.WithCommand("/bin/bash", "-c", `

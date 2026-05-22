@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package events.knita.io;
+
+option go_package = "github.com/knita-io/knita/api/events/v1";
+
+import "google/protobuf/any.proto";
+
+message Meta {
+  string build_id = 1;
+  string correlation_id = 2;
+  uint64 sequence = 3;
+  map<string,string> labels = 4;
+  map<string, string> annotations = 5;
+}
+
+message Event {
+  Meta meta = 1;
+  google.protobuf.Any payload = 2;
+}

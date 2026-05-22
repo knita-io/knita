@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -17,7 +18,15 @@ func init() {
 }
 
 type config struct {
+	Observer  observerConfig  `mapstructure:"observer"`
 	Executors executorsConfig `mapstructure:"executors"`
+}
+
+type observerConfig struct {
+	Address            string        `mapstructure:"address"`
+	Required           bool          `mapstructure:"required"`
+	TimeoutMS          time.Duration `mapstructure:"timeout_ms"`
+	InsecureSkipVerify bool          `mapstructure:"tls_insecure_skip_verify"`
 }
 
 type executorsConfig struct {
@@ -30,7 +39,7 @@ type localExecutorConfig struct {
 	// If true, a local or upstream broker must be configured.
 	Disabled bool `mapstructure:"disabled"`
 	// Labels the executor will advertise to the broker.
-	Labels []string `mapstructure:"labels"`
+	Labels map[string]string `mapstructure:"labels"`
 }
 
 type remoteExecutorConfig struct {
@@ -39,6 +48,7 @@ type remoteExecutorConfig struct {
 }
 
 func fillDefaultValues(config *config) *config {
+	config.Observer.TimeoutMS = 2 * time.Second
 	return config
 }
 
@@ -52,7 +62,7 @@ func getConfig(syslog *zap.SugaredLogger, configFilePath string) (*config, error
 		if err != nil {
 			return nil, fmt.Errorf("error reading config file: %w", err)
 		}
-		syslog.Infof("using config file: %s", v.ConfigFileUsed())
+		syslog.Infof("Using config file: %s", v.ConfigFileUsed())
 	}
 	conf := &config{}
 	err = v.Unmarshal(conf)

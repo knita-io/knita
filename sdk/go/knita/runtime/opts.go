@@ -1,11 +1,12 @@
 package runtime
 
 import (
+	directorv1 "github.com/knita-io/knita/api/director/v1"
 	executorv1 "github.com/knita-io/knita/api/executor/v1"
 )
 
 const (
-	// TypeHost is a runtime that executes directly on the host executor without any containerization or virtualization.
+	// TypeHost is a runtime that executes directly on the host executor.
 	TypeHost Type = "host"
 	// TypeDocker is a runtime that executes inside a Docker container.
 	TypeDocker Type = "docker"
@@ -13,177 +14,191 @@ const (
 
 type Type string
 
-type Opt interface {
-	Apply(opts *executorv1.Opts)
-}
-
-type withType struct {
-	runtimeType executorv1.RuntimeType
-}
-
-func (o *withType) Apply(opts *executorv1.Opts) {
-	opts.Type = o.runtimeType
-}
+// Opt configures a directorv1.OpenRequest.
+type Opt func(opts *directorv1.OpenRequest)
 
 // WithType specifies the type of runtime to open.
 func WithType(t Type) Opt {
-	switch t {
-	case TypeDocker:
-		return &withType{runtimeType: executorv1.RuntimeType_RUNTIME_DOCKER}
-	case TypeHost:
-		return &withType{runtimeType: executorv1.RuntimeType_RUNTIME_HOST}
-	default:
-		panic("Unknown runtime type: " + t)
+	return func(o *directorv1.OpenRequest) {
+		switch t {
+		case TypeDocker:
+			o.Opts.Type = executorv1.RuntimeType_RUNTIME_DOCKER
+		case TypeHost:
+			o.Opts.Type = executorv1.RuntimeType_RUNTIME_HOST
+		default:
+			panic("unknown runtime type: " + string(t))
+		}
 	}
 }
 
-type withRunsOn struct {
-	labels []string
-}
-
-func (o *withRunsOn) Apply(opts *executorv1.Opts) {
-	opts.Labels = append(opts.Labels, o.labels...)
-}
-
-// WithRunsOn specifies that this runtime can only be opened on an executor that supports the specified labels.
-func WithRunsOn(labels ...string) Opt {
-	return &withRunsOn{labels: labels}
-}
-
-type withTag struct {
-	key   string
-	value string
-}
-
-func (o *withTag) Apply(opts *executorv1.Opts) {
-	if opts.Tags == nil {
-		opts.Tags = map[string]string{}
-	}
-	opts.Tags[o.key] = o.value
-}
-
-// WithTag tags the runtime with a key value pair.
-func WithTag(key string, value string) Opt {
-	return &withTag{key: key, value: value}
-}
-
-type withTags struct {
-	tags map[string]string
-}
-
-func (o *withTags) Apply(opts *executorv1.Opts) {
-	if opts.Tags == nil {
-		opts.Tags = map[string]string{}
-	}
-	for k, v := range o.tags {
-		opts.Tags[k] = v
-	}
-}
-
-// WithTags tags the runtime with one or more key value pairs.
-// The expected format of tags is an array of alternating key value pairs.
-// If tags are mismatched this function will panic.
-func WithTags(tags ...string) Opt {
-	m := map[string]string{}
-	if len(tags)%2 != 0 {
-		panic("expected alternating kv paris")
-	}
-	return &withTags{tags: m}
-}
-
-type withImage struct {
-	imageURI string
-}
-
-func (o *withImage) Apply(opts *executorv1.Opts) {
-	if opts.Opts == nil {
-		opts.Opts = &executorv1.Opts_Docker{Docker: &executorv1.DockerOpts{}}
-	}
-	if opts.GetDocker().GetImage() == nil {
-		opts.GetDocker().Image = &executorv1.DockerPullOpts{}
-	}
-	opts.GetDocker().Image.ImageUri = o.imageURI
-}
-
-// WithImage specifies the image to use when the runtime type is Docker.
-func WithImage(imageURI string) Opt {
-	return &withImage{imageURI: imageURI}
-}
+type Operator string
 
 const (
-	// PullStrategyAlways ensures that a Docker pull is performed prior to starting the runtime.
-	PullStrategyAlways DockerPullStrategy = "always"
-	// PullStrategyNever will skip the Docker pull entirely. This is useful if executors are
-	// loaded with relevant Docker images out of band of any individual build.
-	PullStrategyNever DockerPullStrategy = "never"
-	// PullStrategyNotExists will run Docker pull only if no matching image is found on the executor.
-	PullStrategyNotExists DockerPullStrategy = "not-exists"
+	OperatorIn           Operator = "in"
+	OperatorNotIn        Operator = "not-in"
+	OperatorExists       Operator = "exists"
+	OperatorDoesNotExist Operator = "not-exists"
 )
+
+// Requirement is a single expression in a selector.
+type Requirement struct {
+	Key      string
+	Operator Operator
+	Values   []string // used only by In/NotIn
+}
+
+// WithRunsOn specifies that this runtime can only be opened on an executor
+// whose labels satisfy the given matchLabels AND matchExpressions.
+func WithRunsOn(matchLabels map[string]string, matchExpressions ...Requirement) Opt {
+	return func(o *directorv1.OpenRequest) {
+		// convert to protobuf LabelSelector
+		var exprs []*executorv1.LabelSelectorRequirement
+		for _, r := range matchExpressions {
+			var op executorv1.LabelSelectorRequirement_Operator
+			switch r.Operator {
+			case OperatorIn:
+				op = executorv1.LabelSelectorRequirement_IN
+			case OperatorNotIn:
+				op = executorv1.LabelSelectorRequirement_NOT_IN
+			case OperatorExists:
+				op = executorv1.LabelSelectorRequirement_EXISTS
+			case OperatorDoesNotExist:
+				op = executorv1.LabelSelectorRequirement_DOES_NOT_EXIST
+			default:
+				panic("unknown label selector operator: " + string(r.Operator))
+			}
+			exprs = append(exprs, &executorv1.LabelSelectorRequirement{
+				Key:      r.Key,
+				Operator: op,
+				Values:   r.Values,
+			})
+		}
+		o.Opts.LabelSelector = &executorv1.LabelSelector{
+			MatchLabels:      matchLabels,
+			MatchExpressions: exprs,
+		}
+	}
+}
+
+// WithImage specifies the Docker image URI to use.
+func WithImage(imageURI string) Opt {
+	return func(o *directorv1.OpenRequest) {
+		if o.Opts.Opts == nil {
+			o.Opts.Opts = &executorv1.RuntimeOpts_Docker{Docker: &executorv1.DockerOpts{}}
+		}
+		d := o.Opts.GetDocker()
+		if d.Image == nil {
+			d.Image = &executorv1.DockerPullOpts{}
+		}
+		d.Image.ImageUri = imageURI
+	}
+}
 
 type DockerPullStrategy string
 
-type withPullStrategy struct {
-	pullStrategy executorv1.DockerPullOpts_PullStrategy
-}
+const (
+	PullStrategyAlways    DockerPullStrategy = "always"
+	PullStrategyNever     DockerPullStrategy = "never"
+	PullStrategyNotExists DockerPullStrategy = "not-exists"
+)
 
-func (o *withPullStrategy) Apply(opts *executorv1.Opts) {
-	if opts.Opts == nil {
-		opts.Opts = &executorv1.Opts_Docker{Docker: &executorv1.DockerOpts{}}
+// WithPullStrategy configures how Docker pulls the image.
+func WithPullStrategy(ps DockerPullStrategy) Opt {
+	return func(o *directorv1.OpenRequest) {
+		if o.Opts.Opts == nil {
+			o.Opts.Opts = &executorv1.RuntimeOpts_Docker{Docker: &executorv1.DockerOpts{}}
+		}
+		d := o.Opts.GetDocker()
+		if d.Image == nil {
+			d.Image = &executorv1.DockerPullOpts{}
+		}
+		switch ps {
+		case PullStrategyAlways:
+			d.Image.PullStrategy = executorv1.DockerPullOpts_PULL_STRATEGY_ALWAYS
+		case PullStrategyNever:
+			d.Image.PullStrategy = executorv1.DockerPullOpts_PULL_STRATEGY_NEVER
+		case PullStrategyNotExists:
+			d.Image.PullStrategy = executorv1.DockerPullOpts_PULL_STRATEGY_NOT_EXISTS
+		default:
+			panic("unknown pull strategy: " + string(ps))
+		}
 	}
-	if opts.GetDocker().GetImage() == nil {
-		opts.GetDocker().Image = &executorv1.DockerPullOpts{}
+}
+
+// WithBasicAuth configures basic auth for Docker pulls.
+func WithBasicAuth(username, password string) Opt {
+	return func(o *directorv1.OpenRequest) {
+		if o.Opts.Opts == nil {
+			o.Opts.Opts = &executorv1.RuntimeOpts_Docker{Docker: &executorv1.DockerOpts{}}
+		}
+		d := o.Opts.GetDocker()
+		if d.Image == nil {
+			d.Image = &executorv1.DockerPullOpts{}
+		}
+		d.Image.Auth = &executorv1.DockerPullAuth{
+			Auth: &executorv1.DockerPullAuth_Basic{
+				Basic: &executorv1.BasicAuth{
+					Username: username,
+					Password: password,
+				},
+			},
+		}
 	}
-	opts.GetDocker().Image.PullStrategy = o.pullStrategy
 }
 
-// WithPullStrategy specifies the behaviour of the docker pull command when the runtime type is Docker.
-func WithPullStrategy(pullStrategy DockerPullStrategy) Opt {
-	switch pullStrategy {
-	case PullStrategyAlways:
-		return &withPullStrategy{pullStrategy: executorv1.DockerPullOpts_PULL_STRATEGY_ALWAYS}
-	case PullStrategyNever:
-		return &withPullStrategy{pullStrategy: executorv1.DockerPullOpts_PULL_STRATEGY_NEVER}
-	case PullStrategyNotExists:
-		return &withPullStrategy{pullStrategy: executorv1.DockerPullOpts_PULL_STRATEGY_NOT_EXISTS}
-	default:
-		panic("Unknown pull strategy: " + pullStrategy)
+// WithAWSECRAuth configures AWS ECR auth for Docker pulls.
+func WithAWSECRAuth(region, accessKeyID, secretKey string) Opt {
+	return func(o *directorv1.OpenRequest) {
+		if o.Opts.Opts == nil {
+			o.Opts.Opts = &executorv1.RuntimeOpts_Docker{Docker: &executorv1.DockerOpts{}}
+		}
+		d := o.Opts.GetDocker()
+		if d.Image == nil {
+			d.Image = &executorv1.DockerPullOpts{}
+		}
+		d.Image.Auth = &executorv1.DockerPullAuth{
+			Auth: &executorv1.DockerPullAuth_AwsEcr{
+				AwsEcr: &executorv1.AWSECRAuth{
+					Region:         region,
+					AwsAccessKeyId: accessKeyID,
+					AwsSecretKey:   secretKey,
+				},
+			},
+		}
 	}
 }
 
-type withBasicAuth struct {
-	basicAuth *executorv1.BasicAuth
-}
-
-func (o *withBasicAuth) Apply(opts *executorv1.Opts) {
-	if opts.GetDocker() == nil {
-		opts.Opts = &executorv1.Opts_Docker{Docker: &executorv1.DockerOpts{}}
+// WithDisplayName sets the display name for the runtime.
+func WithDisplayName(displayName string) Opt {
+	return func(o *directorv1.OpenRequest) {
+		o.Opts.DisplayName = displayName
 	}
-	if opts.GetDocker().GetImage() == nil {
-		opts.GetDocker().Image = &executorv1.DockerPullOpts{}
+}
+
+// WithLabel sets a single label.
+func WithLabel(key, value string) Opt {
+	return WithLabels(key, value)
+}
+
+// WithLabels sets multiple labels from an alternating key/value list.
+// Panics if you pass an odd number of args.
+func WithLabels(kv ...string) Opt {
+	m := KVMap("WithLabels", kv)
+	return func(o *directorv1.OpenRequest) {
+		o.Opts.Meta = MergeLabels(o.Opts.Meta, m)
 	}
-	opts.GetDocker().Image.Auth = &executorv1.DockerPullAuth{Auth: &executorv1.DockerPullAuth_Basic{Basic: o.basicAuth}}
 }
 
-// WithBasicAuth configures basic auth for the docker pull command when the runtime type is Docker.
-func WithBasicAuth(username string, password string) Opt {
-	return &withBasicAuth{basicAuth: &executorv1.BasicAuth{Username: username, Password: password}}
+// WithAnnotation sets a single annotation.
+func WithAnnotation(key, value string) Opt {
+	return WithAnnotations(key, value)
 }
 
-type withAWSAuth struct {
-	awsECRAuth *executorv1.AWSECRAuth
-}
-
-func (o *withAWSAuth) Apply(opts *executorv1.Opts) {
-	if opts.GetDocker() == nil {
-		opts.Opts = &executorv1.Opts_Docker{Docker: &executorv1.DockerOpts{}}
+// WithAnnotations sets multiple annotations from an alternating key/value list.
+// Panics if you pass an odd number of args.
+func WithAnnotations(kv ...string) Opt {
+	m := KVMap("WithAnnotations", kv)
+	return func(o *directorv1.OpenRequest) {
+		o.Opts.Meta = MergeAnnotations(o.Opts.Meta, m)
 	}
-	if opts.GetDocker().GetImage() == nil {
-		opts.GetDocker().Image = &executorv1.DockerPullOpts{}
-	}
-	opts.GetDocker().Image.Auth = &executorv1.DockerPullAuth{Auth: &executorv1.DockerPullAuth_AwsEcr{AwsEcr: o.awsECRAuth}}
-}
-
-// WithAWSECRAuth configures AWS ECR auth for the docker pull command when the runtime type is Docker.
-func WithAWSECRAuth(region string, awsAccessKeyID string, awsSecretKey string) Opt {
-	return &withAWSAuth{awsECRAuth: &executorv1.AWSECRAuth{Region: region, AwsAccessKeyId: awsAccessKeyID, AwsSecretKey: awsSecretKey}}
 }

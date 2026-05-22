@@ -1,81 +1,68 @@
 syntax = "proto3";
 
-package director;
+package director.knita.io;
 
 option go_package = "github.com/knita-io/knita/api/director/v1";
 
 import "executor/v1/executor.proto";
+import "events/v1/event.proto";
 
 service Director {
   rpc Open(OpenRequest) returns (OpenResponse);
-  rpc Exec(ExecRequest) returns (stream ExecEvent);
+  rpc Exec(ExecRequest) returns (stream events.knita.io.Event);
   rpc Import(ImportRequest) returns (ImportResponse);
   rpc Export(ExportRequest) returns (ExportResponse);
-  rpc Close(executor.CloseRequest) returns (executor.CloseResponse);
+  rpc Close(CloseRequest) returns (CloseResponse);
 }
 
 message OpenRequest {
   string build_id = 1;
-  executor.Opts opts = 2;
+  executor.knita.io.RuntimeOpts opts = 2;
 }
 
 message OpenResponse {
   string runtime_id = 1;
   string work_directory = 2;
-  executor.SystemInfo sys_info = 3;
+  executor.knita.io.SystemInfo sys_info = 3;
 }
 
 message ImportRequest {
   string runtime_id = 1;
-  string src_path = 2;
-  ImportOpts opts = 3;
+  ImportOpts opts = 2;
 }
 
 message ImportOpts {
-  string dest_path = 1;
-  repeated string excludes = 2;
+  string src_path = 1;
+  string dest_path = 2;
+  repeated string excludes = 3;
+  executor.knita.io.OptsMeta meta = 4;
+  string display_name = 6;
 }
 
 message ImportResponse {}
 
 message ExportRequest {
   string runtime_id = 1;
-  string src_path = 2;
-  ExportOpts opts = 3;
+  ExportOpts opts = 2;
 }
 
 message ExportOpts {
-  string dest_path = 1;
-  repeated string excludes = 2;
+  string src_path = 1;
+  string dest_path = 2;
+  repeated string excludes = 3;
+  executor.knita.io.OptsMeta meta = 4;
+  string display_name = 6;
 }
 
 message ExportResponse {}
 
 message ExecRequest {
   string runtime_id = 1;
-  executor.ExecOpts opts = 2;
+  executor.knita.io.ExecOpts opts = 2;
 }
 
-message ExecEvent {
-  oneof payload {
-    ExecStartEvent exec_start = 1;
-    ExecStdoutEvent stdout = 2;
-    ExecStderrEvent stderr = 3;
-    ExecEndEvent exec_end = 4;
-  }
+message CloseRequest {
+  string runtime_id = 1;
 }
 
-message ExecStartEvent {}
-
-message ExecStdoutEvent {
-  bytes data = 1;
-}
-
-message ExecStderrEvent {
-  bytes data = 1;
-}
-
-message ExecEndEvent {
-  string error = 1;
-  int32 exit_code = 2;
-}
+message CloseResponse {}
